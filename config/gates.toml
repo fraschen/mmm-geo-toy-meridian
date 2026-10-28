@@ -100,7 +100,7 @@ basis = "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too nar
 enforced_in = "scripts/gates.py"
 
 [gates.within_geo_r2]
-plain = "Does the model pick up week-to-week movements within each region, not just the differences between regions?"
+plain = "Does the model pick up week-to-week movements within each geo, not just the differences between geos?"
 blocking = false
 applies_to = "selected model"
 checks = "R2 after removing each geo's mean (week-to-week signal within geos). WARN below the minimum."

@@ -1,7 +1,7 @@
 # Marketing mix model with Google Meridian
 
 This project measures how much five paid media channels contribute to revenue, using
-Google's Meridian marketing mix model on 3 years of weekly data from 40 regions (Meridian's
+Google's Meridian marketing mix model on 3 years of weekly data from 40 geos (Meridian's
 simulated dataset). It runs one model, in a container, from one command.
 
 This page explains the choices we made, which checks we trust, and what the model can and
@@ -35,11 +35,11 @@ Anything shared from this model should come with these caveats.
 
 Defined in [`config/model.toml`](config/model.toml):
 
-- **Underlying demand** follows a straight-line trend, because the data show steady growth and no
-  yearly seasonality.
+- **Underlying demand** follows a straight-line trend (`knots = 2`: one knot at each end of the
+  series, so no bends), because the data show steady growth and no yearly seasonality.
 - **Media** has effects that carry over for up to 4 weeks and that flatten out as spend grows.
-- **Regions share information:** a channel is assumed to work similarly across regions, because
-  each region's own data are too noisy to estimate it alone.
+- **Geos share information:** a channel is assumed to work similarly across geos, because
+  each geo's own data are too noisy to estimate it alone.
 - **Every channel starts from the same prior belief** about its return, so differences between
   channels come from the data.
 - **Competitor sales and consumer sentiment** are included, because they move with both our spend
@@ -74,7 +74,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
   does not pass yet (see above).
 - **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by
   4.0%, better than a simple 13-week average (5.1%).
-  Its 94% ranges contain 95% of regional weeks, close to the 94% they should.
+  Its 94% ranges contain 95% of geo-level weeks, close to the 94% they should.
 - **Did the data teach the model anything?** Yes. Every channel's estimate moved away from the
   starting assumption.
 - **What we don't rely on:** Meridian's built-in health score (93/100). It only
@@ -134,7 +134,7 @@ of spend: above 1, a channel pays for itself.
 
 - **Whether any specific channel pays back.** The ranges are too wide.
 - **Reliable forecasts.** Not yet tested well enough.
-- **Results by region.** The model shares information across regions, so it reports national results only.
+- **Results by geo.** The model shares information across geos, so it reports national results only.
 - **What happens at much higher spend than ever before.** Beyond past levels, results depend on
   assumptions about how returns flatten.
 - **A precise split between media and underlying demand.**
@@ -146,8 +146,8 @@ narrowed Channel3's range and left the others unchanged. It is not part of the p
 <details><summary>Technical details</summary>
 
 - HYPOTHETICAL test: Channel3, 2023-07-03 to 2023-08-27, ROI 1.4 (SE 0.25); calibrated prior mean 1.23, sd 0.47.
-- Model-implied ROI for the test regions and weeks before calibration: 1.43 (94% CI 0.62-2.40).
-- Across 20 alternative test-region sets, implied ROI 1.35-1.50: the choice of regions does not drive the result.
+- Model-implied ROI for the test geos and weeks before calibration: 1.43 (94% CI 0.62-2.40).
+- Across 20 alternative test-geo sets, implied ROI 1.35-1.50: the choice of geos does not drive the result.
 
 </details>
 
@@ -170,23 +170,23 @@ saved models are reused when the configuration has not changed.
 ## The data
 
 Meridian's simulated [geo dataset](https://github.com/google/meridian/blob/main/meridian/data/simulated_data/csv/geo_all_channels.csv):
-40 regions, 156 weeks (2021-01-25 to 2024-01-15), five paid channels,
+40 geos, 156 weeks (2021-01-25 to 2024-01-15), five paid channels,
 two controls, a promotion and one organic channel. It is downloaded from a fixed version and checked
 before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - **Data quality:** the data are complete and clean.
 - **Trend and seasonality:** revenue grows about 1.5% a year, with no
   meaningful yearly seasonality.
-- **Noise:** weekly revenue is noisy, about 30% up or down per region and
+- **Noise:** weekly revenue is noisy, about 30% up or down per geo and
   6.9% nationally, which limits how precise any model can be.
-- **Media signal:** media's effect is hard to see in the raw data, so the model has to pool regions to find it.
+- **Media signal:** media's effect is hard to see in the raw data, so the model has to pool geos to find it.
 
 <details><summary>Technical details</summary>
 
 - Balanced panel, 0 missing values; spend = impressions x a constant CPM. Spend shares: Channel0 18.5%, Channel1 14.3%, Channel2 5.5%, Channel3 40.0%, Channel4 21.7%.
 - Trend +1.46%/year (HAC p = 0.010); yearly breaks do not improve on a line (p = 0.10).
 - Seasonality: week-of-year means explain R2 = 0.360 of detrended national revenue vs 0.330 for pure noise (p = 0.28).
-- Within-region spend-revenue correlations all |r| <= 0.08; within-region VIF at most 2.11.
+- Within-geo spend-revenue correlations all |r| <= 0.08; within-geo VIF at most 2.11.
 - Controls correlate with spend up to 0.55, so they are confounders.
 - Conversions are inflated in this simulated dataset (about 19 per person per week), so revenue per conversion (about 0.02) looks low; revenue is on a realistic scale (paid spend is 17% of revenue).
 

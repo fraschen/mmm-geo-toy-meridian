@@ -256,7 +256,7 @@ def noise_floor(df, nat):
   n = stats_for(nat.to_numpy())
   q = lambda a: {"median": float(np.median(a)), "min": float(np.min(a)),
                  "max": float(np.max(a))}
-  # Noise vs region size (input to using one residual variance for all regions).
+  # Noise vs geo size (input to using one residual variance for all geos).
   pc = df.assign(pc=df["revenue"] / df[POPULATION]).groupby(GEO).agg(
       pop=(POPULATION, "first"), sd=("pc", "std"))
   return {
@@ -298,7 +298,7 @@ def lag_correlations(df):
       c: [l for l, v in enumerate(vs) if v > out["null_95pct_band"]] for c, vs in part.items()}
 
   fig, axes = plt.subplots(1, 2, figsize=(10, 3.4), sharey=True)
-  for ax, key, title in [(axes[0], "geo_demeaned", "Raw (region averages removed)"),
+  for ax, key, title in [(axes[0], "geo_demeaned", "Raw (geo averages removed)"),
                          (axes[1], "geo_demeaned_partial_controls", "After removing the controls")]:
     ax.axhspan(-out["null_95pct_band"], out["null_95pct_band"], color="#e1e0d9", alpha=.6,
                lw=0)
@@ -310,7 +310,7 @@ def lag_correlations(df):
     ax.set_title(title)
   axes[0].set_ylabel("corr(revenue_t, spend_t-lag)")
   axes[1].legend(loc="upper left", bbox_to_anchor=(1.01, 1))
-  fig.suptitle("Within-region spend-revenue correlation by lag (grey band: range expected by chance)",
+  fig.suptitle("Within-geo spend-revenue correlation by lag (grey band: range expected by chance)",
                y=1.03)
   out["figure"] = savefig(fig, "lag_correlation.png")
   return out
@@ -332,7 +332,7 @@ def collinearity(df):
   for i in range(5):
     for j in range(5):
       ax.text(j, i, f"{corr.iloc[i, j]:.2f}", ha="center", va="center", fontsize=8)
-  ax.set_title("Within-region spend correlation")
+  ax.set_title("Within-geo spend correlation")
   return {"within_geo_spend_corr": corr.to_dict(), "within_geo_max_abs_corr": float(off.max()),
           "vif_within_geo": vif, "max_vif": float(max(vif.values())),
           "figure": savefig(fig, "collinearity.png")}

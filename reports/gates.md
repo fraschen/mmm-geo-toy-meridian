@@ -17,7 +17,7 @@ Model: `mmm` (selected as R1 (linear_strong_pool_lag4)). Blocking failures: cv_f
 | [convergence](#convergence) | Did the computation run reliably? The model is estimated by several independent simulations; they must agree. | yes | convergence PASS |
 | [insample_r2](#insample-r2) | Does the model explain a reasonable share of what happened in the past? | yes | insample_r2 PASS |
 | [insample_coverage](#insample-coverage) | Do the model's 94% ranges contain about 94% of past weeks, neither too narrow nor too wide? | yes | insample_coverage PASS |
-| [within_geo_r2](#within-geo-r2) | Does the model pick up week-to-week movements within each region, not just the differences between regions? | no (warn only) | within_geo_r2 PASS |
+| [within_geo_r2](#within-geo-r2) | Does the model pick up week-to-week movements within each geo, not just the differences between geos? | no (warn only) | within_geo_r2 PASS |
 | [residual_autocorrelation](#residual-autocorrelation) | Are the model's misses random, or does it repeatedly miss in the same direction week after week? | no (warn only) | residual_autocorrelation PASS |
 | [cv](#cv) | Does the model forecast weeks it has not seen? We refit it on shorter histories and check the next 13 weeks. | yes | cv_fold_104 FAIL, cv_fold_117 FAIL, cv_fold_130 FAIL, cv_holdout FAIL |
 | [roi_fold_stability](#roi-fold-stability) | Do the channel ROIs stay roughly the same when the model is refitted on less data? | yes | roi_fold_stability FAIL |
@@ -147,7 +147,7 @@ Latest result:
 
 ### within_geo_r2
 
-**Does the model pick up week-to-week movements within each region, not just the differences between regions?**
+**Does the model pick up week-to-week movements within each geo, not just the differences between geos?**
 
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model

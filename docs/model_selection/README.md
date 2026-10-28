@@ -29,7 +29,7 @@ installed `meridian.model.spec` / `prior_distribution` source (google-meridian 2
 1. **How flexible the baseline is over time (knots).** There is no yearly seasonality
    (p = 0.28 vs AR(1) noise), and the national trend is linear (+1.46%/year, HAC
    p = 0.010). Yearly breaks do not improve on a straight line (HAC Wald p = 0.10). In
-   Meridian, `knots = 2` is exactly a linear-trend baseline. However, week dummies
+   Meridian, `knots = 2` (one knot at each end, no bends) is exactly a straight-line baseline. However, week dummies
    explain 5.3% of within-geo per-capita revenue variance, against 2.5% under a
    permutation null, and Meridian's docs recommend starting with Automatic Knot
    Selection, which picks 66 knots here.

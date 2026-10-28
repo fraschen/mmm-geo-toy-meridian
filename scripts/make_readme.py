@@ -49,7 +49,7 @@ def main():
   text = f"""# Marketing mix model with Google Meridian
 
 This project measures how much five paid media channels contribute to revenue, using
-Google's Meridian marketing mix model on 3 years of weekly data from 40 regions (Meridian's
+Google's Meridian marketing mix model on 3 years of weekly data from 40 geos (Meridian's
 simulated dataset). It runs one model, in a container, from one command.
 
 This page explains the choices we made, which checks we trust, and what the model can and
@@ -77,11 +77,11 @@ Anything shared from this model should come with these caveats.
 
 Defined in [`config/model.toml`](config/model.toml):
 
-- **Underlying demand** follows a straight-line trend, because the data show steady growth and no
-  yearly seasonality.
+- **Underlying demand** follows a straight-line trend (`knots = 2`: one knot at each end of the
+  series, so no bends), because the data show steady growth and no yearly seasonality.
 - **Media** has effects that carry over for up to 4 weeks and that flatten out as spend grows.
-- **Regions share information:** a channel is assumed to work similarly across regions, because
-  each region's own data are too noisy to estimate it alone.
+- **Geos share information:** a channel is assumed to work similarly across geos, because
+  each geo's own data are too noisy to estimate it alone.
 - **Every channel starts from the same prior belief** about its return, so differences between
   channels come from the data.
 - **Competitor sales and consumer sentiment** are included, because they move with both our spend
@@ -110,7 +110,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
   does not pass yet (see above).
 - **Does it fit the past?** {'Yes, within the limits of the data' if g['insample_r2']['status'] == 'PASS' and g['insample_coverage']['status'] == 'PASS' else 'Not well enough'}. Nationally it misses a typical week by
   {pct(gates['insample']['national_mape'])}, better than a simple 13-week average ({pct(nf['national_mape_vs_13wk_ma'])}).
-  Its 94% ranges contain {pct(cov['geo_week'], 0)} of regional weeks, close to the 94% they should.
+  Its 94% ranges contain {pct(cov['geo_week'], 0)} of geo-level weeks, close to the 94% they should.
 - **Did the data teach the model anything?** {'Yes. Every channel' if not any(v['prior_driven'] for v in contraction.values()) else 'Not for every channel. Some channels'}'s estimate moved away from the
   starting assumption{'' if not any(v['prior_driven'] for v in contraction.values()) else ' only a little'}.
 - **What we don't rely on:** Meridian's built-in health score ({gates['meridian_health']['health_score']:.0f}/100). It only
@@ -154,7 +154,7 @@ of spend: above 1, a channel pays for itself.
 
 - **Whether any specific channel pays back.** The ranges are too wide.
 - **Reliable forecasts.** Not yet tested well enough.
-- **Results by region.** The model shares information across regions, so it reports national results only.
+- **Results by geo.** The model shares information across geos, so it reports national results only.
 - **What happens at much higher spend than ever before.** Beyond past levels, results depend on
   assumptions about how returns flatten.
 - **A precise split between media and underlying demand.**
@@ -163,8 +163,8 @@ of spend: above 1, a channel pays for itself.
 of a lift test would sharpen the model. We used an invented (HYPOTHETICAL) Channel3 test: it
 narrowed Channel3's range and left the others unchanged. It is not part of the production model.
 {details(f"HYPOTHETICAL test: {cal['test']['channel']}, {cal['test']['start_date']} to {cal['test']['end_date']}, ROI {cal['test']['point_estimate_roi']} (SE {cal['test']['standard_error']}); calibrated prior mean {cal['prior_channel']['after_calibrated']['mean']:.2f}, sd {cal['prior_channel']['after_sd']:.2f}.",
-          f"Model-implied ROI for the test regions and weeks before calibration: {cal['implied_test_roi_before']['mean']:.2f} (94% CI {cal['implied_test_roi_before']['ci_lo']:.2f}-{cal['implied_test_roi_before']['ci_hi']:.2f}).",
-          f"Across {cal['geo_choice_check']['n_alternative_sets']} alternative test-region sets, implied ROI {cal['geo_choice_check']['implied_roi_mean_range'][0]:.2f}-{cal['geo_choice_check']['implied_roi_mean_range'][1]:.2f}: the choice of regions does not drive the result.")}
+          f"Model-implied ROI for the test geos and weeks before calibration: {cal['implied_test_roi_before']['mean']:.2f} (94% CI {cal['implied_test_roi_before']['ci_lo']:.2f}-{cal['implied_test_roi_before']['ci_hi']:.2f}).",
+          f"Across {cal['geo_choice_check']['n_alternative_sets']} alternative test-geo sets, implied ROI {cal['geo_choice_check']['implied_roi_mean_range'][0]:.2f}-{cal['geo_choice_check']['implied_roi_mean_range'][1]:.2f}: the choice of geos does not drive the result.")}
 
 ## Run it
 
@@ -184,20 +184,20 @@ saved models are reused when the configuration has not changed.
 ## The data
 
 Meridian's simulated [geo dataset](https://github.com/google/meridian/blob/main/meridian/data/simulated_data/csv/geo_all_channels.csv):
-{d['n_geos']} regions, {d['n_weeks']} weeks ({d['first_week']} to {d['last_week']}), five paid channels,
+{d['n_geos']} geos, {d['n_weeks']} weeks ({d['first_week']} to {d['last_week']}), five paid channels,
 two controls, a promotion and one organic channel. It is downloaded from a fixed version and checked
 before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - **Data quality:** the data are complete and clean.
 - **Trend and seasonality:** revenue grows about {tr['slope_per_year_pct_of_mean']:.1f}% a year, with no
   meaningful yearly seasonality.
-- **Noise:** weekly revenue is noisy, about {pct(nf['geo_weekly_cv']['median'], 0)} up or down per region and
+- **Noise:** weekly revenue is noisy, about {pct(nf['geo_weekly_cv']['median'], 0)} up or down per geo and
   {pct(nf['national_weekly_cv'])} nationally, which limits how precise any model can be.
-- **Media signal:** media's effect is hard to see in the raw data, so the model has to pool regions to find it.
+- **Media signal:** media's effect is hard to see in the raw data, so the model has to pool geos to find it.
 {details(f"Balanced panel, {d['missing_values_total']} missing values; spend = impressions x a constant CPM. Spend shares: " + ", ".join(f"{c} {pct(d['spend_share'][c])}" for c in CHANNELS) + ".",
           f"Trend {tr['slope_per_year_pct_of_mean']:+.2f}%/year (HAC p = {tr['p_value']:.3f}); yearly breaks do not improve on a line (p = {tr['piecewise_yearly_vs_linear']['p_value']:.2f}).",
           f"Seasonality: week-of-year means explain R2 = {eda['seasonality']['observed_r2']:.3f} of detrended national revenue vs {eda['seasonality']['null_iid_mean']:.3f} for pure noise (p = {eda['seasonality']['p_value_ar1']:.2f}).",
-          f"Within-region spend-revenue correlations all |r| <= 0.08; within-region VIF at most {eda['collinearity']['max_vif']:.2f}.",
+          f"Within-geo spend-revenue correlations all |r| <= 0.08; within-geo VIF at most {eda['collinearity']['max_vif']:.2f}.",
           f"Controls correlate with spend up to {eda['controls_confounding']['max_abs_corr_control_with_spend_within_geo']:.2f}, so they are confounders.",
           f"Conversions are inflated in this simulated dataset (about 19 per person per week), so revenue per conversion (about {d['revenue_per_conversion']['mean']:.2f}) looks low; revenue is on a realistic scale (paid spend is {pct(d['total_spend'] / d['total_revenue'], 0)} of revenue).")}
 
