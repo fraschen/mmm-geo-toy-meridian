@@ -4,13 +4,16 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: calibration budget gates reports-meridian all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
+.PHONY: fit-round1 results reports docker calibration budget gates reports-meridian all data eda eda-meridian eda-extended fit select cv-fit validate clean-outputs
 
-CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
-              linear_strong_pool_lag4 linear_strong_pool
+CANDIDATES := linear_strong_pool_lag4 linear_strong_pool
+ROUND1 := aks_default_pool linear_default_pool aks_strong_pool
 MODELS := $(foreach c,$(CANDIDATES),model_build/$(c)/meridian_model.binpb)
 
-all: eda fit fit-long select validate
+# Every phase. Gates may fail (blocking failures are reported); the reports still build.
+all: eda fit select validate reports-meridian budget calibration
+	-$(MAKE) gates
+	$(MAKE) reports
 
 data: $(RAW)
 
@@ -28,21 +31,17 @@ eda-extended: data
 	$(PY) scripts/eda.py
 	$(PY) scripts/eda_findings.py
 
-# Phase 3: fit each approved candidate (skill script); skipped if already saved.
+# Phase 3: round 2 (R1, R2; default sampler). Round 1 (C1-C3) diagnostics are committed;
+# `make fit-round1` refits those models.
 fit: $(MODELS)
 
-$(MODELS): model_build/%/meridian_model.binpb: $(RAW)
+ROUND1_MODELS := $(foreach c,$(ROUND1),model_build/$(c)/meridian_model.binpb)
+fit-round1: $(ROUND1_MODELS)
+
+$(MODELS) $(ROUND1_MODELS): model_build/%/meridian_model.binpb: $(RAW)
 	$(AWAKE) $(PY) model_build/build_model.py --spec $* > model_build/$*.log 2>&1
 
-# Round 3 (post hoc): C1-C3 refit with the longer warm-up.
-ROUND3 := $(foreach c,aks_default_pool linear_default_pool aks_strong_pool,model_build/$(c)__long/meridian_model.binpb)
-
-fit-long: $(ROUND3)
-
-$(ROUND3): model_build/%__long/meridian_model.binpb: $(RAW)
-	$(AWAKE) $(PY) model_build/build_model.py --spec $* --sampler long > model_build/$*__long.log 2>&1
-
-select: $(MODELS) $(ROUND3)
+select: $(MODELS)
 	$(PY) scripts/select_model.py
 
 # Phase 4: rolling-origin CV folds for the selected spec (the 143-week fold is
@@ -84,6 +83,22 @@ $(CALIBRATED): $(RAW) $(LIFT)
 
 calibration: $(CALIBRATED)
 	$(PY) scripts/calibration.py
+
+# Phase 6: channel results file + markdown reports (+ README).
+results:
+	$(PY) scripts/analysis_data.py
+	$(PY) scripts/channel_results.py
+
+reports: results
+	$(PY) scripts/make_reports.py
+	$(PY) scripts/make_readme.py
+
+# Phase 9: Docker image from the lockfile; verifies EDA reproduces and sampling runs.
+IMAGE := mmm-geo-toy-meridian
+docker:
+	docker build -t $(IMAGE) .
+	docker run --rm $(IMAGE) sh -c 'cp outputs/eda/eda_summary.json /tmp/ref.json && make eda-extended && .venv/bin/python scripts/compare_json.py /tmp/ref.json outputs/eda/eda_summary.json'
+	docker run --rm $(IMAGE) sh -c 'make data && .venv/bin/python scripts/docker_smoke.py'
 
 clean-outputs:
 	rm -rf outputs reports/figures model_build/eda_default

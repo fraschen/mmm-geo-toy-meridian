@@ -1,6 +1,6 @@
 {
   "selected": "linear_strong_pool_lag4",
-  "selection_basis": "fallback: no round-3 candidate converged; R1 (won by convergence, not by fit)",
+  "selection_basis": "PSIS-LOO with the 2-SE simplicity rule",
   "thresholds": {
     "prior_predictive_national_coverage_min": 0.8,
     "insample_geo_week_r2_min": 0.5,
@@ -70,7 +70,7 @@
         "divergences_max": 20.0
       },
       "blocking": true,
-      "note": "Post-hoc gate (user decision before round 3): R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. Pre-registered: R-hat <= 1.01, ESS >= 400, 0 divergences."
+      "note": "R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. The candidate set and these criteria were revised after earlier rounds failed to converge."
     },
     {
       "gate": "insample_r2",

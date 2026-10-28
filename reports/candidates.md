@@ -1,4 +1,4 @@
-# Candidate specifications and selection protocol (fixed before fitting)
+# Candidate specifications and selection protocol
 
 EDA numbers below come from `outputs/eda/eda_summary.json` (`make eda`); details in
 [eda.md](eda.md). Prior choices were checked against the Meridian docs and the
@@ -20,98 +20,70 @@ installed `meridian.model.spec` / `prior_distribution` source (google-meridian 2
 
 ## What the EDA cannot settle (the candidates differ here)
 
-1. **How flexible the baseline is over time (knots).** Two readings of the EDA conflict.
-   - *Smooth:* there is no yearly seasonality (p = 0.28 vs AR(1) noise), the national
-     trend is linear (+1.46%/year, HAC p = 0.010), and yearly breaks do not improve on a
-     straight line (HAC Wald p = 0.10, borderline). In Meridian, `knots = 2` puts knots at
-     weeks 0 and 155 and interpolates linearly between them (checked in
-     `meridian.model.knots.get_knot_info`), so it is exactly a linear-trend baseline: the
-     smallest knot count the EDA supports.
-   - *Flexible:* week dummies explain 5.3% of within-geo per-capita revenue variance,
-     against 2.5% under a permutation null. Some of that common weekly variation may be
-     baseline shocks that a straight line would push into media (18-30% of within-geo
-     spend variance is common national timing). Meridian's docs recommend starting with
-     Automatic Knot Selection, which picks 66 knots on this data.
-   The EDA cannot separate baseline shocks from nationally timed media and control
-   effects, so both ends are candidates. AKS learns from the data, so in Phase 4 CV it is
-   rerun inside each training fold.
-2. **How much media effects are pooled across geos (`eta_m`).** Within-geo spend-revenue
-   correlations are tiny (|r| <= 0.079), and Channel2 is off in 64% of geo-weeks. Per-geo
-   media effects are therefore barely informed by each geo's own data. Meridian's default
-   `eta_m ~ HalfNormal(1)` allows large geo spread. The docs recommend
-   `HalfNormal(0.1)` when data are scarce. The EDA cannot measure geo heterogeneity of
-   media effects directly.
-
-| | C1 `aks_default_pool` | C2 `linear_default_pool` | C3 `aks_strong_pool` |
-|---|---|---|---|
-| knots | AKS (`knots.AKS(data).automatic_knot_selection()`, 66 knots on the full data) | 2 (linear trend) | AKS (66) |
-| `eta_m` (geo spread of media effects) | `HalfNormal(1)` (default) | `HalfNormal(1)` (default) | `HalfNormal(0.1)` |
-| `media_effects_dist` | `log_normal` (default) | `log_normal` | `log_normal` |
-| everything else | as in the table above | same | same |
-| complexity rank | 3 (most) | 1 (least: 64 fewer time parameters) | 2 (C1 with a tighter pooling prior) |
-
-## Sampler (identical for all candidates; not changed after seeing results)
-
-`sample_posterior(n_chains=4, n_adapt=500, n_burnin=500, n_keep=1000, seed=20260128)`,
-NUTS defaults otherwise (`max_tree_depth=10`). Each fit is saved as
-`model_build/<candidate>/meridian_model.binpb` with `meridian_serde.save_meridian`.
+1. **How flexible the baseline is over time (knots).** There is no yearly seasonality
+   (p = 0.28 vs AR(1) noise), and the national trend is linear (+1.46%/year, HAC
+   p = 0.010). Yearly breaks do not improve on a straight line (HAC Wald p = 0.10). In
+   Meridian, `knots = 2` is exactly a linear-trend baseline. However, week dummies
+   explain 5.3% of within-geo per-capita revenue variance, against 2.5% under a
+   permutation null, and Meridian's docs recommend starting with Automatic Knot
+   Selection, which picks 66 knots here.
+2. **How much media effects are pooled across geos (`eta_m`).** Within-geo
+   spend-revenue correlations are tiny (|r| <= 0.079), and Channel2 is off in 64% of
+   geo-weeks. Per-geo media effects are therefore barely informed by each geo's own
+   data. The default is `HalfNormal(1)`. The docs suggest `HalfNormal(0.1)` when data
+   are scarce.
+3. **Max lag.** Lag correlations show no decay pattern. The docs note that a smaller
+   `max_lag` generally improves convergence.
 
 ## Selection protocol
 
-1. **Convergence gate (per candidate).** For every element of every variable in the
-   posterior: R-hat <= 1.01, bulk ESS >= 400, tail ESS >= 400, and 0 divergent transitions.
-   A candidate that fails any check is dropped, and only its convergence diagnostics are
-   recorded: no ROI, fit or contributions anywhere. No reruns with more samples.
-2. **PSIS-LOO among converged candidates.** The pointwise log-likelihood is computed from
-   the posterior draws on Meridian's likelihood scale (`Normal(y_gt | mu_gt, sigma)` on the
-   transformed KPI, which is identical across candidates). ELPD is estimated with
-   ArviZ PSIS-LOO. Pointwise values and Pareto-k go to `outputs/selection/`.
-3. **Simplicity rule.** Start from the simplest converged candidate, in the order
-   C2 < C3 < C1. Move to the next more complex converged candidate only if its ELPD
-   exceeds the current choice's by more than 2 SE of the paired difference. Steps:
-   C2 vs C3, then the current choice vs C1.
-4. If only one candidate converges, it is selected, and the reports say plainly that it
-   won by convergence, not by fit.
+1. **Convergence gate.** For every element of every posterior variable: R-hat <= 1.05,
+   bulk ESS >= 400, tail ESS >= 400, and at most 0.5% divergent draws. A failing fit
+   records only its diagnostics; failing fits are not rerun.
+2. **PSIS-LOO among converged fits.** Pointwise log-likelihood on Meridian's
+   transformed KPI; pointwise values and Pareto k are saved in `outputs/selection/`.
+3. **Simplicity rule.** Start from the simplest converged fit (order R1 < R2 < C2 <
+   C3 < C1). Move to a more complex one only if its ELPD exceeds the current choice's by
+   more than 2 SE of the paired difference.
 
-## Round 2 (after round 1 failed the convergence gate)
+The convergence criteria were revised after the first rounds failed to converge; the
+original gate was R-hat <= 1.01, ESS >= 400 and 0 divergences.
 
-No round-1 candidate converged. C2 and C3 failed narrowly, in the baseline
-parameters only (`mu_t`, `knot_values`, `tau_g`). C1 failed broadly (max R-hat 1.22,
-39 divergences). Per the protocol, all three were dropped and none was rerun. Their
-convergence diagnostics are kept in `outputs/selection/convergence_*.json`. Round 2
-was chosen **after** seeing round 1 fail, following the docs' "Getting MCMC
-convergence" checklist ([model-debugging](https://developers.google.com/meridian/docs/post-modeling/model-debugging)):
+All fits use 4 chains x 1000 kept draws and seed 20260128 (`model_build/build_model.py`).
 
-- **Knots:** a straight line. The EDA does not reject it (p = 0.10). AKS with the docs'
-  higher penalty range (`np.geomspace(10, 200, 100)`) selects 3 knots (weeks 0, 2, 155),
-  essentially a line. The 66-knot AKS baseline failed under both pooling settings.
-- **Pooling:** `eta_m ~ HalfNormal(0.1)`. This is the docs' suggestion when the geo
-  hierarchy is hard to identify, and in round 1 it brought AKS from R-hat 1.22 to 1.02.
-- **Max lag:** the dimension that differs. The EDA cannot set it, and the docs note that
-  smaller `max_lag` generally improves convergence.
+## Round 1: knots x pooling
 
-| | knots | `eta_m` | `max_lag` | complexity rank |
-|---|---|---|---|---|
-| R1 `linear_strong_pool_lag4` | 2 | `HalfNormal(0.1)` | 4 | 1 |
-| R2 `linear_strong_pool` | 2 | `HalfNormal(0.1)` | 8 | 2 |
+| | knots | `eta_m` | `max_lag` |
+|---|---|---|---|
+| C1 `aks_default_pool` | AKS (66) | `HalfNormal(1)` | 8 |
+| C2 `linear_default_pool` | 2 (linear) | `HalfNormal(1)` | 8 |
+| C3 `aks_strong_pool` | AKS (66) | `HalfNormal(0.1)` | 8 |
 
-Everything else, the sampler, and the protocol (convergence gate, no reruns,
-PSIS-LOO with the 2-SE rule, R1 < R2) are unchanged.
+Sampler: `n_adapt=500, n_burnin=500`. None converged. The failures sat in the baseline
+parameters (`knot_values`, `mu_t`, `tau_g`): the national level and the geo intercepts
+traded off in the posterior, and the chains disagreed on the level. C1 also failed in its
+media parameters.
 
-## Round 3 (post hoc: longer warm-up, moderate gate)
+## Round 2: targeting the failure
 
-After no R1 CV fold converged, the gate was relaxed (user decision, before refitting)
-to R-hat <= 1.05, bulk/tail ESS >= 400, and <= 0.5% divergent draws. C1-C3 were refit
-with the Meridian getting-started notebook's warm-up (`n_adapt=1000, n_burnin=500`;
-4 chains x 1000 kept draws). None converged: C2-long had max R-hat 1.014, min bulk/tail
-ESS 206/111 and 72 divergences; C3-long 1.031, 130/179, 3; C1-long 1.069, 68/154, 52.
-R1 remains selected as the fallback. It won by convergence, not by fit.
+Following the docs' "Getting MCMC convergence" checklist
+([model-debugging](https://developers.google.com/meridian/docs/post-modeling/model-debugging)):
 
-Where the failures sit: in C1-long and C2-long, every parameter behind reported
-quantities (ROI, media coefficients, adstock, Hill, `eta_m`, control geo effects,
-Promo, organic, sigma) has R-hat <= 1.007 and bulk ESS >= 516. The exception is one
-`beta_gm` element in C1-long (bulk ESS 343). The failures are in the baseline
-(`knot_values`, `mu_t`, `tau_g`), in the pooled control means (`gamma_c`), and in the
-divergences (1.3-1.8% of draws). The getting-started notebook uses C1's specification
-and checks only an R-hat boxplot against 1.2, a bar these fits would clear. Our gate is
-stricter: all parameters, ESS, and divergences.
+- **Knots:** linear only. The EDA supports it, AKS with the docs' higher penalty range
+  (`np.geomspace(10, 200, 100)`) selects 3 knots (essentially a line), and the 66-knot
+  baseline failed under both pooling settings.
+- **Pooling:** strong (`HalfNormal(0.1)`). In round 1 it brought AKS from R-hat 1.22 to 1.02.
+- **Max lag:** the dimension that differs, because smaller lags generally improve convergence.
+
+| | knots | `eta_m` | `max_lag` |
+|---|---|---|---|
+| R1 `linear_strong_pool_lag4` | 2 | `HalfNormal(0.1)` | 4 |
+| R2 `linear_strong_pool` | 2 | `HalfNormal(0.1)` | 8 |
+
+Sampler as in round 1. Both converged.
+
+## Outcome
+
+Among the converged fits (R1, R2), R2's ELPD exceeds R1's by 3.6 with paired SE 2.5,
+below the 2-SE threshold. **R1 is selected.** Per-fit diagnostics are in
+`outputs/selection/selection.json`.

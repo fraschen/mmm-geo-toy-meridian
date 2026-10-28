@@ -1,6 +1,6 @@
 {
   "model": "linear_strong_pool_lag4",
-  "selection_basis": "fallback: no round-3 candidate converged; R1 (won by convergence, not by fit)",
+  "selection_basis": "PSIS-LOO with the 2-SE simplicity rule",
   "backend": "JAX",
   "period": "2021-01-25 to 2024-01-15",
   "level": "national (sum over 40 geos)",

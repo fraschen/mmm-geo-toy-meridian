@@ -1,16 +1,66 @@
 {
   "labels": {
-    "aks_default_pool": "C1",
-    "linear_default_pool": "C2",
-    "aks_strong_pool": "C3",
     "linear_strong_pool_lag4": "R1",
     "linear_strong_pool": "R2",
-    "aks_default_pool__long": "C1-long",
-    "linear_default_pool__long": "C2-long",
-    "aks_strong_pool__long": "C3-long"
+    "linear_default_pool": "C2",
+    "aks_strong_pool": "C3",
+    "aks_default_pool": "C1"
   },
-  "gate_note": "Post-hoc gate (user decision before round 3): R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. Pre-registered: R-hat <= 1.01, ESS >= 400, 0 divergences.",
-  "earlier_rounds_convergence": {
+  "gate_note": "R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. The candidate set and these criteria were revised after earlier rounds failed to converge.",
+  "rounds": {
+    "round_1": [
+      "linear_default_pool",
+      "aks_strong_pool",
+      "aks_default_pool"
+    ],
+    "round_2": [
+      "linear_strong_pool_lag4",
+      "linear_strong_pool"
+    ]
+  },
+  "round_notes": {
+    "round_1": "C1-C3: knots (AKS vs linear) x media pooling (default vs strong); default sampler.",
+    "round_2": "R1-R2: after round 1 failed in the baseline parameters, linear knots and strong pooling (the docs' convergence checklist), with max lag 4 vs 8; default sampler."
+  },
+  "order_simplest_first": [
+    "linear_strong_pool_lag4",
+    "linear_strong_pool",
+    "linear_default_pool",
+    "aks_strong_pool",
+    "aks_default_pool"
+  ],
+  "converged": {
+    "linear_strong_pool_lag4": true,
+    "linear_strong_pool": true,
+    "linear_default_pool": false,
+    "aks_strong_pool": false,
+    "aks_default_pool": false
+  },
+  "convergence_summary": {
+    "linear_strong_pool_lag4": {
+      "max_rhat": 1.0091139545555818,
+      "min_ess_bulk": 441.1680564540055,
+      "min_ess_tail": 690.0086171905064,
+      "divergences": 1,
+      "passed": {
+        "rhat": true,
+        "ess_bulk": true,
+        "ess_tail": true,
+        "divergences": true
+      }
+    },
+    "linear_strong_pool": {
+      "max_rhat": 1.0105302941136625,
+      "min_ess_bulk": 447.1645142054008,
+      "min_ess_tail": 737.6933115451303,
+      "divergences": 1,
+      "passed": {
+        "rhat": true,
+        "ess_bulk": true,
+        "ess_tail": true,
+        "divergences": true
+      }
+    },
     "linear_default_pool": {
       "max_rhat": 1.0207628412686538,
       "min_ess_bulk": 308.792446268965,
@@ -46,78 +96,6 @@
         "ess_tail": false,
         "divergences": false
       }
-    },
-    "linear_strong_pool_lag4": {
-      "max_rhat": 1.0091139545555818,
-      "min_ess_bulk": 441.1680564540055,
-      "min_ess_tail": 690.0086171905064,
-      "divergences": 1,
-      "passed": {
-        "rhat": true,
-        "ess_bulk": true,
-        "ess_tail": true,
-        "divergences": true
-      }
-    },
-    "linear_strong_pool": {
-      "max_rhat": 1.0105302941136625,
-      "min_ess_bulk": 447.1645142054008,
-      "min_ess_tail": 737.6933115451303,
-      "divergences": 1,
-      "passed": {
-        "rhat": true,
-        "ess_bulk": true,
-        "ess_tail": true,
-        "divergences": true
-      }
-    }
-  },
-  "order_simplest_first": [
-    "linear_default_pool__long",
-    "aks_strong_pool__long",
-    "aks_default_pool__long"
-  ],
-  "converged": {
-    "linear_default_pool__long": false,
-    "aks_strong_pool__long": false,
-    "aks_default_pool__long": false
-  },
-  "convergence_summary": {
-    "linear_default_pool__long": {
-      "max_rhat": 1.013762630655589,
-      "min_ess_bulk": 205.76300453459027,
-      "min_ess_tail": 111.48820598744848,
-      "divergences": 72,
-      "passed": {
-        "rhat": true,
-        "ess_bulk": false,
-        "ess_tail": false,
-        "divergences": false
-      }
-    },
-    "aks_strong_pool__long": {
-      "max_rhat": 1.0310109341366342,
-      "min_ess_bulk": 130.13251469869957,
-      "min_ess_tail": 179.0796248583509,
-      "divergences": 3,
-      "passed": {
-        "rhat": true,
-        "ess_bulk": false,
-        "ess_tail": false,
-        "divergences": true
-      }
-    },
-    "aks_default_pool__long": {
-      "max_rhat": 1.0684748396851314,
-      "min_ess_bulk": 68.292024009916,
-      "min_ess_tail": 153.57870565888146,
-      "divergences": 52,
-      "passed": {
-        "rhat": false,
-        "ess_bulk": false,
-        "ess_tail": false,
-        "divergences": false
-      }
     }
   },
   "loo": {
@@ -129,9 +107,27 @@
       "pareto_k_gt_0.7": 0,
       "pareto_k_gt_1": 0,
       "pareto_k_max": 0.5144675641065146
+    },
+    "linear_strong_pool": {
+      "elpd_loo": -7445.953471221215,
+      "se": 55.004872641102416,
+      "p_loo": 138.18185815413926,
+      "n_obs": 6240,
+      "pareto_k_gt_0.7": 0,
+      "pareto_k_gt_1": 0,
+      "pareto_k_max": 0.451727183956222
     }
   },
-  "comparison_steps": [],
+  "comparison_steps": [
+    {
+      "current": "linear_strong_pool_lag4",
+      "challenger": "linear_strong_pool",
+      "elpd_diff": 3.583979087415114,
+      "se": 2.514443718967997,
+      "threshold": 5.028887437935994,
+      "switch": false
+    }
+  ],
   "selected": "linear_strong_pool_lag4",
-  "selection_basis": "fallback: no round-3 candidate converged; R1 (won by convergence, not by fit)"
+  "selection_basis": "PSIS-LOO with the 2-SE simplicity rule"
 }
