@@ -539,6 +539,46 @@ def control_heterogeneity(df):
   return out
 
 
+def time_effects(df):
+  """Inputs for knots and sigma choices.
+
+  - Share of within-geo per-capita revenue variance explained by week dummies
+    (what knots = n_times can absorb), vs a within-geo permutation null.
+  - Meridian's Automatic Knot Selection on the outcome (no MMM fit).
+  - Per-geo per-capita revenue sd vs population (unique_sigma_for_each_geo).
+  """
+  pc = (df["revenue"] / df[POPULATION]).to_numpy()
+  geo_codes = pd.factorize(df[GEO])[0]
+  week_codes = pd.factorize(df[TIME])[0]
+  n_geo, n_week = geo_codes.max() + 1, week_codes.max() + 1
+  W = (pc - pd.Series(pc).groupby(geo_codes).transform("mean").to_numpy()).reshape(n_geo, n_week)
+
+  def week_share(M):
+    return 1 - ((M - M.mean(0, keepdims=True)) ** 2).sum() / (M ** 2).sum()
+
+  rng = np.random.default_rng(SEED)
+  null = np.array([week_share(rng.permuted(W, axis=1)) for _ in range(1000)])
+  obs = float(week_share(W))
+
+  from meridian.model import knots
+  from common import build_input_data
+  aks = knots.AKS(build_input_data()).automatic_knot_selection()
+
+  g = df.groupby(GEO).agg(pop=(POPULATION, "first"))
+  g["sd_pc"] = (df["revenue"] / df[POPULATION]).groupby(df[GEO]).std()
+  return {
+      "week_share_of_within_geo_per_capita_revenue_variance": obs,
+      "permutation_null_mean": float(null.mean()),
+      "permutation_null_p95": float(np.quantile(null, .95)),
+      "permutation_p_value": float((null >= obs).mean()),
+      "aks_n_knots": int(len(aks.knots)),
+      "aks_knots": [int(k) for k in aks.knots],
+      "per_capita_sd_spearman_with_population": float(
+          stats.spearmanr(g["pop"], g["sd_pc"])[0]),
+      "per_capita_sd_min_over_max": float(g["sd_pc"].min() / g["sd_pc"].max()),
+  }
+
+
 def spend_share_fig(suff):
   share = suff["spend_share"]
   fig, ax = plt.subplots(figsize=(6, 2.4))
@@ -562,6 +602,7 @@ def main():
   summary["trend"] = trend_test(nat)
   summary["seasonality"] = seasonality_test(df, nat)
   summary["noise_floor"] = noise_floor(df, nat)
+  summary["time_effects"] = time_effects(df)
   summary["lag_correlation"] = lag_correlations(df)
   summary["collinearity"] = collinearity(df)
   summary["population"] = population_relation(df)

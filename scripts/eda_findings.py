@@ -6,6 +6,7 @@ from common import CHANNELS, CONTROLS, OUTPUTS, ROOT
 
 s = json.load(open(OUTPUTS / "eda" / "eda_summary.json"))
 d, cpm, tr, se, nf = s["data"], s["cpm"], s["trend"], s["seasonality"], s["noise_floor"]
+te = s["time_effects"]
 lag, col, pop = s["lag_correlation"], s["collinearity"], s["population"]
 gm, cc, het = s["spend_vs_geo_max"], s["controls_confounding"], s["control_heterogeneity"]
 t = tr[tr["primary"]]
@@ -72,6 +73,19 @@ lines = [
     f"{nf['national_lag1_autocorr']:.3f}, MAPE of a 13-week moving average "
     f"{pct(nf['national_mape_vs_13wk_ma'])}.",
     "- Weekly revenue is close to white noise around a slow trend, at both levels.",
+    "",
+    "## Common weekly variation (inputs for knots and residual variance)",
+    f"- Week dummies explain {pct(te['week_share_of_within_geo_per_capita_revenue_variance'])} "
+    f"of within-geo per-capita revenue variance; a within-geo permutation null gives "
+    f"{pct(te['permutation_null_mean'])} (95th percentile {pct(te['permutation_null_p95'])}, "
+    f"p {'< 0.001' if te['permutation_p_value'] == 0 else '= ' + format(te['permutation_p_value'], '.3f')}). There is common weekly variation beyond noise, but "
+    "it mixes baseline shocks with nationally timed media and controls, so the EDA cannot "
+    "say how much of it a weekly baseline should absorb.",
+    f"- Meridian's Automatic Knot Selection on the outcome picks {te['aks_n_knots']} knots "
+    f"out of {d['n_weeks']} weeks.",
+    f"- Per-geo per-capita revenue sd vs population: Spearman "
+    f"{te['per_capita_sd_spearman_with_population']:+.2f}; smallest/largest sd "
+    f"{te['per_capita_sd_min_over_max']:.2f}.",
     "",
     "## Spend-revenue correlation by lag (within geo)",
     f"- All within-geo correlations are small (|r| <= "
