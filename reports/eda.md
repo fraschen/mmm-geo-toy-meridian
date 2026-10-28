@@ -5,7 +5,7 @@ This page summarises what we learned about the data before building the model, a
 ## The data are complete and clean
 We have 40 regions (geos) observed every week for 156 weeks (2021-01-25 to 2024-01-15). Nothing is missing, nothing is duplicated, and spend, impressions and sales are never negative. The only negative numbers are in the two control indices, which are centred around zero by design.
 
-Revenue per conversion barely changes (it varies by only 0.5%), so results in revenue and in conversions tell the same story.
+Revenue per conversion barely changes (it varies by only 0.5%), so results in revenue and in conversions tell the same story. Its value (about 0.02) looks low because the simulated conversions are inflated (around 19 per person per week); revenue itself is on a realistic scale, with paid spend at 17% of revenue. Conversions and revenue per conversion should not be read literally, which is one reason results are reported in revenue.
 
 <details><summary>Technical details</summary>
 
@@ -39,7 +39,7 @@ National revenue grows by about 1.5% a year, and a straight line describes that 
 
 <details><summary>Technical details</summary>
 
-- Trend: 1.46% of mean revenue per year, p = 0.010 (regression with autocorrelation-robust standard errors; p = 0.007 with a longer window).
+- Trend: 1.46% of mean revenue per year, p = 0.010 (regression with autocorrelation-robust standard errors).
 - Allowing breaks at weeks 52 and 104 does not improve on a straight line: p = 0.10.
 - Last 52 weeks vs first 52 weeks: +2.6%.
 
@@ -48,37 +48,25 @@ National revenue grows by about 1.5% a year, and a straight line describes that 
 ![](figures/eda/national_trend.png)
 
 ## No meaningful yearly seasonality
-Revenue shows no repeating yearly pattern beyond what chance would produce. Any seasonal swing is at most about 4% from peak to trough, no larger than ordinary week-to-week noise. **For the model:** no seasonal component is needed.
+Revenue shows no repeating yearly pattern: the three years do not line up week by week. Any seasonal swing is at most about 4% from peak to trough, no larger than ordinary week-to-week noise. **For the model:** no seasonal component is needed.
 
 <details><summary>Technical details</summary>
 
-- Week-of-year averages explain R2 = 0.360 of detrended national revenue. Pure noise of the same length gives 0.330 on average (95th percentile 0.418); p = 0.28 (independent noise), 0.28 (autocorrelated noise, lag-1 = -0.025).
-- Fitted yearly wave (trend + one sine/cosine pair, HAC SEs): peak-to-trough 0.9% of mean revenue, 95% upper bound 4.1%, p = 0.83.
-- Per region: 6 of 40 are significant at 5% (2 expected by chance); there is no shared yearly cycle nationally.
-- These are frequentist screening tests used to inform the model specification; they do not enter the Bayesian model.
+- National revenue fitted on a linear trend plus a yearly wave (one sine/cosine pair, autocorrelation-robust standard errors): wave p = 0.83; peak-to-trough 0.9% of mean revenue, 95% upper bound 4.1%.
+- This is a frequentist screening test used to inform the model specification; it does not enter the Bayesian model.
 
 </details>
 
-![](figures/eda/seasonality_null.png)
+![](figures/eda/seasonality.png)
 
 ## How noisy is revenue week to week?
 A typical region's weekly revenue moves up and down by about 30% around its average; nationally, where regions offset each other, by 6.9%. These movements look random: one week tells you almost nothing about the next. **For the model:** this sets the bar for accuracy. Even a simple 13-week average misses a typical regional week by 23% and a national week by 5.1%, so the model cannot be expected to do much better.
 
 <details><summary>Technical details</summary>
 
-- Geo-week revenue: CV median 30.0% (range 21.5%-49.4%); detrended CV 29.9%; lag-1 autocorrelation of detrended revenue median 0.007; MAPE of a 13-week moving average 23.1%; median week-on-week change 28.1%.
-- National weekly revenue: CV 6.9%, lag-1 autocorrelation -0.025, MAPE of a 13-week moving average 5.1%, median week-on-week change 6.4%.
-
-</details>
-
-## Some weeks move all regions together
-Some weeks are up or down in every region at once: these shared weekly movements explain 5.3% of regional revenue variation, against 2.5% expected by chance. Part of this is likely media and the controls, which are also timed nationally, so the data alone cannot tell how much belongs to the baseline. This is why we tested both a flexible and a straight-line baseline when choosing the model.
-
-<details><summary>Technical details</summary>
-
-- Week dummies explain 5.3% of within-geo per-capita revenue variance; a within-geo permutation null gives 2.5% (95th percentile 3.0%, p < 0.001).
-- Meridian's Automatic Knot Selection on the outcome picks 66 of 156 weeks as knots.
-- Per-region per-capita revenue sd vs population: Spearman -0.33; smallest/largest sd 0.60 (input to the single-residual-variance choice).
+- Regional weekly revenue: CV median 30.0% (range 21.5%-49.4%); lag-1 autocorrelation of detrended revenue median 0.007; MAPE of a 13-week moving average 23.1%.
+- National weekly revenue: CV 6.9%, lag-1 autocorrelation -0.025, MAPE of a 13-week moving average 5.1%.
+- Noise vs region size: Spearman -0.33 between per-capita revenue noise and population; the quietest region's noise is 0.60x the noisiest's. The model uses one noise level for all regions.
 
 </details>
 
@@ -100,8 +88,7 @@ Channels are switched on and off at fairly different times, so the model can tel
 
 <details><summary>Technical details</summary>
 
-- Within-region spend correlation: max |r| = 0.50; national weekly max |r| = 0.70. Within-region variance inflation factor (spend, Promo, organic, controls) at most 2.11 (values above 5-10 would be a concern).
-- Share of each variable's within-region variation that is common national timing: Channel0 18.1%, Channel1 19.6%, Channel2 17.7%, Channel3 29.7%, Channel4 25.0%, Promo 19.9%, Organic_channel0_impression 19.6%, competitor_sales_control 33.4%, sentiment_score_control 27.5%.
+- Within-region spend correlation: max |r| = 0.50. Within-region variance inflation factor (spend, Promo, organic, controls) at most 2.11 (values above 5-10 would be a concern).
 
 </details>
 
@@ -144,18 +131,3 @@ Competitor sales move with both revenue (down when competitors are up) and with 
 </details>
 
 ![](figures/eda/controls_correlation.png)
-
-## Control effects differ a lot between regions
-How much competitor sales and sentiment move revenue varies strongly from region to region (about 94% and 88% of the variation in their estimated effects is real, not noise). Promo and organic media behave much more consistently. **For the model:** control effects are allowed to vary by region.
-
-<details><summary>Technical details</summary>
-
-- Per geo: y ~ const + linear trend + controls + Promo + organic/geo-mean + each spend/geo-mean; Newey-West SEs. Primary y = revenue per capita / panel-mean revenue per capita; sensitivity y = revenue / geo-mean revenue.
-- competitor_sales_control: pooled -0.077 (SE 0.004), Cochran's Q = 615.1 on 39 df (p = 1.1e-104), I2 = 93.7%, tau = 0.099, 22.5% of regions positive; Spearman with population +0.21; I2 on the region-relative scale 93.6%.
-- sentiment_score_control: pooled -0.021 (SE 0.004), Cochran's Q = 337.1 on 39 df (p = 4e-49), I2 = 88.4%, tau = 0.075, 35.0% of regions positive; Spearman with population +0.06; I2 on the region-relative scale 88.5%.
-- Promo: pooled +0.051 (SE 0.006), Cochran's Q = 52.7 on 39 df (p = 0.07), I2 = 26.0%, tau = 0.021, 87.5% of regions positive; Spearman with population +0.04; I2 on the region-relative scale 25.3%.
-- Organic_channel0_impression: pooled +0.010 (SE 0.004), Cochran's Q = 48.8 on 39 df (p = 0.14), I2 = 20.1%, tau = 0.011, 65.0% of regions positive; Spearman with population +0.29; I2 on the region-relative scale 20.7%.
-
-</details>
-
-![](figures/eda/control_heterogeneity.png)

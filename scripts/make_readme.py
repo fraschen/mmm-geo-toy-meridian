@@ -189,16 +189,17 @@ two controls, a promotion and one organic channel. It is downloaded from a fixed
 before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - **Data quality:** the data are complete and clean.
-- **Trend and seasonality:** revenue grows about {tr[tr['primary']]['slope_per_year_pct_of_mean']:.1f}% a year, with no
+- **Trend and seasonality:** revenue grows about {tr['slope_per_year_pct_of_mean']:.1f}% a year, with no
   meaningful yearly seasonality.
 - **Noise:** weekly revenue is noisy, about {pct(nf['geo_weekly_cv']['median'], 0)} up or down per region and
   {pct(nf['national_weekly_cv'])} nationally, which limits how precise any model can be.
 - **Media signal:** media's effect is hard to see in the raw data, so the model has to pool regions to find it.
 {details(f"Balanced panel, {d['missing_values_total']} missing values; spend = impressions x a constant CPM. Spend shares: " + ", ".join(f"{c} {pct(d['spend_share'][c])}" for c in CHANNELS) + ".",
-          f"Trend {tr[tr['primary']]['slope_per_year_pct_of_mean']:+.2f}%/year (HAC p = {tr[tr['primary']]['p_value']:.3f}); yearly breaks do not improve on a line (p = {tr['piecewise_yearly_vs_linear']['p_value']:.2f}).",
-          f"Seasonality: p = {eda['seasonality']['p_value_ar1']:.2f} vs simulated noise; any yearly swing at most {pct(eda['seasonality']['bound']['peak_to_trough_upper_95'])} peak to trough (95% upper bound).",
+          f"Trend {tr['slope_per_year_pct_of_mean']:+.2f}%/year (HAC p = {tr['p_value']:.3f}); yearly breaks do not improve on a line (p = {tr['piecewise_yearly_vs_linear']['p_value']:.2f}).",
+          f"Seasonality: yearly wave p = {eda['seasonality']['p_value']:.2f}; any yearly swing at most {pct(eda['seasonality']['peak_to_trough_upper_95'])} peak to trough (95% upper bound).",
           f"Within-region spend-revenue correlations all |r| <= 0.08; within-region VIF at most {eda['collinearity']['max_vif']:.2f}.",
-          f"Controls correlate with spend up to {eda['controls_confounding']['max_abs_corr_control_with_spend_within_geo']:.2f}; their effects vary across regions (I2 {pct(eda['control_heterogeneity']['competitor_sales_control']['i2'], 0)} and {pct(eda['control_heterogeneity']['sentiment_score_control']['i2'], 0)}).")}
+          f"Controls correlate with spend up to {eda['controls_confounding']['max_abs_corr_control_with_spend_within_geo']:.2f}, so they are confounders.",
+          f"Conversions are inflated in this simulated dataset (about 19 per person per week), so revenue per conversion (about {d['revenue_per_conversion']['mean']:.2f}) looks low; revenue is on a realistic scale (paid spend is {pct(d['total_spend'] / d['total_revenue'], 0)} of revenue).")}
 
 ## Acceptance checks
 

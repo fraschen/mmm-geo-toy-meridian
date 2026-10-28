@@ -29,7 +29,6 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 FIG = FIGURES / "eda"
 FIG.mkdir(parents=True, exist_ok=True)
 OUT = OUTPUTS / "eda"
-N_SIM = 10_000
 MAX_LAG = 8
 SEASON = 52
 # Newey-West bandwidth rule floor(4 (T/100)^(2/9)).
@@ -147,18 +146,10 @@ def trend_test(nat):
   n = len(y)
   t = np.arange(n) / 52.0
   X = sm.add_constant(t)
-  res = {}
-  for lag in sorted({nw_lags(n), 13}):
-    fit = sm.OLS(y, X).fit(cov_type="HAC", cov_kwds={"maxlags": lag})
-    res[f"hac_maxlags_{lag}"] = {
-        "slope_per_year": float(fit.params[1]),
-        "slope_per_year_pct_of_mean": float(100 * fit.params[1] / y.mean()),
-        "se": float(fit.bse[1]), "t": float(fit.tvalues[1]),
-        "p_value": float(fit.pvalues[1])}
-  fit_log = sm.OLS(np.log(y), X).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
-  res["log_revenue_growth_pct_per_year"] = float(100 * (np.exp(fit_log.params[1]) - 1))
-  res["log_revenue_p_value"] = float(fit_log.pvalues[1])
-  res["primary"] = f"hac_maxlags_{nw_lags(n)}"
+  fit = sm.OLS(y, X).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
+  res = {"slope_per_year_pct_of_mean": float(100 * fit.params[1] / y.mean()),
+         "t": float(fit.tvalues[1]), "p_value": float(fit.pvalues[1]),
+         "hac_maxlags": nw_lags(n)}
   # Is a straight line enough? Add yearly hinge terms (a piecewise-linear trend
   # with breaks at weeks 52 and 104) and test them jointly with HAC SEs.
   tw = np.arange(n)
@@ -184,28 +175,19 @@ def trend_test(nat):
   return res
 
 
-def woy_r2(Y, period=SEASON):
-  """Share of variance explained by week-of-year means. Y: (..., T)."""
-  T = Y.shape[-1]
-  g = np.arange(T) % period
-  Yc = Y - Y.mean(-1, keepdims=True)
-  means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
-  fitted = means[..., g]
-  return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
-
-
 def detrend(y):
   t = np.arange(len(y))
   b = np.polyfit(t, y, 1)
   return y - np.polyval(b, t)
 
 
-def seasonality_bound(nat):
-  """Upper bound on the size of any yearly seasonality.
+def seasonality(nat):
+  """Is there yearly seasonality, and how big could it be?
 
   Fits national revenue on a linear trend plus one yearly sine/cosine pair (HAC
-  standard errors) and reports the peak-to-trough swing of the seasonal wave as a
-  share of mean revenue, with a 95% upper bound from coefficient draws.
+  standard errors). Reports the p-value that the seasonal terms are zero and the
+  peak-to-trough swing of the seasonal wave as a share of mean revenue, with a 95%
+  upper bound from coefficient draws.
   """
   y = nat.to_numpy()
   n, t = len(y), np.arange(len(y))
@@ -214,58 +196,25 @@ def seasonality_bound(nat):
   fit = sm.OLS(y, X).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
   swing = lambda b: 2 * np.hypot(b[2], b[3]) / y.mean()
   draws = np.random.default_rng(SEED).multivariate_normal(fit.params, fit.cov_params(), 5000)
-  return {"peak_to_trough_estimate": float(swing(fit.params)),
-          "peak_to_trough_upper_95": float(np.quantile([swing(b) for b in draws], .95)),
-          "p_value": float(fit.wald_test(np.eye(4)[2:], scalar=True).pvalue)}
+  res = {"peak_to_trough_estimate": float(swing(fit.params)),
+         "peak_to_trough_upper_95": float(np.quantile([swing(b) for b in draws], .95)),
+         "p_value": float(fit.wald_test(np.eye(4)[2:], scalar=True).pvalue)}
+  res["seasonality_detected"] = bool(res["p_value"] < 0.05)
 
-
-def seasonality_test(df, nat):
-  rng = np.random.default_rng(SEED)
-  y = detrend(nat.to_numpy())
-  T = len(y)
-  obs = float(woy_r2(y))
-  phi = float(np.corrcoef(y[:-1], y[1:])[0, 1])
-  iid = woy_r2(rng.standard_normal((N_SIM, T)))
-  e = rng.standard_normal((N_SIM, T))
-  ar = np.empty_like(e)
-  ar[:, 0] = e[:, 0] / np.sqrt(1 - phi ** 2)
-  for t in range(1, T):
-    ar[:, t] = phi * ar[:, t - 1] + e[:, t]
-  ar1 = woy_r2(ar)
-
-  # Per geo: detrended revenue, iid null (fraction of geos significant at 5%).
-  geo_y = df.pivot(index=GEO, columns=TIME, values="revenue").to_numpy()
-  geo_r2 = woy_r2(np.apply_along_axis(detrend, 1, geo_y))
-  geo_p = (iid[None, :] >= geo_r2[:, None]).mean(1)
-
-  res = {
-      "method": ("Detrended national revenue; R2 of week-of-year means "
-                 f"(52 groups x 3 years) vs {N_SIM} simulated noise series of the "
-                 "same length: iid Gaussian and AR(1) with the observed lag-1 autocorrelation."),
-      "observed_r2": obs,
-      "null_iid_mean": float(iid.mean()), "null_iid_p95": float(np.quantile(iid, .95)),
-      "p_value_iid": float((iid >= obs).mean()),
-      "detrended_lag1_autocorr": phi,
-      "null_ar1_mean": float(ar1.mean()), "null_ar1_p95": float(np.quantile(ar1, .95)),
-      "p_value_ar1": float((ar1 >= obs).mean()),
-      "geo_r2_median": float(np.median(geo_r2)),
-      "geos_significant_5pct_iid": int((geo_p < .05).sum()),
-      "geos_expected_by_chance": 0.05 * len(geo_r2),
-  }
-  res["seasonality_detected"] = bool(res["p_value_ar1"] < 0.05)
-
-  fig, ax = plt.subplots(figsize=(7, 3.2))
-  bins = np.linspace(0.1, 0.65, 56)
-  ax.hist(iid, bins=bins, color=PALETTE[0], histtype="step", lw=2, label="Null: iid noise")
-  ax.hist(ar1, bins=bins, color=PALETTE[1], histtype="step", lw=2,
-          label=f"Null: AR(1) noise, phi={phi:.2f}")
-  ax.axvline(obs, color=INK_2, lw=2, ls="--",
-             label=f"Observed R2 = {obs:.2f} (p = {res['p_value_ar1']:.2f}, AR(1) null)")
-  ax.set_xlabel("Variance share explained by week-of-year means")
-  ax.set_ylabel("Simulations")
-  ax.set_title("Yearly seasonality vs chance (detrended national revenue)")
-  ax.legend(loc="upper left", fontsize=8)
-  res["figure"] = savefig(fig, "seasonality_null.png")
+  # Figure: detrended revenue by week of year, one line per year, with the fitted wave.
+  det = (y - X[:, :2] @ fit.params[:2]) / y.mean() * 100
+  fig, ax = plt.subplots(figsize=(8, 3.2))
+  for k in range(n // SEASON):
+    ax.plot(range(1, SEASON + 1), det[k * SEASON:(k + 1) * SEASON], color=PALETTE[k], lw=1.2,
+            alpha=.8, label=f"Year {k + 1}")
+  wave = (X[:SEASON, 2:] @ fit.params[2:]) / y.mean() * 100
+  ax.plot(range(1, SEASON + 1), wave, color=INK_2, lw=2.5, label="Fitted yearly wave")
+  ax.axhline(0, color=MUTED, lw=1)
+  ax.set_xlabel("Week of year")
+  ax.set_ylabel("Revenue vs trend (%)")
+  ax.set_title("No repeating yearly pattern: the three years do not line up")
+  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=4)
+  res["figure"] = savefig(fig, "seasonality.png")
   return res
 
 
@@ -275,47 +224,42 @@ def noise_floor(df, nat):
     Y = np.atleast_2d(Y)
     cv = Y.std(1, ddof=1) / Y.mean(1)
     det = np.apply_along_axis(detrend, 1, Y)
-    cv_det = det.std(1, ddof=1) / Y.mean(1)
-    ac1 = np.array([np.corrcoef(d[:-1], d[1:])[0, 1] for d in det])
+    ac1 = np.array([np.corrcoef(x[:-1], x[1:])[0, 1] for x in det])
     ma = pd.DataFrame(Y.T).rolling(13, center=True).mean().to_numpy().T
     ape = np.nanmean(np.abs(Y / ma - 1), 1)
-    wow = np.median(np.abs(np.diff(Y, axis=1) / Y[:, :-1]), 1)
-    return cv, cv_det, ac1, ape, wow
+    return cv, ac1, ape
   g = stats_for(piv.to_numpy().T)
   n = stats_for(nat.to_numpy())
   q = lambda a: {"median": float(np.median(a)), "min": float(np.min(a)),
                  "max": float(np.max(a))}
+  # Noise vs region size (input to using one residual variance for all regions).
+  pc = df.assign(pc=df["revenue"] / df[POPULATION]).groupby(GEO).agg(
+      pop=(POPULATION, "first"), sd=("pc", "std"))
   return {
-      "definition": ("CV = sd/mean of weekly revenue; detrended CV removes a linear "
-                     "trend; MAPE vs 13-week centred moving average approximates the "
-                     "error floor of a smooth predictor; lag-1 autocorrelation of "
-                     "detrended revenue."),
-      "geo_weekly_cv": q(g[0]), "geo_detrended_cv": q(g[1]),
-      "geo_lag1_autocorr": q(g[2]), "geo_mape_vs_13wk_ma": q(g[3]),
-      "geo_median_abs_week_on_week_change": q(g[4]),
-      "national_weekly_cv": float(n[0][0]), "national_detrended_cv": float(n[1][0]),
-      "national_lag1_autocorr": float(n[2][0]),
-      "national_mape_vs_13wk_ma": float(n[3][0]),
-      "national_median_abs_week_on_week_change": float(n[4][0]),
+      "definition": ("CV = sd/mean of weekly revenue; lag-1 autocorrelation of detrended "
+                     "revenue; MAPE of a 13-week centred moving average (the error floor of "
+                     "a smooth predictor)."),
+      "geo_weekly_cv": q(g[0]), "geo_lag1_autocorr": q(g[1]), "geo_mape_vs_13wk_ma": q(g[2]),
+      "national_weekly_cv": float(n[0][0]), "national_lag1_autocorr": float(n[1][0]),
+      "national_mape_vs_13wk_ma": float(n[2][0]),
+      "per_capita_sd_spearman_with_population": float(stats.spearmanr(pc["pop"], pc["sd"])[0]),
+      "per_capita_sd_min_over_max": float(pc["sd"].min() / pc["sd"].max()),
   }
 
 
 def lag_correlations(df):
   d = df.copy()
   d["rev_g"] = demean(d, ["revenue"], GEO)
-  d["rev_gt"] = d["rev_g"] - d.groupby(TIME)["rev_g"].transform("mean")
   # Partial version: geo-demeaned revenue and spend with controls, Promo and
   # organic (geo-demeaned) regressed out of both.
   Z = sm.add_constant(demean(d, CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA, GEO))
   resid = lambda v: v - Z @ np.linalg.lstsq(Z, v, rcond=None)[0]
   d["rev_p"] = resid(d["rev_g"])
-  out = {"geo_demeaned": {}, "geo_and_week_demeaned": {}, "geo_demeaned_partial_controls": {}}
+  out = {"geo_demeaned": {}, "geo_demeaned_partial_controls": {}}
   for c, sp in zip(CHANNELS, SPEND_COLS):
     s_g = demean(d, [sp], GEO)[sp]
-    s_gt = s_g - s_g.groupby(d[TIME]).transform("mean")
     s_p = resid(s_g)
     for key, rv, sv in [("geo_demeaned", d["rev_g"], s_g),
-                        ("geo_and_week_demeaned", d["rev_gt"], s_gt),
                         ("geo_demeaned_partial_controls", d["rev_p"], s_p)]:
       vals = []
       for lag in range(MAX_LAG + 1):
@@ -326,15 +270,12 @@ def lag_correlations(df):
   # Approximate 95% band for a zero correlation with n geo-weeks.
   out["null_95pct_band"] = float(1.96 / np.sqrt(len(d)))
   part = out["geo_demeaned_partial_controls"]
-  out["max_partial_corr_lag"] = {c: int(np.argmax(v)) for c, v in part.items()}
   out["lags_above_null_band_partial"] = {
       c: [l for l, v in enumerate(vs) if v > out["null_95pct_band"]] for c, vs in part.items()}
 
-  fig, axes = plt.subplots(1, 3, figsize=(12, 3.4), sharey=True)
-  for ax, key, title in [(axes[0], "geo_demeaned", "Geo means removed"),
-                         (axes[1], "geo_and_week_demeaned", "Geo and week means removed"),
-                         (axes[2], "geo_demeaned_partial_controls",
-                          "Geo means removed, controls partialled out")]:
+  fig, axes = plt.subplots(1, 2, figsize=(10, 3.4), sharey=True)
+  for ax, key, title in [(axes[0], "geo_demeaned", "Raw (region averages removed)"),
+                         (axes[1], "geo_demeaned_partial_controls", "After removing the controls")]:
     ax.axhspan(-out["null_95pct_band"], out["null_95pct_band"], color="#e1e0d9", alpha=.6,
                lw=0)
     for c in CHANNELS:
@@ -344,8 +285,8 @@ def lag_correlations(df):
     ax.set_xlabel("Lag of spend (weeks)")
     ax.set_title(title)
   axes[0].set_ylabel("corr(revenue_t, spend_t-lag)")
-  axes[2].legend(loc="upper left", bbox_to_anchor=(1.01, 1))
-  fig.suptitle("Within-geo spend-revenue correlation by lag (grey band: 95% range under zero correlation)",
+  axes[1].legend(loc="upper left", bbox_to_anchor=(1.01, 1))
+  fig.suptitle("Within-region spend-revenue correlation by lag (grey band: range expected by chance)",
                y=1.03)
   out["figure"] = savefig(fig, "lag_correlation.png")
   return out
@@ -356,42 +297,21 @@ def collinearity(df):
   W = demean(df, cols, GEO)
   corr = W[SPEND_COLS].corr()
   corr.index = corr.columns = CHANNELS
-  vif_media = {c: float(variance_inflation_factor(W[SPEND_COLS].to_numpy(), i))
-               for i, c in enumerate(CHANNELS)}
-  vif_all = {c: float(variance_inflation_factor(W[cols].to_numpy(), i))
-             for i, c in enumerate(cols)}
-  nat = df.groupby(TIME)[SPEND_COLS].sum().corr()
-  nat.index = nat.columns = CHANNELS
-  off = lambda m: m.where(~np.eye(len(m), dtype=bool)).abs().stack()
-  # Share of each variable's within-geo variance explained by week (geo-time collinearity).
-  week_r2 = {}
-  for c in cols:
-    v = W[c]
-    week_r2[c] = float(1 - ((v - v.groupby(df[TIME]).transform("mean")) ** 2).sum()
-                       / (v ** 2).sum())
+  vif = {c: float(variance_inflation_factor(W[cols].to_numpy(), i)) for i, c in enumerate(cols)}
+  off = corr.where(~np.eye(len(corr), dtype=bool)).abs().stack()
 
-  fig, axes = plt.subplots(1, 2, figsize=(9, 3.6))
-  for ax, m, title in [(axes[0], corr, "Within-geo spend correlation"),
-                       (axes[1], nat, "National weekly spend correlation")]:
-    ax.imshow(m.to_numpy(), cmap=DIVERGING, vmin=-1, vmax=1)
-    ax.set_xticks(range(5), CHANNELS, rotation=45, ha="right")
-    ax.set_yticks(range(5), CHANNELS)
-    ax.grid(False)
-    for i in range(5):
-      for j in range(5):
-        ax.text(j, i, f"{m.iloc[i, j]:.2f}", ha="center", va="center", fontsize=8)
-    ax.set_title(title)
-  return {
-      "within_geo_spend_corr": corr.to_dict(),
-      "within_geo_max_abs_corr": float(off(corr).max()),
-      "national_spend_corr": nat.to_dict(),
-      "national_max_abs_corr": float(off(nat).max()),
-      "vif_within_geo_media_only": vif_media,
-      "vif_within_geo_all_treatments_and_controls": vif_all,
-      "max_vif": float(max(vif_all.values())),
-      "within_geo_variance_share_explained_by_week": week_r2,
-      "figure": savefig(fig, "collinearity.png"),
-  }
+  fig, ax = plt.subplots(figsize=(4.8, 3.8))
+  ax.imshow(corr.to_numpy(), cmap=DIVERGING, vmin=-1, vmax=1)
+  ax.set_xticks(range(5), CHANNELS, rotation=45, ha="right")
+  ax.set_yticks(range(5), CHANNELS)
+  ax.grid(False)
+  for i in range(5):
+    for j in range(5):
+      ax.text(j, i, f"{corr.iloc[i, j]:.2f}", ha="center", va="center", fontsize=8)
+  ax.set_title("Within-region spend correlation")
+  return {"within_geo_spend_corr": corr.to_dict(), "within_geo_max_abs_corr": float(off.max()),
+          "vif_within_geo": vif, "max_vif": float(max(vif.values())),
+          "figure": savefig(fig, "collinearity.png")}
 
 
 def population_relation(df):
@@ -466,11 +386,6 @@ def controls_confounding(df):
     tab.loc[c, "revenue"] = W[c].corr(W["revenue"])
     for ch, sp in zip(CHANNELS, SPEND_COLS):
       tab.loc[c, ch] = W[c].corr(W[sp])
-  nat = df.groupby(TIME)[cols + SPEND_COLS + ["revenue"]].sum()
-  nat_tab = pd.DataFrame({k: [nat[c].corr(nat[k if k == "revenue" else
-                                              SPEND_COLS[CHANNELS.index(k)]])
-                              for c in cols] for k in ["revenue"] + CHANNELS},
-                         index=cols)
   fig, ax = plt.subplots(figsize=(7, 2.6))
   ax.imshow(tab.to_numpy(float), cmap=DIVERGING, vmin=-1, vmax=1, aspect="auto")
   ax.set_xticks(range(tab.shape[1]), tab.columns)
@@ -482,128 +397,9 @@ def controls_confounding(df):
   ax.set_title("Within-geo correlation of controls/treatments with revenue and spend")
   return {
       "within_geo_corr": tab.to_dict(orient="index"),
-      "national_weekly_corr": nat_tab.to_dict(orient="index"),
       "max_abs_corr_control_with_spend_within_geo": float(
           tab.loc[CONTROLS, CHANNELS].abs().to_numpy().max()),
       "figure": savefig(fig, "controls_correlation.png"),
-  }
-
-
-def _per_geo_fits(df, scale):
-  focus = CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA
-  est = {c: [] for c in focus}
-  se = {c: [] for c in focus}
-  pops = []
-  pc_mean = (df["revenue"] / df[POPULATION]).mean()
-  for g, d in df.groupby(GEO):
-    if scale == "per_capita":
-      y = d["revenue"] / d[POPULATION] / pc_mean
-    else:
-      y = d["revenue"] / d["revenue"].mean()
-    pops.append(d[POPULATION].iloc[0])
-    X = pd.DataFrame({"trend": np.arange(len(d)) / 52.0}, index=d.index)
-    for c in CONTROLS + NON_MEDIA_TREATMENTS:
-      X[c] = d[c]
-    # Organic and spend scaled by their geo means (unitless).
-    for c in ORGANIC_MEDIA:
-      X[c] = d[c] / d[c].mean()
-    for sp in SPEND_COLS:
-      X[sp] = d[sp] / d[sp].mean() if d[sp].mean() > 0 else 0.0
-    fit = sm.OLS(y, sm.add_constant(X)).fit(cov_type="HAC",
-                                           cov_kwds={"maxlags": nw_lags(len(d))})
-    for c in focus:
-      est[c].append(fit.params[c])
-      se[c].append(fit.bse[c])
-  return focus, est, se, np.array(pops)
-
-
-def _meta(b, s, pops):
-  w = 1 / s ** 2
-  bw = (w * b).sum() / w.sum()
-  Q = float((w * (b - bw) ** 2).sum())
-  k = len(b)
-  I2 = max(0.0, (Q - (k - 1)) / Q)
-  tau2 = max(0.0, (Q - (k - 1)) / (w.sum() - (w ** 2).sum() / w.sum()))
-  return {"pooled_fixed_effect": float(bw), "pooled_se": float(np.sqrt(1 / w.sum())),
-          "cochran_q": Q, "df": k - 1, "q_p_value": float(stats.chi2.sf(Q, k - 1)),
-          "i2": float(I2), "tau": float(np.sqrt(tau2)),
-          "geo_estimate_min": float(b.min()), "geo_estimate_max": float(b.max()),
-          "share_geos_positive": float((b > 0).mean()),
-          "spearman_estimate_vs_population": float(stats.spearmanr(b, pops)[0])}
-
-
-def control_heterogeneity(df):
-  """Per-geo OLS (HAC SEs) and Cochran's Q / I^2 across geos.
-
-  Primary scale is revenue per capita (relative to the panel mean), matching
-  Meridian, which models KPI per capita with controls not population-scaled
-  by default. Revenue relative to each geo's own mean is a sensitivity check.
-  """
-  out = {"model": ("Per geo: y ~ const + linear trend + controls + Promo + "
-                   "organic/geo-mean + each spend/geo-mean; Newey-West SEs. "
-                   "Primary y = revenue per capita / panel-mean revenue per capita; "
-                   "sensitivity y = revenue / geo-mean revenue.")}
-  focus, est, se, pops = _per_geo_fits(df, "per_capita")
-  _, est_r, se_r, _ = _per_geo_fits(df, "geo_relative")
-  out["sensitivity_geo_relative_scale"] = {
-      c: _meta(np.array(est_r[c]), np.array(se_r[c]), pops) for c in focus}
-  fig, axes = plt.subplots(1, len(focus), figsize=(11, 5.6), sharey=True)
-  for ax, c, col in zip(axes, focus, PALETTE):
-    b, s = np.array(est[c]), np.array(se[c])
-    out[c] = _meta(b, s, pops)
-    bw, I2, k = out[c]["pooled_fixed_effect"], out[c]["i2"], len(b)
-    order = np.argsort(b)
-    yy = np.arange(k)
-    ax.errorbar(b[order], yy, xerr=1.96 * s[order], fmt="o", ms=3, color=col,
-                ecolor=col, elinewidth=1, alpha=.85)
-    ax.axvline(bw, color=INK_2, lw=1.2, ls="--")
-    ax.axvline(0, color=MUTED, lw=1)
-    ax.set_title(f"{c}\nI2={I2:.0%}, Q p={out[c]['q_p_value']:.2g}", fontsize=8)
-    ax.set_yticks([])
-  axes[0].set_ylabel("Geos (sorted by estimate)")
-  fig.suptitle("Per-geo effects on revenue per capita (relative to panel mean), "
-               "95% CI; dashed: pooled", y=1.02)
-  out["figure"] = savefig(fig, "control_heterogeneity.png")
-  return out
-
-
-def time_effects(df):
-  """Inputs for knots and sigma choices.
-
-  - Share of within-geo per-capita revenue variance explained by week dummies
-    (what knots = n_times can absorb), vs a within-geo permutation null.
-  - Meridian's Automatic Knot Selection on the outcome (no MMM fit).
-  - Per-geo per-capita revenue sd vs population (unique_sigma_for_each_geo).
-  """
-  pc = (df["revenue"] / df[POPULATION]).to_numpy()
-  geo_codes = pd.factorize(df[GEO])[0]
-  week_codes = pd.factorize(df[TIME])[0]
-  n_geo, n_week = geo_codes.max() + 1, week_codes.max() + 1
-  W = (pc - pd.Series(pc).groupby(geo_codes).transform("mean").to_numpy()).reshape(n_geo, n_week)
-
-  def week_share(M):
-    return 1 - ((M - M.mean(0, keepdims=True)) ** 2).sum() / (M ** 2).sum()
-
-  rng = np.random.default_rng(SEED)
-  null = np.array([week_share(rng.permuted(W, axis=1)) for _ in range(1000)])
-  obs = float(week_share(W))
-
-  from meridian.model import knots
-  from common import build_input_data
-  aks = knots.AKS(build_input_data()).automatic_knot_selection()
-
-  g = df.groupby(GEO).agg(pop=(POPULATION, "first"))
-  g["sd_pc"] = (df["revenue"] / df[POPULATION]).groupby(df[GEO]).std()
-  return {
-      "week_share_of_within_geo_per_capita_revenue_variance": obs,
-      "permutation_null_mean": float(null.mean()),
-      "permutation_null_p95": float(np.quantile(null, .95)),
-      "permutation_p_value": float((null >= obs).mean()),
-      "aks_n_knots": int(len(aks.knots)),
-      "aks_knots": [int(k) for k in aks.knots],
-      "per_capita_sd_spearman_with_population": float(
-          stats.spearmanr(g["pop"], g["sd_pc"])[0]),
-      "per_capita_sd_min_over_max": float(g["sd_pc"].min() / g["sd_pc"].max()),
   }
 
 
@@ -628,16 +424,13 @@ def main():
   summary["data"]["figure_spend_share"] = spend_share_fig(summary["data"])
   summary["cpm"] = cpm_check(df)
   summary["trend"] = trend_test(nat)
-  summary["seasonality"] = seasonality_test(df, nat)
-  summary["seasonality"]["bound"] = seasonality_bound(nat)
+  summary["seasonality"] = seasonality(nat)
   summary["noise_floor"] = noise_floor(df, nat)
-  summary["time_effects"] = time_effects(df)
   summary["lag_correlation"] = lag_correlations(df)
   summary["collinearity"] = collinearity(df)
   summary["population"] = population_relation(df)
   summary["spend_vs_geo_max"] = spend_vs_geo_max(df)
   summary["controls_confounding"] = controls_confounding(df)
-  summary["control_heterogeneity"] = control_heterogeneity(df)
   write_json(summary, OUT / "eda_summary.json")
   print(f"Wrote {OUT / 'eda_summary.json'}")
 

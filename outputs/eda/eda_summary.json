@@ -139,23 +139,10 @@
     "figure": "reports/figures/eda/cpm_relative.png"
   },
   "trend": {
-    "hac_maxlags_4": {
-      "slope_per_year": 123541.51726070108,
-      "slope_per_year_pct_of_mean": 1.4614760681000492,
-      "se": 47658.78785357317,
-      "t": 2.592208547986364,
-      "p_value": 0.00953619443126921
-    },
-    "hac_maxlags_13": {
-      "slope_per_year": 123541.51726070108,
-      "slope_per_year_pct_of_mean": 1.4614760681000492,
-      "se": 45516.53174815848,
-      "t": 2.714212012994583,
-      "p_value": 0.006643363425727912
-    },
-    "log_revenue_growth_pct_per_year": 1.5111075542780572,
-    "log_revenue_p_value": 0.008931316507010498,
-    "primary": "hac_maxlags_4",
+    "slope_per_year_pct_of_mean": 1.4614760681000492,
+    "t": 2.592208547986364,
+    "p_value": 0.00953619443126921,
+    "hac_maxlags": 4,
     "piecewise_yearly_vs_linear": {
       "wald_stat": 4.5493420599331,
       "df": 2,
@@ -166,37 +153,18 @@
     "figure": "reports/figures/eda/national_trend.png"
   },
   "seasonality": {
-    "method": "Detrended national revenue; R2 of week-of-year means (52 groups x 3 years) vs 10000 simulated noise series of the same length: iid Gaussian and AR(1) with the observed lag-1 autocorrelation.",
-    "observed_r2": 0.36031184639956626,
-    "null_iid_mean": 0.3300382505385119,
-    "null_iid_p95": 0.41844260885787454,
-    "p_value_iid": 0.2777,
-    "detrended_lag1_autocorr": -0.024866315449246446,
-    "null_ar1_mean": 0.33005820518137985,
-    "null_ar1_p95": 0.4206391887450931,
-    "p_value_ar1": 0.2776,
-    "geo_r2_median": 0.347109097397609,
-    "geos_significant_5pct_iid": 6,
-    "geos_expected_by_chance": 2.0,
+    "peak_to_trough_estimate": 0.00913675419739353,
+    "peak_to_trough_upper_95": 0.040611005446706046,
+    "p_value": 0.8341870424438272,
     "seasonality_detected": false,
-    "figure": "reports/figures/eda/seasonality_null.png",
-    "bound": {
-      "peak_to_trough_estimate": 0.00913675419739353,
-      "peak_to_trough_upper_95": 0.040611005446706046,
-      "p_value": 0.8341870424438272
-    }
+    "figure": "reports/figures/eda/seasonality.png"
   },
   "noise_floor": {
-    "definition": "CV = sd/mean of weekly revenue; detrended CV removes a linear trend; MAPE vs 13-week centred moving average approximates the error floor of a smooth predictor; lag-1 autocorrelation of detrended revenue.",
+    "definition": "CV = sd/mean of weekly revenue; lag-1 autocorrelation of detrended revenue; MAPE of a 13-week centred moving average (the error floor of a smooth predictor).",
     "geo_weekly_cv": {
       "median": 0.300369133482736,
       "min": 0.21523317047310353,
       "max": 0.4942870190921175
-    },
-    "geo_detrended_cv": {
-      "median": 0.29929150983689945,
-      "min": 0.21420786286349563,
-      "max": 0.4913144619204597
     },
     "geo_lag1_autocorr": {
       "median": 0.007448136120956329,
@@ -208,91 +176,9 @@
       "min": 0.1550692734377039,
       "max": 0.3973754812747756
     },
-    "geo_median_abs_week_on_week_change": {
-      "median": 0.2813403351277337,
-      "min": 0.17443031119173058,
-      "max": 0.5253077028151426
-    },
     "national_weekly_cv": 0.0690814906008424,
-    "national_detrended_cv": 0.06790458040809742,
     "national_lag1_autocorr": -0.024866315449246446,
     "national_mape_vs_13wk_ma": 0.05146468432693258,
-    "national_median_abs_week_on_week_change": 0.06412514611031929
-  },
-  "time_effects": {
-    "week_share_of_within_geo_per_capita_revenue_variance": 0.05273684097913567,
-    "permutation_null_mean": 0.025080393751892627,
-    "permutation_null_p95": 0.029749211922933647,
-    "permutation_p_value": 0.0,
-    "aks_n_knots": 66,
-    "aks_knots": [
-      0,
-      1,
-      2,
-      4,
-      6,
-      7,
-      9,
-      12,
-      14,
-      17,
-      22,
-      23,
-      27,
-      29,
-      37,
-      40,
-      43,
-      45,
-      48,
-      49,
-      50,
-      52,
-      56,
-      57,
-      60,
-      61,
-      64,
-      65,
-      67,
-      68,
-      70,
-      74,
-      78,
-      79,
-      83,
-      86,
-      87,
-      102,
-      103,
-      104,
-      105,
-      108,
-      109,
-      110,
-      111,
-      113,
-      114,
-      115,
-      119,
-      120,
-      123,
-      125,
-      127,
-      128,
-      132,
-      133,
-      134,
-      135,
-      136,
-      138,
-      139,
-      142,
-      144,
-      146,
-      152,
-      155
-    ],
     "per_capita_sd_spearman_with_population": -0.3285178236397749,
     "per_capita_sd_min_over_max": 0.5954121783012518
   },
@@ -354,63 +240,6 @@
         -0.018093512121160504
       ]
     },
-    "geo_and_week_demeaned": {
-      "Channel0": [
-        0.03076272313221801,
-        0.021855612100953298,
-        0.012091030408581682,
-        0.004186641305949233,
-        0.020055246176937647,
-        0.01963918095960053,
-        0.006802377148429637,
-        0.03459580926619497,
-        0.0028618515768765594
-      ],
-      "Channel1": [
-        -0.013430033583878953,
-        0.017239763825557534,
-        0.01901242101982639,
-        0.0371990357442688,
-        0.010344407124468045,
-        -0.009062028279838732,
-        -0.0012783550548150838,
-        0.026110014288751957,
-        -0.00017957196664406777
-      ],
-      "Channel2": [
-        -0.044893573805902906,
-        0.026831205097465786,
-        0.011033983686047681,
-        0.012246535168918752,
-        0.035695735498317414,
-        0.011277304873451398,
-        -0.018625801078368264,
-        0.013988030095479017,
-        -0.03089879162069458
-      ],
-      "Channel3": [
-        -0.045798290146489104,
-        0.030434224274031977,
-        0.007354894243492015,
-        0.004853958751343627,
-        0.006499755653648881,
-        0.008268421071465252,
-        -0.0039837838339525115,
-        0.023697479679320902,
-        -0.02000352307859923
-      ],
-      "Channel4": [
-        -0.07083093772599282,
-        0.006591393049012276,
-        0.036096545896664944,
-        0.04862106503432021,
-        -0.0020584809562868844,
-        0.016532086628670284,
-        0.012503208676838715,
-        0.004968060765933077,
-        -0.007268965949971041
-      ]
-    },
     "geo_demeaned_partial_controls": {
       "Channel0": [
         0.0007076179030110112,
@@ -469,13 +298,6 @@
       ]
     },
     "null_95pct_band": 0.024812114493549833,
-    "max_partial_corr_lag": {
-      "Channel0": 7,
-      "Channel1": 7,
-      "Channel2": 4,
-      "Channel3": 1,
-      "Channel4": 3
-    },
     "lags_above_null_band_partial": {
       "Channel0": [
         7
@@ -536,52 +358,7 @@
       }
     },
     "within_geo_max_abs_corr": 0.5035495464518134,
-    "national_spend_corr": {
-      "Channel0": {
-        "Channel0": 1.0,
-        "Channel1": 0.3260642713712874,
-        "Channel2": 0.3847334722105976,
-        "Channel3": 0.43669531579626947,
-        "Channel4": 0.26824912854447264
-      },
-      "Channel1": {
-        "Channel0": 0.3260642713712874,
-        "Channel1": 1.0,
-        "Channel2": 0.42764562011684065,
-        "Channel3": 0.4508752403238931,
-        "Channel4": 0.3735868248546777
-      },
-      "Channel2": {
-        "Channel0": 0.3847334722105976,
-        "Channel1": 0.42764562011684065,
-        "Channel2": 1.0,
-        "Channel3": 0.7002853280627723,
-        "Channel4": 0.6424522750547254
-      },
-      "Channel3": {
-        "Channel0": 0.43669531579626947,
-        "Channel1": 0.4508752403238931,
-        "Channel2": 0.7002853280627723,
-        "Channel3": 1.0,
-        "Channel4": 0.6150332744513177
-      },
-      "Channel4": {
-        "Channel0": 0.26824912854447264,
-        "Channel1": 0.3735868248546777,
-        "Channel2": 0.6424522750547254,
-        "Channel3": 0.6150332744513177,
-        "Channel4": 1.0
-      }
-    },
-    "national_max_abs_corr": 0.7002853280627723,
-    "vif_within_geo_media_only": {
-      "Channel0": 1.143844046209124,
-      "Channel1": 1.1295431468468318,
-      "Channel2": 1.4561654719490968,
-      "Channel3": 1.638953178162871,
-      "Channel4": 1.3978152706249076
-    },
-    "vif_within_geo_all_treatments_and_controls": {
+    "vif_within_geo": {
       "Channel0_spend": 1.3612737845773253,
       "Channel1_spend": 1.1932915693964166,
       "Channel2_spend": 1.6162856512502646,
@@ -593,17 +370,6 @@
       "sentiment_score_control": 1.8785744390731638
     },
     "max_vif": 2.111746481421072,
-    "within_geo_variance_share_explained_by_week": {
-      "Channel0_spend": 0.18137954624297548,
-      "Channel1_spend": 0.1962068169136143,
-      "Channel2_spend": 0.17653308826087266,
-      "Channel3_spend": 0.2968257513924233,
-      "Channel4_spend": 0.25006566786126605,
-      "Promo": 0.1994629124171785,
-      "Organic_channel0_impression": 0.19595149577123727,
-      "competitor_sales_control": 0.3339967912791738,
-      "sentiment_score_control": 0.2751065212622169
-    },
     "figure": "reports/figures/eda/collinearity.png"
   },
   "population": {
@@ -773,151 +539,7 @@
         "Channel4": 0.3031488741056738
       }
     },
-    "national_weekly_corr": {
-      "competitor_sales_control": {
-        "revenue": -0.385686115690491,
-        "Channel0": 0.25572893607062014,
-        "Channel1": 0.34682585403536254,
-        "Channel2": 0.6571426142646561,
-        "Channel3": 0.696931188197443,
-        "Channel4": 0.7352223001694295
-      },
-      "sentiment_score_control": {
-        "revenue": -0.06368291566159222,
-        "Channel0": 0.5267922897082634,
-        "Channel1": 0.4965725574080119,
-        "Channel2": 0.6280224100975016,
-        "Channel3": 0.6899877713995088,
-        "Channel4": 0.4287783387986056
-      },
-      "Promo": {
-        "revenue": 0.3015391525502514,
-        "Channel0": 0.4613200088009537,
-        "Channel1": 0.27303958114403615,
-        "Channel2": 0.3331873315559501,
-        "Channel3": 0.38082238513106803,
-        "Channel4": 0.25650508512573916
-      },
-      "Organic_channel0_impression": {
-        "revenue": 0.016237731920942886,
-        "Channel0": 0.4615221626856212,
-        "Channel1": 0.522602807558219,
-        "Channel2": 0.585817316614508,
-        "Channel3": 0.6470211225412184,
-        "Channel4": 0.48945164159757315
-      }
-    },
     "max_abs_corr_control_with_spend_within_geo": 0.550355679551241,
     "figure": "reports/figures/eda/controls_correlation.png"
-  },
-  "control_heterogeneity": {
-    "model": "Per geo: y ~ const + linear trend + controls + Promo + organic/geo-mean + each spend/geo-mean; Newey-West SEs. Primary y = revenue per capita / panel-mean revenue per capita; sensitivity y = revenue / geo-mean revenue.",
-    "sensitivity_geo_relative_scale": {
-      "competitor_sales_control": {
-        "pooled_fixed_effect": -0.07797040151879454,
-        "pooled_se": 0.004040265328174739,
-        "cochran_q": 605.1281213895572,
-        "df": 39,
-        "q_p_value": 1.195804246492703e-102,
-        "i2": 0.935550838539045,
-        "tau": 0.09745778523303174,
-        "geo_estimate_min": -0.3093420866605562,
-        "geo_estimate_max": 0.11121182462658626,
-        "share_geos_positive": 0.225,
-        "spearman_estimate_vs_population": 0.22476547842401504
-      },
-      "sentiment_score_control": {
-        "pooled_fixed_effect": -0.020204131152307514,
-        "pooled_se": 0.004225415849839063,
-        "cochran_q": 339.59063599406716,
-        "df": 39,
-        "q_p_value": 1.3162836503190564e-49,
-        "i2": 0.8851558439300389,
-        "tau": 0.07439468658997851,
-        "geo_estimate_min": -0.22890193807021902,
-        "geo_estimate_max": 0.1382791435620409,
-        "share_geos_positive": 0.35,
-        "spearman_estimate_vs_population": 0.04371482176360226
-      },
-      "Promo": {
-        "pooled_fixed_effect": 0.05170338830024106,
-        "pooled_se": 0.005530871938990517,
-        "cochran_q": 52.195196204906644,
-        "df": 39,
-        "q_p_value": 0.07690066786134407,
-        "i2": 0.25280480129062566,
-        "tau": 0.020367411569255225,
-        "geo_estimate_min": -0.03778833951683859,
-        "geo_estimate_max": 0.12399357127336721,
-        "share_geos_positive": 0.875,
-        "spearman_estimate_vs_population": 0.009568480300187619
-      },
-      "Organic_channel0_impression": {
-        "pooled_fixed_effect": 0.009720649321876504,
-        "pooled_se": 0.003505820104786552,
-        "cochran_q": 49.17867201549574,
-        "df": 39,
-        "q_p_value": 0.12729861134274387,
-        "i2": 0.2069732995695479,
-        "tau": 0.011344304655264807,
-        "geo_estimate_min": -0.0403296535468657,
-        "geo_estimate_max": 0.05555096743961471,
-        "share_geos_positive": 0.65,
-        "spearman_estimate_vs_population": 0.28667917448405256
-      }
-    },
-    "competitor_sales_control": {
-      "pooled_fixed_effect": -0.0770961007769611,
-      "pooled_se": 0.004049690635187054,
-      "cochran_q": 615.1264385897682,
-      "df": 39,
-      "q_p_value": 1.090843773057414e-104,
-      "i2": 0.9365984006647301,
-      "tau": 0.0985075324676185,
-      "geo_estimate_min": -0.2717463949319506,
-      "geo_estimate_max": 0.10456271610172742,
-      "share_geos_positive": 0.225,
-      "spearman_estimate_vs_population": 0.21144465290806758
-    },
-    "sentiment_score_control": {
-      "pooled_fixed_effect": -0.021458932198568644,
-      "pooled_se": 0.00426369685248837,
-      "cochran_q": 337.1235799278575,
-      "df": 39,
-      "q_p_value": 3.9524408057660834e-49,
-      "i2": 0.8843154192645148,
-      "tau": 0.07464662284944461,
-      "geo_estimate_min": -0.24495229915121203,
-      "geo_estimate_max": 0.1443105612614245,
-      "share_geos_positive": 0.35,
-      "spearman_estimate_vs_population": 0.0577861163227017
-    },
-    "Promo": {
-      "pooled_fixed_effect": 0.05139000113155873,
-      "pooled_se": 0.005513982409602928,
-      "cochran_q": 52.72166032807593,
-      "df": 39,
-      "q_p_value": 0.07007920251176314,
-      "i2": 0.26026608878948215,
-      "tau": 0.020703934119136232,
-      "geo_estimate_min": -0.03529902644559048,
-      "geo_estimate_max": 0.12187368460878431,
-      "share_geos_positive": 0.875,
-      "spearman_estimate_vs_population": 0.03714821763602252
-    },
-    "Organic_channel0_impression": {
-      "pooled_fixed_effect": 0.00999035851267887,
-      "pooled_se": 0.0035177809286788667,
-      "cochran_q": 48.801260204536334,
-      "df": 39,
-      "q_p_value": 0.13511191037433382,
-      "i2": 0.20084030952186877,
-      "tau": 0.01116459116354489,
-      "geo_estimate_min": -0.039653214110585214,
-      "geo_estimate_max": 0.05627238938994869,
-      "share_geos_positive": 0.65,
-      "spearman_estimate_vs_population": 0.28855534709193253
-    },
-    "figure": "reports/figures/eda/control_heterogeneity.png"
   }
 }

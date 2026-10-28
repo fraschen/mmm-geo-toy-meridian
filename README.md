@@ -185,9 +185,10 @@ before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - Balanced panel, 0 missing values; spend = impressions x a constant CPM. Spend shares: Channel0 18.5%, Channel1 14.3%, Channel2 5.5%, Channel3 40.0%, Channel4 21.7%.
 - Trend +1.46%/year (HAC p = 0.010); yearly breaks do not improve on a line (p = 0.10).
-- Seasonality: p = 0.28 vs simulated noise; any yearly swing at most 4.1% peak to trough (95% upper bound).
+- Seasonality: yearly wave p = 0.83; any yearly swing at most 4.1% peak to trough (95% upper bound).
 - Within-region spend-revenue correlations all |r| <= 0.08; within-region VIF at most 2.11.
-- Controls correlate with spend up to 0.55; their effects vary across regions (I2 94% and 88%).
+- Controls correlate with spend up to 0.55, so they are confounders.
+- Conversions are inflated in this simulated dataset (about 19 per person per week), so revenue per conversion (about 0.02) looks low; revenue is on a realistic scale (paid spend is 17% of revenue).
 
 </details>
 
