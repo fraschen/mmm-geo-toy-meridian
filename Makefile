@@ -4,9 +4,12 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: all data eda eda-meridian eda-extended clean-outputs
+.PHONY: all data eda eda-meridian eda-extended fit clean-outputs
 
-all: eda
+CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool
+MODELS := $(foreach c,$(CANDIDATES),model_build/$(c)/meridian_model.binpb)
+
+all: eda fit
 
 data: $(RAW)
 
@@ -23,6 +26,12 @@ eda-meridian: data
 eda-extended: data
 	$(PY) scripts/eda.py
 	$(PY) scripts/eda_findings.py
+
+# Phase 3: fit each approved candidate (skill script); skipped if already saved.
+fit: $(MODELS)
+
+model_build/%/meridian_model.binpb: $(RAW)
+	$(AWAKE) $(PY) model_build/build_model.py --spec $* > model_build/$*.log 2>&1
 
 clean-outputs:
 	rm -rf outputs reports/figures model_build/eda_default
