@@ -54,7 +54,7 @@
     "linear_strong_pool": "R2"
   },
   "converged": {
-    "linear_strong_pool_lag4": false,
+    "linear_strong_pool_lag4": true,
     "linear_strong_pool": false
   },
   "convergence_summary": {
@@ -67,7 +67,7 @@
         "rhat": true,
         "ess_bulk": true,
         "ess_tail": true,
-        "divergences": false
+        "divergences": true
       },
       "n_failing_elements": {
         "rhat": 0,
@@ -84,7 +84,7 @@
         "rhat": false,
         "ess_bulk": true,
         "ess_tail": true,
-        "divergences": false
+        "divergences": true
       },
       "n_failing_elements": {
         "rhat": 1,
@@ -93,8 +93,19 @@
       }
     }
   },
-  "loo": {},
+  "loo": {
+    "linear_strong_pool_lag4": {
+      "elpd_loo": -7449.53745030863,
+      "se": 54.94638045720876,
+      "p_loo": 137.35699947223566,
+      "n_obs": 6240,
+      "pareto_k_gt_0.7": 0,
+      "pareto_k_gt_1": 0,
+      "pareto_k_max": 0.5144675641065146
+    }
+  },
   "comparison_steps": [],
-  "selected": null,
-  "selection_basis": "none: no candidate converged"
+  "selected": "linear_strong_pool_lag4",
+  "selection_basis": "convergence: the only converged candidate (won by convergence, not by fit)",
+  "divergence_rule_note": "Post-hoc relaxation: the pre-registered rule was 0 divergences; relaxed to <= 1 per 4000 draws after round 2 results."
 }

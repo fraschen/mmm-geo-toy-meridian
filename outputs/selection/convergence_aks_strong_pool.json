@@ -2,7 +2,9 @@
   "thresholds": {
     "rhat_max": 1.01,
     "ess_min": 400,
-    "divergences": 0
+    "divergences_max": 1.0,
+    "divergences_preregistered": 0,
+    "note": "Post-hoc relaxation: the pre-registered rule was 0 divergences; relaxed to <= 1 per 4000 draws after round 2 results."
   },
   "n_chains": 4,
   "n_draws_total": 4000,

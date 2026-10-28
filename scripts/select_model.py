@@ -30,6 +30,11 @@ ORDER = ["linear_strong_pool_lag4", "linear_strong_pool"]
 LABEL = {"aks_default_pool": "C1", "linear_default_pool": "C2", "aks_strong_pool": "C3",
          "linear_strong_pool_lag4": "R1", "linear_strong_pool": "R2"}
 RHAT_MAX, ESS_MIN, SE_RULE = 1.01, 400, 2.0
+# Pre-registered: 0 divergences. Relaxed POST HOC (user decision after round 2,
+# where R1 and R2 each had 1 divergence in 4000 draws) to <= 1 per 4000 draws.
+DIVERGENCES_MAX_PER_4000 = 1
+DIVERGENCE_RULE_NOTE = ("Post-hoc relaxation: the pre-registered rule was 0 divergences; "
+                        "relaxed to <= 1 per 4000 draws after round 2 results.")
 OUT = OUTPUTS / "selection"
 
 
@@ -72,8 +77,10 @@ def convergence(idata) -> dict:
   passed = {"rhat": checks["max_rhat"] <= RHAT_MAX,
             "ess_bulk": checks["min_ess_bulk"] >= ESS_MIN,
             "ess_tail": checks["min_ess_tail"] >= ESS_MIN,
-            "divergences": div == 0}
-  return {"thresholds": {"rhat_max": RHAT_MAX, "ess_min": ESS_MIN, "divergences": 0},
+            "divergences": div <= DIVERGENCES_MAX_PER_4000 * n_draws / 4000}
+  return {"thresholds": {"rhat_max": RHAT_MAX, "ess_min": ESS_MIN,
+                         "divergences_max": DIVERGENCES_MAX_PER_4000 * n_draws / 4000,
+                         "divergences_preregistered": 0, "note": DIVERGENCE_RULE_NOTE},
           "n_chains": int(post.sizes["chain"]), "n_draws_total": n_draws,
           **checks, "n_failing_elements": n_fail, "passed": passed,
           "converged": all(passed.values()),
@@ -98,7 +105,8 @@ def pointwise_loglik(mmm) -> tuple[np.ndarray, pd.MultiIndex]:
 
 def run_loo(name, mmm) -> dict:
   ll, idx = pointwise_loglik(mmm)
-  idata = az.from_dict(log_likelihood={"y": ll})
+  idata = az.from_dict(posterior={"sigma": np.asarray(mmm.inference_data.posterior["sigma"])},
+                       log_likelihood={"y": ll})
   loo = az.loo(idata, pointwise=True)
   k = np.asarray(loo.pareto_k)
   pw = pd.DataFrame({"elpd_loo": np.asarray(loo.loo_i), "pareto_k": k}, index=idx)
@@ -168,7 +176,7 @@ def main():
                                          "divergences", "passed", "n_failing_elements")}
                                     for n in ORDER},
             "loo": loo, "comparison_steps": steps, "selected": selected,
-            "selection_basis": basis}
+            "selection_basis": basis, "divergence_rule_note": DIVERGENCE_RULE_NOTE}
   write_json(result, OUT / "selection.json")
   print(json.dumps({"selected": selected, "basis": basis, "steps": steps}, indent=2))
 
