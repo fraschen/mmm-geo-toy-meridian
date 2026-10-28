@@ -50,7 +50,7 @@ National revenue grows by about 1.5% a year, and a straight line describes that 
 ## No yearly seasonality
 We checked whether the same week looks similar every year (for example, a peak every summer). It does not, beyond what chance would produce: random noise of the same length shows a pattern at least this strong 28% of the time. **For the model:** no seasonal component is needed.
 
-Looking at each geo separately, 6 of 40 show a yearly pattern, where about 2 would by chance (p = 0.014). A few geos may have their own seasonality, but it does not add up to a shared yearly cycle nationally.
+Looking at each geo separately, 6 of 40 show a yearly pattern, where about 2 would by chance. A few geos may have their own seasonality, but it does not add up to a shared yearly cycle nationally.
 
 <details><summary>Technical details</summary>
 

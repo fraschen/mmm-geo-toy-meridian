@@ -85,7 +85,7 @@ lines = [
     f"this strong {pct(se['p_value_ar1'], 0)} of the time. **For the model:** no seasonal component is needed.",
     "",
     f"Looking at each geo separately, {se['geos_significant_5pct_iid']} of {d['n_geos']} show a yearly pattern, where "
-    f"about {se['geos_expected_by_chance']:.0f} would by chance (p = {se['geos_p_value_binomial']:.3f}). A few geos may have "
+    f"about {se['geos_expected_by_chance']:.0f} would by chance. A few geos may have "
     "their own seasonality, but it does not add up to a shared yearly cycle nationally.",
     *details(f"Week-of-year means explain R2 = {se['observed_r2']:.3f} of detrended national revenue. Pure noise "
              f"of the same length gives {se['null_iid_mean']:.3f} on average (95th percentile {se['null_iid_p95']:.3f}); "
