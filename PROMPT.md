@@ -161,8 +161,3 @@ for the test vs what the test said. Check whether the choice of test geos drives
   explanations that turn out wrong.
 - Commit locally at each milestone; ask me before creating or pushing a GitHub repo, and before anything that
   uploads data externally (e.g. the scenario planner).
-
-## Optional comparison
-If I give you the path to an earlier pymc-marketing study of the same data (`/Users/fs/code/mmm-geo-toy-pymc-marketing`),
-add an appendix comparing channel ROI, contributions and diagnostics, and explain differences by modeling choice
-rather than by framework.
