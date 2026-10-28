@@ -31,6 +31,7 @@ FIG.mkdir(parents=True, exist_ok=True)
 OUT = OUTPUTS / "eda"
 N_SIM = 10_000
 MAX_LAG = 8
+TIME_AXIS = -1  # in the arrays below, the last axis is time (weeks)
 SEASON = 52
 # Newey-West bandwidth rule floor(4 (T/100)^(2/9)).
 def nw_lags(n): return int(np.floor(4 * (n / 100) ** (2 / 9)))
@@ -177,13 +178,13 @@ def trend_test(nat):
 
 
 def woy_r2(Y, period=SEASON):
-  """Share of variance explained by week-of-year means. Y: (..., T)."""
-  T = Y.shape[-1]
+  """Share of variance explained by week-of-year means. Y: (..., time)."""
+  T = Y.shape[TIME_AXIS]
   g = np.arange(T) % period
-  Yc = Y - Y.mean(-1, keepdims=True)
-  means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
+  Yc = Y - Y.mean(TIME_AXIS, keepdims=True)
+  means = np.stack([Yc[..., g == k].mean(TIME_AXIS) for k in range(period)], TIME_AXIS)
   fitted = means[..., g]
-  return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
+  return (fitted ** 2).sum(TIME_AXIS) / (Yc ** 2).sum(TIME_AXIS)
 
 
 def detrend(y):
