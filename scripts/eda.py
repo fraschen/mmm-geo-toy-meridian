@@ -224,6 +224,7 @@ def seasonality_test(df, nat):
       "geo_r2_median": float(np.median(geo_r2)),
       "geos_significant_5pct_iid": int((geo_p < .05).sum()),
       "geos_expected_by_chance": 0.05 * len(geo_r2),
+      "geos_p_value_binomial": float(stats.binom.sf(int((geo_p < .05).sum()) - 1, len(geo_r2), 0.05)),
   }
   res["seasonality_detected"] = bool(res["p_value_ar1"] < 0.05)
 

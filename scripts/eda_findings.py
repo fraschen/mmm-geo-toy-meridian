@@ -83,12 +83,17 @@ lines = [
     "We checked whether the same week looks similar every year (for example, a peak every summer). It "
     "does not, beyond what chance would produce: random noise of the same length shows a pattern at least "
     f"this strong {pct(se['p_value_ar1'], 0)} of the time. **For the model:** no seasonal component is needed.",
+    "",
+    f"Looking at each geo separately, {se['geos_significant_5pct_iid']} of {d['n_geos']} show a yearly pattern, where "
+    f"about {se['geos_expected_by_chance']:.0f} would by chance (p = {se['geos_p_value_binomial']:.3f}). A few geos may have "
+    "their own seasonality, but it does not add up to a shared yearly cycle nationally.",
     *details(f"Week-of-year means explain R2 = {se['observed_r2']:.3f} of detrended national revenue. Pure noise "
              f"of the same length gives {se['null_iid_mean']:.3f} on average (95th percentile {se['null_iid_p95']:.3f}); "
              f"p = {se['p_value_iid']:.2f} (iid null), {se['p_value_ar1']:.2f} (AR(1) null, phi = "
              f"{se['detrended_lag1_autocorr']:.3f}).",
              f"Per geo, {se['geos_significant_5pct_iid']} of {d['n_geos']} geos are significant at 5% "
-             f"({se['geos_expected_by_chance']:.0f} expected by chance)."),
+             f"({se['geos_expected_by_chance']:.0f} expected by chance); the probability of that many or more "
+             f"by chance is p = {se['geos_p_value_binomial']:.3f}."),
     fig(se["figure"]),
     "",
     "## How noisy is revenue week to week?",

@@ -165,6 +165,7 @@
     "geo_r2_median": 0.347109097397609,
     "geos_significant_5pct_iid": 6,
     "geos_expected_by_chance": 2.0,
+    "geos_p_value_binomial": 0.013876949213303603,
     "seasonality_detected": false,
     "figure": "reports/figures/eda/seasonality_null.png"
   },

@@ -50,10 +50,12 @@ National revenue grows by about 1.5% a year, and a straight line describes that 
 ## No yearly seasonality
 We checked whether the same week looks similar every year (for example, a peak every summer). It does not, beyond what chance would produce: random noise of the same length shows a pattern at least this strong 28% of the time. **For the model:** no seasonal component is needed.
 
+Looking at each geo separately, 6 of 40 show a yearly pattern, where about 2 would by chance (p = 0.014). A few geos may have their own seasonality, but it does not add up to a shared yearly cycle nationally.
+
 <details><summary>Technical details</summary>
 
 - Week-of-year means explain R2 = 0.360 of detrended national revenue. Pure noise of the same length gives 0.330 on average (95th percentile 0.418); p = 0.28 (iid null), 0.28 (AR(1) null, phi = -0.025).
-- Per geo, 6 of 40 geos are significant at 5% (2 expected by chance).
+- Per geo, 6 of 40 geos are significant at 5% (2 expected by chance); the probability of that many or more by chance is p = 0.014.
 
 </details>
 
