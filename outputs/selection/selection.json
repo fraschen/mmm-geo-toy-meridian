@@ -1,20 +1,10 @@
 {
-  "order_simplest_first": [
-    "linear_default_pool",
-    "aks_strong_pool",
-    "aks_default_pool"
-  ],
-  "labels": {
-    "aks_default_pool": "C1",
-    "linear_default_pool": "C2",
-    "aks_strong_pool": "C3"
-  },
-  "converged": {
+  "round1_not_converged": {
     "linear_default_pool": false,
     "aks_strong_pool": false,
     "aks_default_pool": false
   },
-  "convergence_summary": {
+  "round1_convergence_summary": {
     "linear_default_pool": {
       "max_rhat": 1.0207628412686538,
       "min_ess_bulk": 308.792446268965,
@@ -25,11 +15,6 @@
         "ess_bulk": false,
         "ess_tail": true,
         "divergences": false
-      },
-      "n_failing_elements": {
-        "rhat": 190,
-        "ess_bulk": 166,
-        "ess_tail": 0
       }
     },
     "aks_strong_pool": {
@@ -42,11 +27,6 @@
         "ess_bulk": false,
         "ess_tail": false,
         "divergences": false
-      },
-      "n_failing_elements": {
-        "rhat": 209,
-        "ess_bulk": 220,
-        "ess_tail": 82
       }
     },
     "aks_default_pool": {
@@ -59,11 +39,57 @@
         "ess_bulk": false,
         "ess_tail": false,
         "divergences": false
+      }
+    }
+  },
+  "order_simplest_first": [
+    "linear_strong_pool_lag4",
+    "linear_strong_pool"
+  ],
+  "labels": {
+    "aks_default_pool": "C1",
+    "linear_default_pool": "C2",
+    "aks_strong_pool": "C3",
+    "linear_strong_pool_lag4": "R1",
+    "linear_strong_pool": "R2"
+  },
+  "converged": {
+    "linear_strong_pool_lag4": false,
+    "linear_strong_pool": false
+  },
+  "convergence_summary": {
+    "linear_strong_pool_lag4": {
+      "max_rhat": 1.0091139545555818,
+      "min_ess_bulk": 441.1680564540055,
+      "min_ess_tail": 690.0086171905064,
+      "divergences": 1,
+      "passed": {
+        "rhat": true,
+        "ess_bulk": true,
+        "ess_tail": true,
+        "divergences": false
       },
       "n_failing_elements": {
-        "rhat": 307,
-        "ess_bulk": 267,
-        "ess_tail": 230
+        "rhat": 0,
+        "ess_bulk": 0,
+        "ess_tail": 0
+      }
+    },
+    "linear_strong_pool": {
+      "max_rhat": 1.0105302941136625,
+      "min_ess_bulk": 447.1645142054008,
+      "min_ess_tail": 737.6933115451303,
+      "divergences": 1,
+      "passed": {
+        "rhat": false,
+        "ess_bulk": true,
+        "ess_tail": true,
+        "divergences": false
+      },
+      "n_failing_elements": {
+        "rhat": 1,
+        "ess_bulk": 0,
+        "ess_tail": 0
       }
     }
   },
