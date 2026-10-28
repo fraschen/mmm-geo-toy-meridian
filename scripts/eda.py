@@ -118,7 +118,7 @@ def cpm_check(df):
   out["constant_cpm_verdict"] = {
       c: bool(out[c]["max_abs_relative_deviation_from_median"] < 1e-6) for c in CHANNELS}
   out["note"] = ("Deviations are at float32 rounding level, so spend = impressions x a "
-                 "constant CPM; any apparent CPM variation is rounding.")
+                 "constant CPM.")
 
   allr = pd.concat(rows)
   fig, ax = plt.subplots(figsize=(7, 3.2))

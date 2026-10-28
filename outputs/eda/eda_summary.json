@@ -135,7 +135,7 @@
       "Channel3": true,
       "Channel4": true
     },
-    "note": "Deviations are at float32 rounding level, so spend = impressions x a constant CPM; any apparent CPM variation is rounding.",
+    "note": "Deviations are at float32 rounding level, so spend = impressions x a constant CPM.",
     "figure": "reports/figures/eda/cpm_relative.png"
   },
   "trend": {

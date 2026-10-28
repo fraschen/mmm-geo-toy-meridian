@@ -60,7 +60,7 @@ lines = [
     "",
     "## Spend and impressions carry the same information",
     "In every channel, spend is exactly impressions times a constant CPM, so it makes no difference "
-    "whether the model uses spend or impressions. Any apparent CPM variation is rounding, not real.",
+    "whether the model uses spend or impressions.",
     *details(f"Largest deviation from each channel's median CPM: "
              f"{max(cpm[c]['max_abs_relative_deviation_from_median'] for c in CHANNELS) * 1e6:.2f} parts per million.",
              "CPM: " + ", ".join(f"{c} {cpm[c]['cpm_median']:.2f}" for c in CHANNELS) + "."),

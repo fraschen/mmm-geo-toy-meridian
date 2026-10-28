@@ -23,7 +23,7 @@ Channel3 takes the largest share of the budget; Channel2 the smallest:
 ![](figures/eda/spend_share.png)
 
 ## Spend and impressions carry the same information
-In every channel, spend is exactly impressions times a constant CPM, so it makes no difference whether the model uses spend or impressions. Any apparent CPM variation is rounding, not real.
+In every channel, spend is exactly impressions times a constant CPM, so it makes no difference whether the model uses spend or impressions.
 
 <details><summary>Technical details</summary>
 
