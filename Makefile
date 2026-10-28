@@ -4,7 +4,7 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: budget gates reports-meridian all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
+.PHONY: calibration budget gates reports-meridian all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
 
 CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
               linear_strong_pool_lag4 linear_strong_pool
@@ -71,6 +71,19 @@ gates:
 # Phase 7: budget scenarios (skill script).
 budget: model_build/linear_strong_pool_lag4/meridian_model.binpb
 	$(AWAKE) $(PY) model_build/run_budget_optimization.py
+
+# Phase 8: HYPOTHETICAL lift test, calibrated refit, comparison.
+LIFT := data/lift_tests/lift_tests.csv
+CALIBRATED := model_build/linear_strong_pool_lag4_calibrated/meridian_model.binpb
+
+$(LIFT):
+	$(PY) scripts/make_hypothetical_lift_test.py
+
+$(CALIBRATED): $(RAW) $(LIFT)
+	$(AWAKE) $(PY) model_build/build_model.py --spec linear_strong_pool_lag4_calibrated > model_build/linear_strong_pool_lag4_calibrated.log 2>&1
+
+calibration: $(CALIBRATED)
+	$(PY) scripts/calibration.py
 
 clean-outputs:
 	rm -rf outputs reports/figures model_build/eda_default

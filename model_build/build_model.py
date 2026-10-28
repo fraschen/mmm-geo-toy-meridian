@@ -12,6 +12,9 @@ Specs (approved at the Phase 2 checkpoint, see reports/candidates.md):
   Round 2 (after C1-C3 all failed the convergence gate):
   linear_strong_pool_lag4  R1: knots=2, eta_m ~ HalfNormal(0.1), max_lag=4.
   linear_strong_pool       R2: knots=2, eta_m ~ HalfNormal(0.1), max_lag=8.
+  Phase 8:
+  linear_strong_pool_lag4_calibrated  R1 with ROI priors calibrated by
+      CalibrationBuilder from data/lift_tests/lift_tests.csv (HYPOTHETICAL test).
 
 Usage (run from the project root):
   .venv/bin/python model_build/build_model.py --spec eda_default --eda-only
@@ -52,7 +55,48 @@ CANDIDATES = ["aks_default_pool", "linear_default_pool", "aks_strong_pool",
               "linear_strong_pool_lag4", "linear_strong_pool"]
 
 
-def make_spec(name: str, **overrides) -> ModelSpec:
+LIFT_TESTS = os.path.join(os.path.dirname(__file__), "..", "data", "lift_tests",
+                          "lift_tests.csv")
+
+
+def calibrated_roi_prior(input_data, max_lag):
+  """ROI prior from lift tests via Meridian's CalibrationBuilder.
+
+  Uncalibrated channels keep the default LogNormal(0.2, 0.9); the same
+  distribution is the baseline prior that each experiment updates.
+  """
+  from meridian.model.calibration import prior_builder
+  tfd = backend.tfd
+  default = tfd.LogNormal(np.float64(0.2), np.float64(0.9), name="roi_m")
+  builder = prior_builder.CalibrationBuilder(
+      input_data, custom_prior=default, baseline_prior=default,
+      adstock_decay_spec="geometric", max_lag=max_lag)
+  tests = pd.read_csv(LIFT_TESTS)
+  for channel, g in tests.groupby("channel"):
+    builder = builder.with_incrementality_experiment_result(
+        channel, point_estimates=g["point_estimate_roi"].tolist(),
+        standard_errors=g["standard_error"].tolist(),
+        experiment_kpi_types=g["kpi_type"].tolist(),
+        experiment_total_spends=g["total_spend"].tolist(),
+        experiment_start_dates=g["start_date"].tolist(),
+        experiment_end_dates=g["end_date"].tolist())
+  calibrated = builder.build().roi_m
+  # google-meridian 2.1.0: the mixed-family CalibratedDistribution fails under JAX
+  # JIT in sample_posterior (jnp.split on a traced value). Use the builder's fitted
+  # per-channel prior, moment-matched to a LogNormal, in a jit-safe LogNormal vector.
+  channels = [str(c) for c in np.asarray(input_data.media_channel)]
+  loc, scale = np.full(len(channels), 0.2), np.full(len(channels), 0.9)
+  for channel in tests["channel"].unique():
+    i = channels.index(channel)
+    comp = calibrated._distributions[i]
+    m = float(np.asarray(comp.mean()).ravel()[0])
+    sd = float(np.asarray(comp.stddev()).ravel()[0])
+    s2 = np.log(1 + sd ** 2 / m ** 2)
+    loc[i], scale[i] = np.log(m) - s2 / 2, np.sqrt(s2)
+  return tfd.LogNormal(loc.astype(np.float64), scale.astype(np.float64), name="roi_m")
+
+
+def make_spec(name: str, input_data=None, **overrides) -> ModelSpec:
   tfd = backend.tfd
   if name == "eda_default":
     # Meridian defaults, used only to drive the EDA report's prior checks.
@@ -75,6 +119,11 @@ def make_spec(name: str, **overrides) -> ModelSpec:
     return ModelSpec(prior=strong_pool, knots=2, **{**common, "max_lag": 4})
   if name == "linear_strong_pool":
     return ModelSpec(prior=strong_pool, knots=2, **common)
+  if name == "linear_strong_pool_lag4_calibrated":
+    prior = PriorDistribution(
+        eta_m=tfd.HalfNormal(scale=np.float64(0.1), name="eta_m"),
+        roi_m=calibrated_roi_prior(input_data, max_lag=4))
+    return ModelSpec(prior=prior, knots=2, **{**common, "max_lag": 4})
   raise ValueError(f"Unknown spec {name!r}")
 
 
@@ -103,7 +152,7 @@ def main():
   input_data = build_input_data(df)
 
   # 2. ModelSpec + Meridian.
-  mmm = Meridian(input_data=input_data, model_spec=make_spec(args.spec))
+  mmm = Meridian(input_data=input_data, model_spec=make_spec(args.spec, input_data))
 
   # 3. Prior sampling (fixed seed).
   mmm.sample_prior(n_draws=N_PRIOR_DRAWS, seed=SEED)
