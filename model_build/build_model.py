@@ -16,6 +16,8 @@ Specs (approved at the Phase 2 checkpoint, see reports/candidates.md):
 Usage (run from the project root):
   .venv/bin/python model_build/build_model.py --spec eda_default --eda-only
   .venv/bin/python model_build/build_model.py --spec aks_default_pool
+  # Phase 4 CV fold: fit on the first N weeks only (all scaling from those weeks).
+  .venv/bin/python model_build/build_model.py --spec linear_strong_pool_lag4 --train-weeks 104
 """
 
 import argparse
@@ -28,7 +30,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from common import SEED, build_input_data  # noqa: E402
+import pandas as pd  # noqa: E402
+from common import RAW_CSV, SEED, TIME, build_input_data  # noqa: E402
 from meridian import backend  # noqa: E402
 from meridian.model.eda import meridian_eda  # noqa: E402
 from meridian.model.model import Meridian  # noqa: E402
@@ -74,13 +77,22 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--spec", default="eda_default")
   parser.add_argument("--eda-only", action="store_true")
+  parser.add_argument("--train-weeks", type=int, default=None,
+                      help="CV fold: keep only the first N weeks; skips the EDA report.")
   args = parser.parse_args()
 
-  output_dir = os.path.join("model_build", args.spec)
+  if args.train_weeks:
+    output_dir = os.path.join("model_build", "cv", f"{args.spec}_train{args.train_weeks}")
+  else:
+    output_dir = os.path.join("model_build", args.spec)
   os.makedirs(output_dir, exist_ok=True)
 
   # 1. Load data & build InputData (approved column mapping).
-  input_data = build_input_data()
+  df = pd.read_csv(RAW_CSV).drop(columns=["Unnamed: 0"], errors="ignore")
+  if args.train_weeks:
+    weeks = sorted(df[TIME].unique())[:args.train_weeks]
+    df = df[df[TIME].isin(weeks)]
+  input_data = build_input_data(df)
 
   # 2. ModelSpec + Meridian.
   mmm = Meridian(input_data=input_data, model_spec=make_spec(args.spec))
@@ -88,10 +100,11 @@ def main():
   # 3. Prior sampling (fixed seed).
   mmm.sample_prior(n_draws=N_PRIOR_DRAWS, seed=SEED)
 
-  # 4. Meridian EDA report.
-  eda = meridian_eda.MeridianEDA(mmm)
-  eda.generate_and_save_report(filename="eda.html", filepath=output_dir)
-  print(f"EDA report written to {os.path.join(output_dir, 'eda.html')}")
+  # 4. Meridian EDA report (full-data fits only).
+  if not args.train_weeks:
+    eda = meridian_eda.MeridianEDA(mmm)
+    eda.generate_and_save_report(filename="eda.html", filepath=output_dir)
+    print(f"EDA report written to {os.path.join(output_dir, 'eda.html')}")
   if args.eda_only:
     return
 
@@ -104,7 +117,7 @@ def main():
   save_path = os.path.join(output_dir, "meridian_model.binpb")
   meridian_serde.save_meridian(mmm, save_path)
   with open(os.path.join(output_dir, "fit_info.json"), "w") as f:
-    json.dump({"spec": args.spec, "sampler": SAMPLER, "n_prior_draws": N_PRIOR_DRAWS,
+    json.dump({"spec": args.spec, "train_weeks": args.train_weeks, "sampler": SAMPLER, "n_prior_draws": N_PRIOR_DRAWS,
                "knot_locations": [int(k) for k in mmm.knot_info.knot_locations],
                "n_knots": int(len(mmm.knot_info.knot_locations)),
                "runtime_seconds": runtime}, f, indent=2)

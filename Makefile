@@ -4,13 +4,13 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: all data eda eda-meridian eda-extended fit clean-outputs
+.PHONY: all data eda eda-meridian eda-extended fit select cv-fit validate clean-outputs
 
 CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
               linear_strong_pool_lag4 linear_strong_pool
 MODELS := $(foreach c,$(CANDIDATES),model_build/$(c)/meridian_model.binpb)
 
-all: eda fit
+all: eda fit select validate
 
 data: $(RAW)
 
@@ -31,8 +31,26 @@ eda-extended: data
 # Phase 3: fit each approved candidate (skill script); skipped if already saved.
 fit: $(MODELS)
 
-model_build/%/meridian_model.binpb: $(RAW)
+$(MODELS): model_build/%/meridian_model.binpb: $(RAW)
 	$(AWAKE) $(PY) model_build/build_model.py --spec $* > model_build/$*.log 2>&1
+
+select: $(MODELS)
+	$(PY) scripts/select_model.py
+
+# Phase 4: rolling-origin CV folds for the selected spec (the 143-week fold is
+# the 13-week holdout), then forecast scoring.
+SELECTED := linear_strong_pool_lag4
+FOLDS := 104 117 130 143
+FOLD_MODELS := $(foreach t,$(FOLDS),model_build/cv/$(SELECTED)_train$(t)/meridian_model.binpb)
+
+cv-fit: $(FOLD_MODELS)
+
+model_build/cv/$(SELECTED)_train%/meridian_model.binpb: $(RAW)
+	mkdir -p model_build/cv
+	$(AWAKE) $(PY) model_build/build_model.py --spec $(SELECTED) --train-weeks $* > model_build/cv/train$*.log 2>&1
+
+validate: cv-fit
+	$(PY) scripts/validate_cv.py
 
 clean-outputs:
 	rm -rf outputs reports/figures model_build/eda_default

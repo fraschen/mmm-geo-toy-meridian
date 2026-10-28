@@ -1,0 +1,5 @@
+fold,train_weeks,test_weeks,converged
+fold_104,1-104,105-117,False
+fold_117,1-117,118-130,False
+fold_130,1-130,131-143,False
+holdout,1-143,144-156,False

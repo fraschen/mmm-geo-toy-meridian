@@ -6,3 +6,4 @@ artifacts/
 *.binpb
 data/raw/
 *.log
+model_build/cv/*.log
