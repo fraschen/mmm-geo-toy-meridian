@@ -1,11 +1,11 @@
 # Diagnostics: model health
 
-Selected model: **linear_strong_pool_lag4** (R1: linear trend, `eta_m ~ HalfNormal(0.1)`, `max_lag = 4`), chosen by PSIS-LOO with the 2-SE simplicity rule.
+Production model (`config/model.toml`): Geo-level Meridian MMM: linear-trend baseline (knots = 2), media effects strongly pooled across geos (eta_m ~ HalfNormal(0.1)), geometric adstock with max lag 4, ROI priors LogNormal(0.2, 0.9) on all paid channels. Selected as R1 (`linear_strong_pool_lag4`).
 
 Meridian's native reports: [health check](meridian/health_check.html), [Model Results Summary](meridian/results_summary.html).
 
-## How the model was chosen
-- Candidates differed on what the EDA cannot settle: baseline flexibility (knots), geo pooling of media effects (`eta_m`) and max lag. Specs, priors and protocol are in [candidates.md](candidates.md).
+## Why this model
+The pipeline fits one model. It was chosen once, from candidates that differed on what the EDA cannot settle: baseline flexibility (knots), geo pooling of media effects (`eta_m`) and max lag. The record (specs, diagnostics, comparison) is in [docs/model_selection](../docs/model_selection/README.md); the candidates are not refitted.
 - Each fit had to pass a convergence gate before PSIS-LOO comparison. The fits ran in two rounds:
   - Round 1: C1-C3: knots (AKS vs linear) x media pooling (default vs strong); default sampler. C2 failed; C3 failed; C1 failed.
   - Round 2: R1-R2: after round 1 failed in the baseline parameters, linear knots and strong pooling (the docs' convergence checklist), with max lag 4 vs 8; default sampler. R1 passed; R2 passed.

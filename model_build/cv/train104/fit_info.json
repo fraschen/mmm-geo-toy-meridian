@@ -1,6 +1,7 @@
 {
-  "spec": "linear_strong_pool_lag4",
-  "train_weeks": 130,
+  "model": "mmm",
+  "calibrated": false,
+  "train_weeks": 104,
   "sampler": {
     "n_chains": 4,
     "n_adapt": 500,
@@ -11,8 +12,8 @@
   "n_prior_draws": 500,
   "knot_locations": [
     0,
-    129
+    103
   ],
   "n_knots": 2,
-  "runtime_seconds": 243.77230787277222
+  "runtime_seconds": 290.13976311683655
 }

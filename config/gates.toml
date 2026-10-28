@@ -48,7 +48,7 @@ enforced_in = "scripts/gates.py"
 # --------------------------------------------------------------------- convergence
 [gates.convergence]
 blocking = true
-applies_to = "every fit: candidates, CV fold fits, calibrated refit"
+applies_to = "every fit: the production model, its CV refits, the optional calibrated refit"
 checks = """For every element of every posterior variable (elements constant across all draws, \
 such as the baseline geo's intercept, are skipped): max R-hat, min bulk ESS, min tail ESS; and \
 the share of divergent NUTS transitions. FAIL if any threshold is breached. A failing fit \
@@ -58,17 +58,17 @@ source = "project (revised; see meta.note)"
 basis = """ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than \
 their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent \
 draws (20 of 4000) are tolerated."""
-enforced_in = "scripts/select_model.py (convergence)"
+enforced_in = "scripts/check_convergence.py (make convergence)"
 
 [selection]
-applies_to = "converged candidates"
+applies_to = "converged candidates, when the production model was chosen (not part of the pipeline)"
 checks = """PSIS-LOO ELPD from the pointwise log-likelihood on Meridian's transformed KPI. Start \
 from the simplest converged candidate; switch to a more complex one only if its ELPD is higher \
 by more than se_rule x the SE of the paired difference."""
 thresholds = { se_rule = 2.0 }
 source = "PROMPT.md"
 basis = "Prefer the simpler model unless the data clearly support the more complex one."
-enforced_in = "scripts/select_model.py"
+enforced_in = "docs/model_selection/select_model.py (record)"
 
 # ------------------------------------------------------------------ in-sample fit
 [gates.insample_r2]

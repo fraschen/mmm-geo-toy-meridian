@@ -1,6 +1,6 @@
 """Phase 8: calibration with a HYPOTHETICAL lift test, before vs after.
 
-- Convergence of the calibrated refit (same gate as selection).
+- Convergence of the calibrated refit (same gate as the production model).
 - ROI and P(ROI > 1) per channel, before (R1) and after (calibrated).
 - The calibrated Channel3 prior vs the test result (CalibrationBuilder adjustments).
 - What each model implies for Channel3's ROI in the test geos and weeks vs the test.
@@ -17,11 +17,11 @@ import pandas as pd
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1] / "model_build"))
 
-from common import CHANNELS, GEO, OUTPUTS, ROOT, SEED, TIME, build_input_data, load_raw, write_json  # noqa: E402
+from common import (CHANNELS, GEO, OUTPUTS, ROOT, SEED, TIME, build_input_data,  # noqa: E402
+                    load_model, load_raw, write_json)
 from make_hypothetical_lift_test import N_TEST_GEOS, stratified_geos  # noqa: E402
-from select_model import convergence, load  # noqa: E402
+from check_convergence import convergence  # noqa: E402
 
-BEFORE, AFTER = "linear_strong_pool_lag4", "linear_strong_pool_lag4_calibrated"
 CI = (0.03, 0.97)
 N_ALT = 20
 OUT = OUTPUTS / "calibration"
@@ -67,7 +67,7 @@ def main():
   weeks = sorted(str(t.date()) for t in raw[TIME].unique()
                  if test["start_date"] <= str(t.date()) <= test["end_date"])
 
-  before, after = load(BEFORE), load(AFTER)
+  before, after = load_model(), load_model("calibrated")
   conv = convergence(after.inference_data)
   result = {"label": "HYPOTHETICAL lift test", "test": test,
             "after_converged": conv["converged"],

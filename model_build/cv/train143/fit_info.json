@@ -1,5 +1,6 @@
 {
-  "spec": "linear_strong_pool_lag4",
+  "model": "mmm",
+  "calibrated": false,
   "train_weeks": 143,
   "sampler": {
     "n_chains": 4,

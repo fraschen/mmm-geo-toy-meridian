@@ -1,7 +1,13 @@
-# Candidate specifications and selection protocol
+# How the production model was chosen
+
+This is a record. The production pipeline fits only the selected model,
+[`config/model.toml`](../../config/model.toml); the candidates below are not refitted
+or kept. This folder holds their convergence diagnostics (`convergence_*.json`), fit
+settings (`fits/`), the PSIS-LOO pointwise values (`loo_pointwise_*.csv`), the comparison
+(`selection.json`) and the script that produced it (`select_model.py`).
 
 EDA numbers below come from `outputs/eda/eda_summary.json` (`make eda`); details in
-[eda.md](eda.md). Prior choices were checked against the Meridian docs and the
+[reports/eda.md](../../reports/eda.md). Prior choices were checked against the Meridian docs and the
 installed `meridian.model.spec` / `prior_distribution` source (google-meridian 2.1.0).
 
 ## What the EDA settles (common to all candidates)
@@ -41,7 +47,7 @@ installed `meridian.model.spec` / `prior_distribution` source (google-meridian 2
    bulk ESS >= 400, tail ESS >= 400, and at most 0.5% divergent draws. A failing fit
    records only its diagnostics; failing fits are not rerun.
 2. **PSIS-LOO among converged fits.** Pointwise log-likelihood on Meridian's
-   transformed KPI; pointwise values and Pareto k are saved in `outputs/selection/`.
+   transformed KPI; pointwise values and Pareto k are saved in this folder (`loo_pointwise_*.csv`).
 3. **Simplicity rule.** Start from the simplest converged fit (order R1 < R2 < C2 <
    C3 < C1). Move to a more complex one only if its ELPD exceeds the current choice's by
    more than 2 SE of the paired difference.
@@ -86,4 +92,4 @@ Sampler as in round 1. Both converged.
 
 Among the converged fits (R1, R2), R2's ELPD exceeds R1's by 3.6 with paired SE 2.5,
 below the 2-SE threshold. **R1 is selected.** Per-fit diagnostics are in
-`outputs/selection/selection.json`.
+`selection.json` in this folder.

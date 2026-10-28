@@ -1,0 +1,44 @@
+# The production model: the single Meridian specification this project fits, validates,
+# reports and containerizes. How it was chosen is documented in docs/model_selection/
+# (candidate rounds, convergence diagnostics, PSIS-LOO comparison); those candidates
+# are not part of the pipeline.
+
+[model]
+name = "mmm"
+description = """Geo-level Meridian MMM: linear-trend baseline (knots = 2), media effects strongly \
+pooled across geos (eta_m ~ HalfNormal(0.1)), geometric adstock with max lag 4, ROI priors \
+LogNormal(0.2, 0.9) on all paid channels. Selected as R1 (`linear_strong_pool_lag4`)."""
+selected_as = "R1 (linear_strong_pool_lag4)"
+
+[model.spec]                 # meridian.model.spec.ModelSpec arguments
+knots = 2                    # knots at weeks 0 and 155: a linear baseline
+max_lag = 4
+media_effects_dist = "log_normal"
+adstock_decay_spec = "geometric"
+hill_before_adstock = false
+media_prior_type = "roi"
+unique_sigma_for_each_geo = false
+
+[model.priors]               # overrides of meridian.model.prior_distribution defaults
+roi_m = { dist = "LogNormal", loc = 0.2, scale = 0.9 }
+eta_m = { dist = "HalfNormal", scale = 0.1 }
+
+[sampler]                    # Meridian.sample_posterior (NUTS, JAX backend)
+n_chains = 4
+n_adapt = 500
+n_burnin = 500
+n_keep = 1000
+seed = 20260128
+n_prior_draws = 500
+
+[paths]
+model = "model_build/model"              # full-data fit: meridian_model.binpb
+cv = "model_build/cv"                    # validation refits: train<N>/meridian_model.binpb
+calibrated = "model_build/model_calibrated"   # optional, HYPOTHETICAL lift test
+
+[validation]                 # rolling-origin CV; the last fold is the 13-week holdout
+train_weeks = [104, 117, 130, 143]
+horizon = 13
+
+[calibration]                # optional (`make calibration`), not part of production
+lift_tests = "data/lift_tests/lift_tests.csv"

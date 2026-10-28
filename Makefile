@@ -2,16 +2,20 @@ PY := .venv/bin/python
 # Keep macOS awake during long runs (no-op elsewhere).
 AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dimsu")
 
+# One production model (config/model.toml). How it was chosen: docs/model_selection/.
 RAW := data/raw/geo_all_channels.csv
+MODEL := model_build/model/meridian_model.binpb
+FOLDS := 104 117 130 143
+FOLD_MODELS := $(foreach t,$(FOLDS),model_build/cv/train$(t)/meridian_model.binpb)
+CALIBRATED := model_build/model_calibrated/meridian_model.binpb
+LIFT := data/lift_tests/lift_tests.csv
 
-.PHONY: fit-round1 results reports docker calibration budget gates reports-meridian all data eda eda-meridian eda-extended fit select cv-fit validate clean-outputs
+.PHONY: all data eda eda-meridian eda-extended fit convergence cv-fit validate \
+        reports-meridian budget gates results reports calibration docker clean-outputs
 
-CANDIDATES := linear_strong_pool_lag4 linear_strong_pool
-ROUND1 := aks_default_pool linear_default_pool aks_strong_pool
-MODELS := $(foreach c,$(CANDIDATES),model_build/$(c)/meridian_model.binpb)
-
-# Every phase. Gates may fail (blocking failures are reported); the reports still build.
-all: eda fit select validate reports-meridian budget calibration
+# Production pipeline. Stops if the model fails its convergence gate. The acceptance
+# gates may fail (blocking failures are reported in reports/gates.md); reports still build.
+all: eda fit convergence validate reports-meridian budget
 	-$(MAKE) gates
 	$(MAKE) reports
 
@@ -20,72 +24,52 @@ data: $(RAW)
 $(RAW):
 	$(PY) scripts/download_data.py
 
-# Phase 1: Meridian's EDA report (skill-generated script, default spec,
-# prior draws only) + the extended EDA (summary JSON + figures).
+# EDA: Meridian's EDA report for the production spec (prior draws only) + extended EDA.
 eda: eda-meridian eda-extended
 
 eda-meridian: data
-	$(AWAKE) $(PY) model_build/build_model.py --spec eda_default --eda-only
+	$(AWAKE) $(PY) model_build/build_model.py --eda-only
 
 eda-extended: data
 	$(PY) scripts/eda.py
 	$(PY) scripts/eda_findings.py
 
-# Phase 3: round 2 (R1, R2; default sampler). Round 1 (C1-C3) diagnostics are committed;
-# `make fit-round1` refits those models.
-fit: $(MODELS)
+# Fit the production model (skill script); skipped if already saved.
+fit: $(MODEL)
 
-ROUND1_MODELS := $(foreach c,$(ROUND1),model_build/$(c)/meridian_model.binpb)
-fit-round1: $(ROUND1_MODELS)
+$(MODEL): $(RAW) config/model.toml
+	mkdir -p model_build/model
+	$(AWAKE) $(PY) model_build/build_model.py > model_build/model/fit.log 2>&1
 
-$(MODELS) $(ROUND1_MODELS): model_build/%/meridian_model.binpb: $(RAW)
-	$(AWAKE) $(PY) model_build/build_model.py --spec $* > model_build/$*.log 2>&1
+# Convergence gate on the production fit (config/gates.toml); exits non-zero on failure.
+convergence: $(MODEL)
+	$(PY) scripts/check_convergence.py
 
-select: $(MODELS)
-	$(PY) scripts/select_model.py
-
-# Phase 4: rolling-origin CV folds for the selected spec (the 143-week fold is
-# the 13-week holdout), then forecast scoring.
-SELECTED := linear_strong_pool_lag4
-FOLDS := 104 117 130 143
-FOLD_MODELS := $(foreach t,$(FOLDS),model_build/cv/$(SELECTED)_train$(t)/meridian_model.binpb)
-
+# Validation: refits of the same model on weeks 1-N (the 143-week refit is the
+# 13-week holdout), each forecasting the next 13 weeks.
 cv-fit: $(FOLD_MODELS)
 
-model_build/cv/$(SELECTED)_train%/meridian_model.binpb: $(RAW)
-	mkdir -p model_build/cv
-	$(AWAKE) $(PY) model_build/build_model.py --spec $(SELECTED) --train-weeks $* > model_build/cv/train$*.log 2>&1
+model_build/cv/train%/meridian_model.binpb: $(RAW) config/model.toml
+	mkdir -p model_build/cv/train$*
+	$(AWAKE) $(PY) model_build/build_model.py --train-weeks $* > model_build/cv/train$*/fit.log 2>&1
 
 validate: cv-fit
 	$(PY) scripts/validate_cv.py
 
-# Phase 5: Meridian health check + Model Results Summary (skill script).
-reports-meridian: model_build/linear_strong_pool_lag4/meridian_model.binpb
+# Meridian health check + Model Results Summary (skill script).
+reports-meridian: $(MODEL)
 	$(AWAKE) $(PY) model_build/results_report.py
 
-# Phase 5: automated gates (exits non-zero on any blocking failure). Rules and
-# thresholds: config/gates.toml; documentation: reports/gates.md (make reports).
+# Budget scenarios (skill script).
+budget: $(MODEL)
+	$(AWAKE) $(PY) model_build/run_budget_optimization.py
+
+# Acceptance gates (exits non-zero on any blocking failure). Rules and thresholds:
+# config/gates.toml; documentation: reports/gates.md.
 gates:
 	$(PY) scripts/gates.py
 
-# Phase 7: budget scenarios (skill script).
-budget: model_build/linear_strong_pool_lag4/meridian_model.binpb
-	$(AWAKE) $(PY) model_build/run_budget_optimization.py
-
-# Phase 8: HYPOTHETICAL lift test, calibrated refit, comparison.
-LIFT := data/lift_tests/lift_tests.csv
-CALIBRATED := model_build/linear_strong_pool_lag4_calibrated/meridian_model.binpb
-
-$(LIFT):
-	$(PY) scripts/make_hypothetical_lift_test.py
-
-$(CALIBRATED): $(RAW) $(LIFT)
-	$(AWAKE) $(PY) model_build/build_model.py --spec linear_strong_pool_lag4_calibrated > model_build/linear_strong_pool_lag4_calibrated.log 2>&1
-
-calibration: $(CALIBRATED)
-	$(PY) scripts/calibration.py
-
-# Phase 6: channel results file + markdown reports (+ README).
+# Channel results file + markdown reports + README.
 results:
 	$(PY) scripts/analysis_data.py
 	$(PY) scripts/channel_results.py
@@ -95,7 +79,19 @@ reports: results
 	$(PY) scripts/make_gates_report.py
 	$(PY) scripts/make_readme.py
 
-# Phase 9: Docker image from the lockfile; verifies EDA reproduces and sampling runs.
+# Optional, not part of production: refit with a HYPOTHETICAL lift test.
+$(LIFT):
+	$(PY) scripts/make_hypothetical_lift_test.py
+
+$(CALIBRATED): $(RAW) $(LIFT) config/model.toml
+	mkdir -p model_build/model_calibrated
+	$(AWAKE) $(PY) model_build/build_model.py --calibrated > model_build/model_calibrated/fit.log 2>&1
+
+calibration: $(CALIBRATED)
+	$(PY) scripts/calibration.py
+
+# Container: build from the lockfile; verify the EDA reproduces and sampling runs.
+# The image's default command runs the production pipeline (make all).
 IMAGE := mmm-geo-toy-meridian
 docker:
 	docker build -t $(IMAGE) .
@@ -103,4 +99,4 @@ docker:
 	docker run --rm $(IMAGE) sh -c 'make data && .venv/bin/python scripts/docker_smoke.py'
 
 clean-outputs:
-	rm -rf outputs reports/figures model_build/eda_default
+	rm -rf outputs reports/figures

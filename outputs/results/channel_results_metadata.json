@@ -1,6 +1,6 @@
 {
-  "model": "linear_strong_pool_lag4",
-  "selection_basis": "PSIS-LOO with the 2-SE simplicity rule",
+  "model": "mmm",
+  "description": "Geo-level Meridian MMM: linear-trend baseline (knots = 2), media effects strongly pooled across geos (eta_m ~ HalfNormal(0.1)), geometric adstock with max lag 4, ROI priors LogNormal(0.2, 0.9) on all paid channels. Selected as R1 (`linear_strong_pool_lag4`).",
   "backend": "JAX",
   "period": "2021-01-25 to 2024-01-15",
   "level": "national (sum over 40 geos)",

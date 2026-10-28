@@ -1,14 +1,14 @@
 """Generates reports/gates.md: every gate's rule, threshold, rationale and latest result.
 
 Rules come from config/gates.toml; results from outputs/gates/gates.json,
-outputs/selection/selection.json and outputs/meridian/health_check.json.
+docs/model_selection/selection.json and outputs/meridian/health_check.json.
 """
 
 from __future__ import annotations
 
 import json
 
-from common import OUTPUTS, ROOT, load_gates_config
+from common import HISTORY, OUTPUTS, ROOT, load_gates_config
 
 J = lambda p: json.load(open(OUTPUTS / p))
 
@@ -27,7 +27,7 @@ def fmt(v):
 def main():
   cfg = load_gates_config()
   gates = J("gates/gates.json")
-  sel = J("selection/selection.json")
+  sel = json.load(open(HISTORY / "selection.json"))
   health = J("meridian/health_check.json")
   nf = J("eda/eda_summary.json")["noise_floor"]
   results = {g["gate"]: g for g in gates["gates"]}
@@ -82,18 +82,19 @@ def main():
       "",
       "## Summary",
       "",
-      f"Selected model: `{gates['selected']}` ({gates['selection_basis']}). Blocking failures: "
+      f"Model: `{gates['model']}` (selected as {gates['selected_as']}). Blocking failures: "
       f"{', '.join(gates['blocking_failures']) or 'none'}.",
       "",
       *summary,
       "",
-      "## Model selection rule",
+      "## Model selection rule (applied once, when the model was chosen)",
       "",
       f"- **Applies to:** {s['applies_to']}",
       f"- **Rule:** {s['checks']}",
       f"- **Threshold:** `se_rule` = {s['thresholds']['se_rule']} ({s['source']}). {s['basis']}",
       f"- **Enforced in:** `{s['enforced_in']}`",
-      f"- **Latest result:** {steps or sel['selection_basis']}.",
+      f"- **Result:** {steps or sel['selection_basis']}. Record: "
+      "[docs/model_selection](../docs/model_selection/README.md).",
       "",
       "## Gate definitions and latest results",
       "",

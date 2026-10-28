@@ -1,3 +1,7 @@
+# HISTORICAL RECORD (not run by the pipeline). This is the script that compared the
+# candidate specifications and selected R1; its outputs are in this folder
+# (selection.json, convergence_*.json, loo_pointwise_*.csv). The candidate models
+# are not kept: the production pipeline fits only config/model.toml.
 """Phase 3: convergence gate and PSIS-LOO selection (protocol in reports/candidates.md).
 
 For each candidate, in the fixed complexity order:

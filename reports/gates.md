@@ -8,7 +8,7 @@ Automated acceptance checks for the selected model. Rules and thresholds live in
 
 ## Summary
 
-Selected model: `linear_strong_pool_lag4` (PSIS-LOO with the 2-SE simplicity rule). Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_stability.
+Model: `mmm` (selected as R1 (linear_strong_pool_lag4)). Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_stability.
 
 | gate | blocking | latest status |
 |---|---|---|
@@ -23,13 +23,13 @@ Selected model: `linear_strong_pool_lag4` (PSIS-LOO with the 2-SE simplicity rul
 | [roi_fold_stability](#roi-fold-stability) | yes | roi_fold_stability FAIL |
 | [channel_roi_checks](#channel-roi-checks) | no (warn only) | channel_roi_checks WARN |
 
-## Model selection rule
+## Model selection rule (applied once, when the model was chosen)
 
-- **Applies to:** converged candidates
+- **Applies to:** converged candidates, when the production model was chosen (not part of the pipeline)
 - **Rule:** PSIS-LOO ELPD from the pointwise log-likelihood on Meridian's transformed KPI. Start from the simplest converged candidate; switch to a more complex one only if its ELPD is higher by more than se_rule x the SE of the paired difference.
 - **Threshold:** `se_rule` = 2.0 (PROMPT.md). Prefer the simpler model unless the data clearly support the more complex one.
-- **Enforced in:** `scripts/select_model.py`
-- **Latest result:** R2 vs R1: ELPD +3.6 (paired SE 2.5, needs > 5.0) -> keep.
+- **Enforced in:** `docs/model_selection/select_model.py (record)`
+- **Result:** R2 vs R1: ELPD +3.6 (paired SE 2.5, needs > 5.0) -> keep. Record: [docs/model_selection](../docs/model_selection/README.md).
 
 ## Gate definitions and latest results
 
@@ -76,11 +76,11 @@ Note: prior predictive 94% interval width / observed mean: 7.06
 ### convergence
 
 - **Blocking:** yes
-- **Applies to:** every fit: candidates, CV fold fits, calibrated refit
+- **Applies to:** every fit: the production model, its CV refits, the optional calibrated refit
 - **Rule:** For every element of every posterior variable (elements constant across all draws, such as the baseline geo's intercept, are skipped): max R-hat, min bulk ESS, min tail ESS; and the share of divergent NUTS transitions. FAIL if any threshold is breached. A failing fit records only its convergence diagnostics; its ROI, fit and contributions are never reported.
 - **Source of threshold:** project (revised; see meta.note)
 - **Basis:** ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent draws (20 of 4000) are tolerated.
-- **Enforced in:** `scripts/select_model.py (convergence)`
+- **Enforced in:** `scripts/check_convergence.py (make convergence)`
 
 | threshold | value |
 |---|---|
@@ -94,7 +94,7 @@ Latest result:
 |---|---|---|
 | convergence | PASS | max_rhat 1.009, min_ess_bulk 441.2, min_ess_tail 690, divergences 1 |
 
-Note: R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. The candidate set and these criteria were revised after earlier rounds failed to converge.
+Note: R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws (config/gates.toml). The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
 
 ### insample_r2
 

@@ -1,6 +1,6 @@
 {
-  "selected": "linear_strong_pool_lag4",
-  "selection_basis": "PSIS-LOO with the 2-SE simplicity rule",
+  "model": "mmm",
+  "selected_as": "R1 (linear_strong_pool_lag4)",
   "thresholds": {
     "prior_predictive_national_coverage_min": 0.8,
     "insample_geo_week_r2_min": 0.5,
@@ -72,7 +72,7 @@
         "divergences_max": 20.0
       },
       "blocking": true,
-      "note": "R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. The candidate set and these criteria were revised after earlier rounds failed to converge."
+      "note": "R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws (config/gates.toml). The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences."
     },
     {
       "gate": "insample_r2",

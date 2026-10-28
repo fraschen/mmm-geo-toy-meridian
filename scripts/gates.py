@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 
 from common import (CHANNELS, GEO, OUTPUTS, TIME, load_raw, sha256, RAW_CSV,
-                    DATA_SHA256, load_gates_config, write_json)
-from select_model import load
+                    DATA_SHA256, load_gates_config, load_model, load_model_config,
+                    write_json)
 
 CI = (0.03, 0.97)
 OUT = OUTPUTS / "gates"
@@ -69,11 +69,11 @@ def gate(name, status, value, threshold, blocking, note=""):
 def main():
   OUT.mkdir(parents=True, exist_ok=True)
   eda = json.load(open(OUTPUTS / "eda" / "eda_summary.json"))
-  sel = json.load(open(OUTPUTS / "selection" / "selection.json"))
+  model_cfg = load_model_config()["model"]
   cv = json.load(open(OUTPUTS / "validation" / "cv_metrics.json"))
   health = json.load(open(OUTPUTS / "meridian" / "health_check.json"))
-  name = sel["selected"]
-  conv = json.load(open(OUTPUTS / "selection" / f"convergence_{name}.json"))
+  name = model_cfg["name"]
+  conv = json.load(open(OUTPUTS / "model" / "convergence.json"))
   nf = eda["noise_floor"]
   basis = {k: v.format(nat_floor=nf["national_mape_vs_13wk_ma"],
                        ratio=THRESHOLDS["cv_national_mape_max"] / nf["national_mape_vs_13wk_ma"],
@@ -95,7 +95,7 @@ def main():
                      "nonnegative": d["nonnegative_required_columns_ok"]}, "all true", True))
 
   raw = load_raw()
-  mmm = load(name)
+  mmm = load_model()
   geos = list(np.asarray(mmm.input_data.geo))
   obs = raw.pivot(index=GEO, columns=TIME, values="revenue").loc[geos].to_numpy()
 
@@ -107,7 +107,7 @@ def main():
                     f"prior predictive 94% interval width / observed mean: "
                     f"{float(np.mean(phi - plo) / obs.sum(0).mean()):.2f}"))
 
-  # 3. Convergence (current post-hoc gate; see selection.json gate_note).
+  # 3. Convergence (config/gates.toml; outputs/model/convergence.json).
   th = conv["thresholds"]
   gates.append(gate("convergence", "PASS" if conv["converged"] else "FAIL",
                     {"max_rhat": conv["max_rhat"], "min_ess_bulk": conv["min_ess_bulk"],
@@ -214,7 +214,7 @@ def main():
     c["details"] = {k: v for k, v in c["details"].items() if k != "correlation_matrix"}
 
   blocking_fail = [g["gate"] for g in gates if g["blocking"] and g["status"] == "FAIL"]
-  result = {"selected": name, "selection_basis": sel["selection_basis"], "thresholds": T,
+  result = {"model": name, "selected_as": model_cfg["selected_as"], "thresholds": T,
             "threshold_basis": basis, "gates": gates, "insample": insample,
             "meridian_health": {"overall_status": health["overall_status"],
                                 "health_score": health["health_score"],

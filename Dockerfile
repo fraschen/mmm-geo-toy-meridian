@@ -10,4 +10,5 @@ RUN python -m venv .venv && .venv/bin/pip install --no-cache-dir -r requirements
 
 COPY . .
 # Keeps the default backend (JAX); MERIDIAN_BACKEND is deliberately not set.
-CMD ["make", "eda"]
+# Default command: the production pipeline for the single model in config/model.toml.
+CMD ["make", "all"]

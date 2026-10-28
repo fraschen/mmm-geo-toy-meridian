@@ -24,7 +24,7 @@ from meridian.analysis import tensors
 from meridian.analysis.analyzer import Analyzer
 from meridian.schema.serde import meridian_serde
 
-MODEL_PATH = "model_build/linear_strong_pool_lag4/meridian_model.binpb"
+MODEL_PATH = "model_build/model/meridian_model.binpb"  # production model (config/model.toml)
 REPORT_DIR = "reports/meridian"
 OUT_DIR = "outputs/budget"
 START_DATE, END_DATE = "2023-01-23", "2024-01-15"

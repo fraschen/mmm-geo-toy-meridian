@@ -13,8 +13,8 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import (AXIS, CHANNEL_COLOR, CHANNELS, FIGURES, INK_2, MUTED, OUTPUTS,
-                    PALETTE, ROOT, style_matplotlib)
+from common import (AXIS, CHANNEL_COLOR, CHANNELS, FIGURES, HISTORY, INK_2, MUTED, OUTPUTS,
+                    PALETTE, ROOT, load_model_config, style_matplotlib)
 
 style_matplotlib()
 import matplotlib.pyplot as plt  # noqa: E402
@@ -42,12 +42,14 @@ def dates(ax):
 # ----------------------------------------------------------------------------
 def load_all():
   d = {k: J(p) for k, p in {
-      "eda": "eda/eda_summary.json", "sel": "selection/selection.json",
+      "eda": "eda/eda_summary.json",
       "gates": "gates/gates.json", "cv": "validation/cv_metrics.json",
       "contrib": "analysis/contributions.json", "ident": "analysis/identification.json",
       "levels": "analysis/calibration_levels.json", "cal": "calibration/calibration.json",
       "main": "budget/scenario_main.json", "stress": "budget/scenario_stress.json"}.items()}
-  d["conv"] = J(f"selection/convergence_{d['sel']['selected']}.json")
+  d["sel"] = json.load(open(HISTORY / "selection.json"))
+  d["conv"] = J("model/convergence.json")
+  d["cfg"] = load_model_config()
   d["nat"] = pd.read_csv(OUTPUTS / "analysis" / "national_weekly.csv", parse_dates=["time"])
   d["wc"] = pd.read_csv(OUTPUTS / "analysis" / "weekly_contribution.csv", parse_dates=["time"])
   d["rpp"] = pd.read_csv(OUTPUTS / "analysis" / "roi_prior_posterior.csv")
@@ -423,16 +425,16 @@ def diagnostics(d, figs):
   lines = [
       "# Diagnostics: model health",
       "",
-      f"Selected model: **{sel['selected']}** (R1: linear trend, `eta_m ~ HalfNormal(0.1)`, "
-      f"`max_lag = 4`), chosen by {sel['selection_basis']}.",
+      f"Production model (`config/model.toml`): {d['cfg']['model']['description']}",
       "",
       "Meridian's native reports: [health check](meridian/health_check.html), "
       "[Model Results Summary](meridian/results_summary.html).",
       "",
-      "## How the model was chosen",
-      "- Candidates differed on what the EDA cannot settle: baseline flexibility (knots), geo "
-      "pooling of media effects (`eta_m`) and max lag. Specs, priors and protocol are in "
-      "[candidates.md](candidates.md).",
+      "## Why this model",
+      "The pipeline fits one model. It was chosen once, from candidates that differed on what the EDA "
+      "cannot settle: baseline flexibility (knots), geo pooling of media effects (`eta_m`) and max lag. "
+      "The record (specs, diagnostics, comparison) is in "
+      "[docs/model_selection](../docs/model_selection/README.md); the candidates are not refitted.",
       "- Each fit had to pass a convergence gate before PSIS-LOO comparison. The fits ran in two rounds:",
   ] + [f"  - {r.replace('_', ' ').capitalize()}: {sel['round_notes'][r]} "
        + "; ".join(f"{sel['labels'][n]} {'passed' if sel['converged'][n] else 'failed'}" for n in names) + "."

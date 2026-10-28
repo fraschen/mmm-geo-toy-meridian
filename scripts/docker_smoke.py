@@ -11,7 +11,7 @@ from meridian import backend  # noqa: E402
 from meridian.model.model import Meridian  # noqa: E402
 
 data = build_input_data()
-mmm = Meridian(input_data=data, model_spec=build_model.make_spec("linear_strong_pool_lag4", data))
+mmm = Meridian(input_data=data, model_spec=build_model.make_spec(data))
 mmm.sample_posterior(n_chains=2, n_adapt=20, n_burnin=20, n_keep=20, seed=0)
 post = mmm.inference_data.posterior
 print(f"backend={backend.computation_backend().name} "

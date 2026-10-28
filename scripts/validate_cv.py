@@ -21,13 +21,14 @@ import dataclasses
 import numpy as np
 import pandas as pd
 
-from common import (GEO, MODEL_BUILD, OUTPUTS, RAW_CSV, SEED, TIME,
+from common import (GEO, OUTPUTS, RAW_CSV, SEED, TIME, load_model, load_model_config,
                     build_input_data, load_raw, write_json)
-from select_model import convergence
+from check_convergence import convergence
 
-SPEC = "linear_strong_pool_lag4"
-FOLDS = [104, 117, 130, 143]
-HORIZON = 13
+_VAL = load_model_config()["validation"]
+SPEC = load_model_config()["model"]["name"]
+FOLDS = _VAL["train_weeks"]
+HORIZON = _VAL["horizon"]
 CI = (0.03, 0.97)  # 94% interval
 OUT = OUTPUTS / "validation"
 
@@ -37,9 +38,8 @@ def fold_label(t0):
 
 
 def load_fold(t0):
-  from meridian.schema.serde import meridian_serde
-  return meridian_serde.load_meridian(
-      str(MODEL_BUILD / "cv" / f"{SPEC}_train{t0}" / "meridian_model.binpb"))
+  return load_model(train_weeks=t0)
+
 
 
 def window_input(t0):

@@ -19,9 +19,8 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import CHANNELS, GEO, OUTPUTS, TIME, load_raw, write_json
+from common import CHANNELS, GEO, OUTPUTS, TIME, load_model, load_raw, write_json
 from gates import revenue_draws
-from select_model import load
 
 CI = (0.03, 0.97)
 OUT = OUTPUTS / "analysis"
@@ -30,8 +29,7 @@ OUT = OUTPUTS / "analysis"
 def main():
   from meridian.analysis.analyzer import Analyzer
   OUT.mkdir(parents=True, exist_ok=True)
-  name = json.load(open(OUTPUTS / "selection" / "selection.json"))["selected"]
-  mmm = load(name)
+  mmm = load_model()
   an = Analyzer(model_context=mmm.model_context, inference_data=mmm.inference_data)
   times = [str(t) for t in np.asarray(mmm.input_data.time)]
   geos = list(np.asarray(mmm.input_data.geo))
@@ -110,7 +108,7 @@ def main():
                         "national": float(np.mean((obs.sum(0) >= nlo) & (obs.sum(0) <= nhi)))}
   write_json(levels, OUT / "calibration_levels.json")
 
-  conv = json.load(open(OUTPUTS / "selection" / f"convergence_{name}.json"))
+  conv = json.load(open(OUTPUTS / "model" / "convergence.json"))
   pd.DataFrame([{"variable": v, **p} for v, p in conv["per_variable"].items()]
                ).to_csv(OUT / "rhat_by_variable.csv", index=False)
   print(f"Wrote {OUT}")

@@ -1,6 +1,6 @@
 """Extended EDA (`make eda`): summary JSON and figures.
 
-Complements Meridian's EDA report (model_build/eda_default/eda.html) with the
+Complements Meridian's EDA report (model_build/model/eda.html) with the
 tests PROMPT.md Phase 1 asks for. Every EDA number quoted in the README is
 read from outputs/eda/eda_summary.json produced here.
 

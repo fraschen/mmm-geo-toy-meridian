@@ -20,6 +20,7 @@ RAW_CSV = ROOT / "data" / "raw" / "geo_all_channels.csv"
 OUTPUTS = ROOT / "outputs"
 FIGURES = ROOT / "reports" / "figures"
 MODEL_BUILD = ROOT / "model_build"
+HISTORY = ROOT / "docs" / "model_selection"  # how the production model was chosen (record)
 
 # Raw data source, pinned to the last upstream commit touching the file.
 DATA_COMMIT = "4229a279581b11ee09ad6f616324f90778480a25"
@@ -43,6 +44,28 @@ ORGANIC_MEDIA = ["Organic_channel0_impression"]
 
 SEED = 20260128
 GATES_CONFIG = ROOT / "config" / "gates.toml"
+MODEL_CONFIG = ROOT / "config" / "model.toml"
+
+
+def load_model_config() -> dict:
+  """The production model's specification, sampler and paths (config/model.toml)."""
+  import tomllib
+  with open(MODEL_CONFIG, "rb") as f:
+    return tomllib.load(f)
+
+
+def model_dir(kind: str = "model", train_weeks: int | None = None) -> Path:
+  """Directory of the production fit ('model'), a CV refit, or the calibrated refit."""
+  paths = load_model_config()["paths"]
+  if train_weeks is not None:
+    return ROOT / paths["cv"] / f"train{train_weeks}"
+  return ROOT / paths[kind]
+
+
+def load_model(kind: str = "model", train_weeks: int | None = None):
+  """Loads a saved fit with meridian_serde (skill convention)."""
+  from meridian.schema.serde import meridian_serde
+  return meridian_serde.load_meridian(str(model_dir(kind, train_weeks) / "meridian_model.binpb"))
 
 
 def load_gates_config() -> dict:

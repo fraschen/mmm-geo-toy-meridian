@@ -14,8 +14,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import CHANNELS, OUTPUTS, load_raw, write_json
-from select_model import load
+from common import CHANNELS, OUTPUTS, load_model, load_model_config, load_raw, write_json
 
 CI = (0.03, 0.97)
 OUT = OUTPUTS / "results"
@@ -29,10 +28,10 @@ def stats(x):
 def main():
   from meridian.analysis.analyzer import Analyzer
   OUT.mkdir(parents=True, exist_ok=True)
-  sel = json.load(open(OUTPUTS / "selection" / "selection.json"))
+  model_cfg = load_model_config()["model"]
   gates = json.load(open(OUTPUTS / "gates" / "gates.json"))
-  name = sel["selected"]
-  mmm = load(name)
+  name = model_cfg["name"]
+  mmm = load_model()
   an = Analyzer(model_context=mmm.model_context, inference_data=mmm.inference_data)
   n = len(CHANNELS)
   inc = np.asarray(an.incremental_outcome(use_kpi=False, include_non_paid_channels=False)).reshape(-1, n)
@@ -77,7 +76,7 @@ def main():
   versions = {p: md.version(p) for p in ("google-meridian", "jax", "jaxlib", "tfp-nightly",
                                          "numpy", "pandas", "arviz")}
   meta = {
-      "model": name, "selection_basis": sel["selection_basis"], "backend": "JAX",
+      "model": name, "description": model_cfg["description"], "backend": "JAX",
       "period": period, "level": "national (sum over 40 geos)",
       "credible_interval": "94% (3rd-97th percentile of 4 chains x 1000 posterior draws)",
       "package_versions": versions,
