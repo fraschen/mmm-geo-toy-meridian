@@ -1,15 +1,15 @@
 """Phase 3: convergence gate and PSIS-LOO selection (protocol in reports/candidates.md).
 
 For each candidate, in the fixed complexity order:
-  1. Convergence (see GATE_NOTE): R-hat <= 1.05, bulk and tail
-     ESS >= 400 for every element of every posterior variable (elements constant across
-     all draws are skipped), and <= 0.5% divergent draws.
+  1. Convergence gate (config/gates.toml, gates.convergence) for every element of
+     every posterior variable (elements constant across all draws are skipped).
      A failing candidate records only these diagnostics.
   2. Converged candidates: pointwise log-likelihood Normal(y_gt | mu_gt, sigma) on
      Meridian's transformed KPI (kpi_scaled, the likelihood node "y"), PSIS-LOO with
      ArviZ; pointwise values and Pareto k saved.
   3. Start from the simplest converged candidate; move to the next more complex one
-     only if its ELPD exceeds the current choice's by > 2 SE of the paired difference.
+     only if its ELPD exceeds the current choice's by more than se_rule SE of the paired
+     difference (config/gates.toml, selection).
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from common import MODEL_BUILD, OUTPUTS, write_json
+from common import MODEL_BUILD, OUTPUTS, load_gates_config, write_json
 
 # Rounds, in the order they were run (all 4 chains x 1000 kept draws, seed 20260128).
 ROUNDS = {
@@ -38,11 +38,14 @@ ORDER = ["linear_strong_pool_lag4", "linear_strong_pool", "linear_default_pool",
          "aks_strong_pool", "aks_default_pool"]
 LABEL = {"linear_strong_pool_lag4": "R1", "linear_strong_pool": "R2",
          "linear_default_pool": "C2", "aks_strong_pool": "C3", "aks_default_pool": "C1"}
-# Convergence gate (see GATE_NOTE).
-RHAT_MAX, ESS_MIN, SE_RULE = 1.05, 400, 2.0
-DIVERGENT_SHARE_MAX = 0.005
-GATE_NOTE = ("R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. The candidate "
-             "set and these criteria were revised after earlier rounds failed to converge.")
+# Convergence gate and selection rule: config/gates.toml.
+_CFG = load_gates_config()
+_CT = _CFG["gates"]["convergence"]["thresholds"]
+RHAT_MAX, ESS_MIN = _CT["rhat_max"], _CT["ess_min"]
+DIVERGENT_SHARE_MAX = _CT["divergent_share_max"]
+SE_RULE = _CFG["selection"]["thresholds"]["se_rule"]
+GATE_NOTE = (f"R-hat <= {RHAT_MAX}, bulk/tail ESS >= {ESS_MIN}, <= {DIVERGENT_SHARE_MAX:.1%} "
+             "divergent draws (config/gates.toml). " + _CFG["meta"]["note"])
 OUT = OUTPUTS / "selection"
 
 

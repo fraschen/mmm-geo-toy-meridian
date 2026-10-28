@@ -63,7 +63,8 @@ validate: cv-fit
 reports-meridian: model_build/linear_strong_pool_lag4/meridian_model.binpb
 	$(AWAKE) $(PY) model_build/results_report.py
 
-# Phase 5: automated gates (exits non-zero on any blocking failure).
+# Phase 5: automated gates (exits non-zero on any blocking failure). Rules and
+# thresholds: config/gates.toml; documentation: reports/gates.md (make reports).
 gates:
 	$(PY) scripts/gates.py
 
@@ -91,6 +92,7 @@ results:
 
 reports: results
 	$(PY) scripts/make_reports.py
+	$(PY) scripts/make_gates_report.py
 	$(PY) scripts/make_readme.py
 
 # Phase 9: Docker image from the lockfile; verifies EDA reproduces and sampling runs.

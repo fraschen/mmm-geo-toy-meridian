@@ -166,7 +166,9 @@ versions in `channel_results_metadata.json`.
 
 ## Gates
 
-`make gates`; details in [reports/diagnostics.md](reports/diagnostics.md#gate-summary-make-gates).
+`make gates` exits non-zero on any blocking failure. Rules, thresholds and their rationale live in
+[`config/gates.toml`](config/gates.toml), which the scripts read. [reports/gates.md](reports/gates.md)
+documents every gate (rule, threshold, source, basis, latest value) and is generated from that file.
 
 | gate | status | blocking |
 |---|---|---|
@@ -200,7 +202,8 @@ model_build/              Meridian skill scripts: build_model.py (EDA, fit, save
                           run_budget_optimization.py; *.binpb models (gitignored)
 scripts/                  EDA, selection, CV, gates, calibration, results, reports
 outputs/                  JSON/CSV outputs behind every reported number
-reports/                  eda.md, candidates.md, diagnostics.md, measurement.md, figures/,
+config/gates.toml         gate rules and thresholds (single source)
+reports/                  eda.md, candidates.md, diagnostics.md, measurement.md, gates.md, figures/,
                           meridian/ (Meridian HTML reports)
 Makefile, Dockerfile, requirements.lock
 ```

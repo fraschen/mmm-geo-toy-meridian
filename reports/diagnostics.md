@@ -76,6 +76,8 @@ Overall: PASS, health score 93.1/100. Where Meridian's thresholds are looser tha
 
 ## Gate summary (`make gates`)
 
+Rules, thresholds and rationale: [gates.md](gates.md) (generated from `config/gates.toml`).
+
 | gate | status | blocking |
 |---|---|---|
 | data_integrity | PASS | yes |
@@ -93,8 +95,6 @@ Overall: PASS, health score 93.1/100. Where Meridian's thresholds are looser tha
 | channel_roi_checks | WARN | no |
 
 Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_stability.
-
-Threshold basis: `cv_national_mape_max`: PROMPT.md value (10%). National noise floor: a 13-week moving average has MAPE 5.1%, so 10% is about 1.9x the floor; kept unchanged. `insample_geo_week_r2_min`: Not set by PROMPT.md. Geo levels dominate geo-week variance (revenue scales with population), so a model must explain at least half of it. `insample_national_r2_min`: Not set by PROMPT.md. National weekly revenue has CV 6.9% and is close to white noise (lag-1 -0.02), so a modest R2 is the realistic bar. `insample_coverage_range`: Not set by PROMPT.md. Nominal 94%; 85-99% allows sampling noise. `roi_contraction_min`: Not set by PROMPT.md. Contraction = 1 - posterior sd / prior sd of ROI; below 0.30 the posterior keeps > 70% of the prior spread (prior-driven, warn). `warn_within_geo_r2_min`: Not set by PROMPT.md. Share of within-geo variance explained. `warn_residual_lag1_abs_max`: Not set by PROMPT.md. |lag-1 autocorrelation| of residuals. `prior_predictive_national_coverage_min`: Not set by PROMPT.md. Share of national weeks inside the prior predictive 94% interval.
 
 ## Known limitations
 - Out-of-sample evidence is thin: only one CV fold fit converged, and its national interval coverage misses the gate.

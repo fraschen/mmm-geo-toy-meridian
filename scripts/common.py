@@ -42,6 +42,14 @@ NON_MEDIA_TREATMENTS = ["Promo"]
 ORGANIC_MEDIA = ["Organic_channel0_impression"]
 
 SEED = 20260128
+GATES_CONFIG = ROOT / "config" / "gates.toml"
+
+
+def load_gates_config() -> dict:
+  """Gate rules and thresholds (config/gates.toml)."""
+  import tomllib
+  with open(GATES_CONFIG, "rb") as f:
+    return tomllib.load(f)
 
 # Categorical palette (dataviz reference instance, light mode), fixed order.
 PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4",

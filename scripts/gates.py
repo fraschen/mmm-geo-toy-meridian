@@ -1,8 +1,9 @@
 """Phase 5: automated gates for the selected spec (`make gates`).
 
 Exits non-zero if any blocking gate fails. Writes outputs/gates/gates.json and
-outputs/gates/insample_national.csv. Thresholds and their basis are in THRESHOLDS;
-accuracy thresholds are set against the EDA noise floor (eda_summary.json).
+outputs/gates/insample_national.csv. Rules, thresholds and their basis are in
+config/gates.toml; accuracy thresholds are set against the EDA noise floor
+(eda_summary.json).
 """
 
 from __future__ import annotations
@@ -14,46 +15,17 @@ import numpy as np
 import pandas as pd
 
 from common import (CHANNELS, GEO, OUTPUTS, TIME, load_raw, sha256, RAW_CSV,
-                    DATA_SHA256, write_json)
+                    DATA_SHA256, load_gates_config, write_json)
 from select_model import load
 
 CI = (0.03, 0.97)
 OUT = OUTPUTS / "gates"
 
-THRESHOLDS = {
-    "prior_predictive_national_coverage_min": 0.80,
-    "insample_geo_week_r2_min": 0.50,
-    "insample_national_r2_min": 0.25,
-    "insample_coverage_range": [0.85, 0.99],
-    "warn_within_geo_r2_min": 0.10,
-    "warn_residual_lag1_abs_max": 0.20,
-    "cv_error_ratio_max": 1.25,
-    "cv_national_mape_max": 0.10,
-    "cv_coverage_min": 0.80,
-    "roi_fold_ratio_warn": 2.0,
-    "roi_fold_ratio_fail": 5.0,
-    "roi_contraction_min": 0.30,
-    "p_roi_gt_1_determined": [0.10, 0.90],
-}
-BASIS = {
-    "cv_national_mape_max": ("PROMPT.md value (10%). National noise floor: a 13-week moving "
-                             "average has MAPE {nat_floor:.1%}, so 10% is about {ratio:.1f}x "
-                             "the floor; kept unchanged."),
-    "insample_geo_week_r2_min": ("Not set by PROMPT.md. Geo levels dominate geo-week variance "
-                                 "(revenue scales with population), so a model must explain at "
-                                 "least half of it."),
-    "insample_national_r2_min": ("Not set by PROMPT.md. National weekly revenue has CV "
-                                 "{nat_cv:.1%} and is close to white noise (lag-1 "
-                                 "{nat_ac:.2f}), so a modest R2 is the realistic bar."),
-    "insample_coverage_range": "Not set by PROMPT.md. Nominal 94%; 85-99% allows sampling noise.",
-    "roi_contraction_min": ("Not set by PROMPT.md. Contraction = 1 - posterior sd / prior sd of "
-                            "ROI; below 0.30 the posterior keeps > 70% of the prior spread "
-                            "(prior-driven, warn)."),
-    "warn_within_geo_r2_min": "Not set by PROMPT.md. Share of within-geo variance explained.",
-    "warn_residual_lag1_abs_max": "Not set by PROMPT.md. |lag-1 autocorrelation| of residuals.",
-    "prior_predictive_national_coverage_min": ("Not set by PROMPT.md. Share of national weeks "
-                                               "inside the prior predictive 94% interval."),
-}
+# Rules, thresholds and their basis: config/gates.toml.
+CONFIG = load_gates_config()
+THRESHOLDS = {k: v for g in CONFIG["gates"].values() for k, v in g["thresholds"].items()
+              if g is not CONFIG["gates"]["convergence"]}
+BASIS = {name: g["basis"] for name, g in CONFIG["gates"].items()}
 
 
 def revenue_draws(mmm, use_posterior=True):
@@ -105,6 +77,8 @@ def main():
   nf = eda["noise_floor"]
   basis = {k: v.format(nat_floor=nf["national_mape_vs_13wk_ma"],
                        ratio=THRESHOLDS["cv_national_mape_max"] / nf["national_mape_vs_13wk_ma"],
+                       geo_cv=nf["geo_weekly_cv"]["median"],
+                       geo_floor=nf["geo_mape_vs_13wk_ma"]["median"],
                        nat_cv=nf["national_weekly_cv"], nat_ac=nf["national_lag1_autocorr"])
            for k, v in BASIS.items()}
   T = THRESHOLDS

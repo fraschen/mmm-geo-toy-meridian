@@ -511,13 +511,14 @@ def diagnostics(d, figs):
       "",
       "## Gate summary (`make gates`)",
       "",
+      "Rules, thresholds and rationale: [gates.md](gates.md) (generated from `config/gates.toml`).",
+      "",
       table(pd.DataFrame([[x["gate"], x["status"], "yes" if x["blocking"] else "no"] for x in d["gates"]["gates"]],
                          columns=["gate", "status", "blocking"])),
       "",
       f"Blocking failures: {', '.join(d['gates']['blocking_failures']) or 'none'}.",
       "",
-      "Threshold basis: " + " ".join(f"`{k}`: {v}" for k, v in d["gates"]["threshold_basis"].items()),
-      "",
+
       "## Known limitations",
       "- Out-of-sample evidence is thin: only one CV fold fit converged, and its national interval "
       "coverage misses the gate.",

@@ -1,0 +1,163 @@
+# Automated acceptance gates: the single source of the rules and their thresholds.
+#
+# Read by scripts/select_model.py (convergence gate, selection rule) and
+# scripts/gates.py (all other gates). reports/gates.md is generated from this file
+# plus the latest results in outputs/gates/gates.json.
+#
+# Fields per gate:
+#   blocking    true: a FAIL makes `make gates` exit non-zero (model not client-ready).
+#               false: the gate can only WARN (reportable with caveats).
+#   applies_to  which fits or quantities the gate evaluates.
+#   checks      what is measured and the PASS / WARN / FAIL rule.
+#   thresholds  numeric values used by the code (keys are read by the scripts).
+#   source      "PROMPT.md" if the value comes from the study brief, "project" if set here.
+#   basis       why the threshold has this value. {placeholders} are filled from
+#               outputs/eda/eda_summary.json when gates.py runs.
+#   enforced_in script and function that apply the rule.
+
+[meta]
+note = """The candidate set and the convergence criteria were revised after earlier rounds \
+failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 \
+and 0 divergences."""
+interval = "94% (3rd-97th percentile of the predictive or posterior draws)"
+
+# ---------------------------------------------------------------------------- data
+[gates.data_integrity]
+blocking = true
+applies_to = "raw data file"
+checks = """Raw CSV matches its pinned SHA-256; balanced 40 x 156 geo-week panel; no missing \
+values; no duplicate geo-weeks; spend, impressions, KPI, population and revenue per KPI are \
+non-negative. FAIL if any check is false."""
+thresholds = {}
+source = "PROMPT.md"
+basis = "Hard data checks; any failure means the inputs are not the documented dataset."
+enforced_in = "scripts/gates.py (data_integrity), values from scripts/eda.py"
+
+# --------------------------------------------------------------------------- prior
+[gates.prior_predictive_coverage]
+blocking = true
+applies_to = "selected model, prior draws"
+checks = """Share of national weekly revenue observations inside the prior predictive 94% \
+interval. FAIL below the minimum."""
+thresholds = { prior_predictive_national_coverage_min = 0.80 }
+source = "project"
+basis = """Rules out priors that cannot generate the observed data. A weak check: the prior \
+predictive interval is wide by design, so a PASS says little about prior quality."""
+enforced_in = "scripts/gates.py"
+
+# --------------------------------------------------------------------- convergence
+[gates.convergence]
+blocking = true
+applies_to = "every fit: candidates, CV fold fits, calibrated refit"
+checks = """For every element of every posterior variable (elements constant across all draws, \
+such as the baseline geo's intercept, are skipped): max R-hat, min bulk ESS, min tail ESS; and \
+the share of divergent NUTS transitions. FAIL if any threshold is breached. A failing fit \
+records only its convergence diagnostics; its ROI, fit and contributions are never reported."""
+thresholds = { rhat_max = 1.05, ess_min = 400, divergent_share_max = 0.005 }
+source = "project (revised; see meta.note)"
+basis = """ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than \
+their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent \
+draws (20 of 4000) are tolerated."""
+enforced_in = "scripts/select_model.py (convergence)"
+
+[selection]
+applies_to = "converged candidates"
+checks = """PSIS-LOO ELPD from the pointwise log-likelihood on Meridian's transformed KPI. Start \
+from the simplest converged candidate; switch to a more complex one only if its ELPD is higher \
+by more than se_rule x the SE of the paired difference."""
+thresholds = { se_rule = 2.0 }
+source = "PROMPT.md"
+basis = "Prefer the simpler model unless the data clearly support the more complex one."
+enforced_in = "scripts/select_model.py"
+
+# ------------------------------------------------------------------ in-sample fit
+[gates.insample_r2]
+blocking = true
+applies_to = "selected model, all 156 weeks"
+checks = "R2 of the posterior-mean prediction at geo-week and national weekly level. FAIL if either is below its minimum."
+thresholds = { insample_geo_week_r2_min = 0.50, insample_national_r2_min = 0.25 }
+source = "project"
+basis = """Geo-week: revenue scales with population, so geo levels dominate the variance; a \
+model must explain at least half of it. National: weekly revenue has CV {nat_cv:.1%} and is \
+close to white noise (lag-1 {nat_ac:.2f}), so there is little variance to explain and a modest \
+R2 is the realistic bar."""
+enforced_in = "scripts/gates.py"
+
+[gates.insample_coverage]
+blocking = true
+applies_to = "selected model, all 156 weeks"
+checks = "Share of observations inside the 94% posterior predictive interval, at geo-week and national level. FAIL outside the range."
+thresholds = { insample_coverage_range = [0.85, 0.99] }
+source = "project"
+basis = "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too narrow; above: too wide."
+enforced_in = "scripts/gates.py"
+
+[gates.within_geo_r2]
+blocking = false
+applies_to = "selected model"
+checks = "R2 after removing each geo's mean (week-to-week signal within geos). WARN below the minimum."
+thresholds = { warn_within_geo_r2_min = 0.10 }
+source = "PROMPT.md (as a warning)"
+basis = """Geo-week revenue has a within-geo CV of {geo_cv:.0%} and is close to white noise, so \
+most within-geo variance is unexplainable; this flags a model with almost no within-geo signal."""
+enforced_in = "scripts/gates.py"
+
+[gates.residual_autocorrelation]
+blocking = false
+applies_to = "selected model"
+checks = "Lag-1 autocorrelation of residuals: national weekly series and median across geos. WARN if either absolute value exceeds the maximum."
+thresholds = { warn_residual_lag1_abs_max = 0.20 }
+source = "PROMPT.md (as a warning)"
+basis = "Revenue itself has lag-1 autocorrelation near 0 (EDA), so residual autocorrelation signals missing time structure."
+enforced_in = "scripts/gates.py"
+
+# ------------------------------------------------------------- out-of-sample (CV)
+[gates.cv]
+blocking = true
+applies_to = """holdout (train 1-143, forecast 144-156) and each rolling-origin fold (train 1-104, \
+1-117, 1-130; forecast the next 13 weeks); reported as cv_fold_104, cv_fold_117, cv_fold_130, \
+cv_holdout"""
+checks = """Each fold is refitted on its training weeks only (all scaling inside the fold). FAIL if \
+the fold fit does not pass the convergence gate (no forecast evidence), or if any of: \
+forecast/in-sample MAPE ratio above the maximum (geo-week or national); national weekly MAPE \
+above the maximum; 94% interval coverage below the minimum (geo-week or national)."""
+thresholds = { cv_error_ratio_max = 1.25, cv_national_mape_max = 0.10, cv_coverage_min = 0.80 }
+source = "PROMPT.md"
+basis = """National MAPE: a 13-week moving average has MAPE {nat_floor:.1%} nationally, so 10% is \
+about {ratio:.1f}x the noise floor; kept at the PROMPT.md value. The error ratio and coverage \
+are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: \
+its noise floor is {geo_floor:.0%}."""
+enforced_in = "scripts/validate_cv.py (metrics), scripts/gates.py (gate)"
+
+[gates.roi_fold_stability]
+blocking = true
+applies_to = "converged CV fold fits"
+checks = """Per channel, max/min of the posterior-mean ROI across converged folds. WARN above the \
+warn ratio, FAIL above the fail ratio. FAIL (not assessable) with fewer than 2 converged folds."""
+thresholds = { roi_fold_ratio_warn = 2.0, roi_fold_ratio_fail = 5.0 }
+source = "PROMPT.md"
+basis = "ROI that changes several-fold when a quarter of data is added is not a stable estimate."
+enforced_in = "scripts/gates.py"
+
+# -------------------------------------------------------------------- per channel
+[gates.channel_roi_checks]
+blocking = false
+applies_to = "selected model, each paid channel"
+checks = """Two warnings per channel. Prior-driven: ROI contraction (1 - posterior sd / prior sd) \
+below the minimum. Payback undetermined: P(ROI > 1) strictly between the two bounds."""
+thresholds = { roi_contraction_min = 0.30, p_roi_gt_1_determined = [0.10, 0.90] }
+source = "PROMPT.md (bounds 0.1 / 0.9); project (contraction 0.30)"
+basis = """Contraction below 0.30 means the posterior keeps more than 70% of the prior spread, so \
+the data say little. A payback call needs at least 90% posterior probability either way."""
+enforced_in = "scripts/gates.py"
+
+# ---------------------------------------------------- Meridian's own health checks
+[meridian_health]
+blocking = false
+applies_to = "selected model"
+checks = """Meridian's ModelReviewer (convergence, baseline, Bayesian PPP, goodness of fit, \
+prior-posterior shift, ROI plausibility). Reported next to our gates, not gating."""
+looser_than_ours = """Convergence: R-hat < 1.2 only (no ESS or divergence check). Goodness of fit: \
+R2/MAPE for guidance, no pass bar. Bayesian PPP: total outcome only, while our gate checks \
+weekly interval coverage."""
+enforced_in = "model_build/results_report.py (outputs/meridian/health_check.json)"

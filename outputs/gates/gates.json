@@ -23,14 +23,16 @@
     ]
   },
   "threshold_basis": {
-    "cv_national_mape_max": "PROMPT.md value (10%). National noise floor: a 13-week moving average has MAPE 5.1%, so 10% is about 1.9x the floor; kept unchanged.",
-    "insample_geo_week_r2_min": "Not set by PROMPT.md. Geo levels dominate geo-week variance (revenue scales with population), so a model must explain at least half of it.",
-    "insample_national_r2_min": "Not set by PROMPT.md. National weekly revenue has CV 6.9% and is close to white noise (lag-1 -0.02), so a modest R2 is the realistic bar.",
-    "insample_coverage_range": "Not set by PROMPT.md. Nominal 94%; 85-99% allows sampling noise.",
-    "roi_contraction_min": "Not set by PROMPT.md. Contraction = 1 - posterior sd / prior sd of ROI; below 0.30 the posterior keeps > 70% of the prior spread (prior-driven, warn).",
-    "warn_within_geo_r2_min": "Not set by PROMPT.md. Share of within-geo variance explained.",
-    "warn_residual_lag1_abs_max": "Not set by PROMPT.md. |lag-1 autocorrelation| of residuals.",
-    "prior_predictive_national_coverage_min": "Not set by PROMPT.md. Share of national weeks inside the prior predictive 94% interval."
+    "data_integrity": "Hard data checks; any failure means the inputs are not the documented dataset.",
+    "prior_predictive_coverage": "Rules out priors that cannot generate the observed data. A weak check: the prior predictive interval is wide by design, so a PASS says little about prior quality.",
+    "convergence": "ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent draws (20 of 4000) are tolerated.",
+    "insample_r2": "Geo-week: revenue scales with population, so geo levels dominate the variance; a model must explain at least half of it. National: weekly revenue has CV 6.9% and is close to white noise (lag-1 -0.02), so there is little variance to explain and a modest R2 is the realistic bar.",
+    "insample_coverage": "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too narrow; above: too wide.",
+    "within_geo_r2": "Geo-week revenue has a within-geo CV of 30% and is close to white noise, so most within-geo variance is unexplainable; this flags a model with almost no within-geo signal.",
+    "residual_autocorrelation": "Revenue itself has lag-1 autocorrelation near 0 (EDA), so residual autocorrelation signals missing time structure.",
+    "cv": "National MAPE: a 13-week moving average has MAPE 5.1% nationally, so 10% is about 1.9x the noise floor; kept at the PROMPT.md value. The error ratio and coverage are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: its noise floor is 23%.",
+    "roi_fold_stability": "ROI that changes several-fold when a quarter of data is added is not a stable estimate.",
+    "channel_roi_checks": "Contraction below 0.30 means the posterior keeps more than 70% of the prior spread, so the data say little. A payback call needs at least 90% posterior probability either way."
   },
   "gates": [
     {
