@@ -42,7 +42,16 @@ lines = [
     "",
     f"Revenue per conversion barely changes (it varies by only {pct(d['revenue_per_conversion']['cv'])}), so "
     "results in revenue and in conversions tell the same story.",
-    "",
+    *details(f"{d['n_geos']} geos x {d['n_weeks']} weeks, {d['n_rows']} rows, weekly steps of "
+             f"{', '.join(map(str, d['time_step_days']))} days; balanced panel: {d['balanced_panel']}; duplicates: "
+             f"{d['duplicate_geo_weeks']}; missing values: {d['missing_values_total']}.",
+             "Negative values only in the centred controls ("
+             + ", ".join(f"{k}: {v}" for k, v in d["negative_values"].items()) + "); spend, impressions, KPI, "
+             f"population and revenue per conversion all non-negative: {d['nonnegative_required_columns_ok']}.",
+             f"Revenue per conversion: mean {d['revenue_per_conversion']['mean']:.4f}, CV "
+             f"{pct(d['revenue_per_conversion']['cv'])}, range {d['revenue_per_conversion']['min']:.4f}-"
+             f"{d['revenue_per_conversion']['max']:.4f}.",
+             f"Total spend {d['total_spend'] / 1e6:,.1f}M over 156 weeks; last 52 weeks {d['last_52_weeks_spend'] / 1e6:,.1f}M."),
     "Channel3 takes the largest share of the budget; Channel2 the smallest:",
     "",
     "- " + ", ".join(f"{c} {pct(d['spend_share'][c])}" for c in CHANNELS),
@@ -73,9 +82,17 @@ lines = [
     "Revenue shows no repeating yearly pattern beyond what chance would produce. Any seasonal swing "
     f"is at most about {pct(sb['peak_to_trough_upper_95'], 0)} from peak to trough, no larger than ordinary "
     "week-to-week noise. **For the model:** no seasonal component is needed.",
-    *details(f"Week-of-year pattern vs random noise: p = {se['p_value_ar1']:.2f}.",
-             f"Fitted yearly wave: peak-to-trough {pct(sb['peak_to_trough_estimate'])}, "
-             f"95% upper bound {pct(sb['peak_to_trough_upper_95'])}."),
+    *details(f"Week-of-year averages explain R2 = {se['observed_r2']:.3f} of detrended national revenue. Pure noise "
+             f"of the same length gives {se['null_iid_mean']:.3f} on average (95th percentile {se['null_iid_p95']:.3f}); "
+             f"p = {se['p_value_iid']:.2f} (independent noise), {se['p_value_ar1']:.2f} (autocorrelated noise, "
+             f"lag-1 = {se['detrended_lag1_autocorr']:.3f}).",
+             f"Fitted yearly wave (trend + one sine/cosine pair, HAC SEs): peak-to-trough "
+             f"{pct(sb['peak_to_trough_estimate'])} of mean revenue, 95% upper bound {pct(sb['peak_to_trough_upper_95'])}, "
+             f"p = {sb['p_value']:.2f}.",
+             f"Per region: {se['geos_significant_5pct_iid']} of {d['n_geos']} are significant at 5% "
+             f"({se['geos_expected_by_chance']:.0f} expected by chance); there is no shared yearly cycle nationally.",
+             "These are frequentist screening tests used to inform the model specification; they do not "
+             "enter the Bayesian model."),
     fig(se["figure"]),
     "",
     "## How noisy is revenue week to week?",
@@ -85,19 +102,26 @@ lines = [
     "**For the model:** this sets the bar for accuracy. Even a simple 13-week average misses a typical "
     f"regional week by {pct(nf['geo_mape_vs_13wk_ma']['median'], 0)} and a national week by "
     f"{pct(nf['national_mape_vs_13wk_ma'])}, so the model cannot be expected to do much better.",
-    *details(f"Regional variation (CV) ranges from {pct(nf['geo_weekly_cv']['min'])} to {pct(nf['geo_weekly_cv']['max'])}.",
-             f"Week-to-week correlation: {nf['geo_lag1_autocorr']['median']:.3f} (regions, median), "
-             f"{nf['national_lag1_autocorr']:.3f} (national)."),
+    *details(f"Geo-week revenue: CV median {pct(nf['geo_weekly_cv']['median'])} (range {pct(nf['geo_weekly_cv']['min'])}-"
+             f"{pct(nf['geo_weekly_cv']['max'])}); detrended CV {pct(nf['geo_detrended_cv']['median'])}; lag-1 autocorrelation "
+             f"of detrended revenue median {nf['geo_lag1_autocorr']['median']:.3f}; MAPE of a 13-week moving average "
+             f"{pct(nf['geo_mape_vs_13wk_ma']['median'])}; median week-on-week change {pct(nf['geo_median_abs_week_on_week_change']['median'])}.",
+             f"National weekly revenue: CV {pct(nf['national_weekly_cv'])}, lag-1 autocorrelation "
+             f"{nf['national_lag1_autocorr']:.3f}, MAPE of a 13-week moving average {pct(nf['national_mape_vs_13wk_ma'])}, "
+             f"median week-on-week change {pct(nf['national_median_abs_week_on_week_change'])}."),
     "## Some weeks move all regions together",
     f"Some weeks are up or down in every region at once: these shared weekly movements explain "
     f"{pct(te['week_share_of_within_geo_per_capita_revenue_variance'])} of regional revenue variation, against "
     f"{pct(te['permutation_null_mean'])} expected by chance. Part of this is likely media and the controls, "
     "which are also timed nationally, so the data alone cannot tell how much belongs to the baseline. "
     "This is why we tested both a flexible and a straight-line baseline when choosing the model.",
-    *details(f"Permutation test p {'< 0.001' if te['permutation_p_value'] == 0 else '= ' + format(te['permutation_p_value'], '.3f')}.",
-             f"Meridian's automatic knot selection picks {te['aks_n_knots']} of {d['n_weeks']} weeks as knots.",
-             f"Noise level vs region size: Spearman {te['per_capita_sd_spearman_with_population']:+.2f}; the "
-             f"quietest region's noise is {te['per_capita_sd_min_over_max']:.2f}x the noisiest's."),
+    *details(f"Week dummies explain {pct(te['week_share_of_within_geo_per_capita_revenue_variance'])} of within-geo "
+             f"per-capita revenue variance; a within-geo permutation null gives {pct(te['permutation_null_mean'])} "
+             f"(95th percentile {pct(te['permutation_null_p95'])}, p "
+             f"{'< 0.001' if te['permutation_p_value'] == 0 else '= ' + format(te['permutation_p_value'], '.3f')}).",
+             f"Meridian's Automatic Knot Selection on the outcome picks {te['aks_n_knots']} of {d['n_weeks']} weeks as knots.",
+             f"Per-region per-capita revenue sd vs population: Spearman {te['per_capita_sd_spearman_with_population']:+.2f}; "
+             f"smallest/largest sd {te['per_capita_sd_min_over_max']:.2f} (input to the single-residual-variance choice)."),
     "## Media's effect is hard to see in the raw data",
     f"Within each region, weeks with more spend do not clearly have more revenue: every correlation "
     f"between spend and revenue is tiny (at most {max_lag_r:.2f} in size), whether we look at the same week or "
@@ -105,27 +129,36 @@ lines = [
     "to the noise, and the model has to pool information across regions to find it. "
     "**For the model:** media effects are pooled strongly across regions, and the data do not tell us "
     "how long media effects last (we use up to 4 weeks).",
-    *details("Same-week correlations, region averages removed: "
+    *details(f"All within-region correlations are small (|r| <= {max_lag_r:.3f}; 95% band under zero correlation "
+             f"+/-{lag['null_95pct_band']:.3f}).",
+             "Same-week correlations with region averages removed: "
              + ", ".join(f"{c} {lag['geo_demeaned'][c][0]:+.3f}" for c in CHANNELS)
-             + "; after removing the controls: "
-             + ", ".join(f"{c} {lag['geo_demeaned_partial_controls'][c][0]:+.3f}" for c in CHANNELS) + ".",
-             f"Range expected from pure chance: +/-{lag['null_95pct_band']:.3f}."),
+             + "; after removing the controls, Promo and organic: "
+             + ", ".join(f"{c} {lag['geo_demeaned_partial_controls'][c][0]:+.3f}" for c in CHANNELS)
+             + ". The negative raw same-week correlations come from the controls.",
+             "Lags (weeks) where the control-adjusted correlation is above the noise band: "
+             + "; ".join(f"{c} {v or 'none'}" for c, v in lag["lags_above_null_band_partial"].items())
+             + ". No clear decay pattern, so the data do not settle the maximum lag."),
     fig(lag["figure"]),
     "",
     "## Channels are not too entangled",
     "Channels are switched on and off at fairly different times, so the model can tell them apart. "
     f"The strongest overlap between two channels is a correlation of {col['within_geo_max_abs_corr']:.2f} within regions.",
-    *details(f"Largest within-region correlation {col['within_geo_max_abs_corr']:.2f}; national "
-             f"{col['national_max_abs_corr']:.2f}; variance inflation factor at most {col['max_vif']:.2f} "
-             "(values above 5-10 would be a concern)."),
+    *details(f"Within-region spend correlation: max |r| = {col['within_geo_max_abs_corr']:.2f}; national weekly max "
+             f"|r| = {col['national_max_abs_corr']:.2f}. Within-region variance inflation factor (spend, Promo, organic, "
+             f"controls) at most {col['max_vif']:.2f} (values above 5-10 would be a concern).",
+             "Share of each variable's within-region variation that is common national timing: "
+             + ", ".join(f"{k.replace('_spend', '')} {pct(v)}" for k, v in col["within_geo_variance_share_explained_by_week"].items()) + "."),
     fig(col["figure"]),
     "",
     "## Bigger regions have proportionally bigger revenue and spend",
     "Revenue and spend grow in step with population: double the population, roughly double the revenue. "
     "**For the model:** revenue and media are expressed per person, which is Meridian's default.",
-    *details(f"Revenue vs population: Spearman {pop['revenue']['spearman']:.3f}, log-log slope "
-             f"{pop['revenue']['loglog_slope']:.2f} (+/- {pop['revenue']['loglog_slope_se']:.2f}); spend "
-             f"{pop['spend']['spearman']:.3f}, slope {pop['spend']['loglog_slope']:.2f} (+/- {pop['spend']['loglog_slope_se']:.2f}).",
+    *details(f"Total revenue vs population: Spearman {pop['revenue']['spearman']:.3f}, log-log slope "
+             f"{pop['revenue']['loglog_slope']:.2f} +/- {pop['revenue']['loglog_slope_se']:.2f}; total spend: Spearman "
+             f"{pop['spend']['spearman']:.3f}, slope {pop['spend']['loglog_slope']:.2f} +/- {pop['spend']['loglog_slope_se']:.2f}.",
+             f"Revenue per capita varies across regions by {pct(pop['revenue_per_capita_cv_across_geos'])} (CV); spend per "
+             f"capita by {pct(pop['spend_per_capita_cv_across_geos'])}.",
              "Control averages barely track population (Spearman "
              + ", ".join(f"{k} {v:+.2f}" for k, v in pop["control_geo_mean_spearman_with_population"].items())
              + "), so the controls are not scaled by population."),
@@ -138,8 +171,10 @@ lines = [
     "region-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed "
     "shape of the response curve.",
     *details("Share of region-weeks with zero spend: " + ", ".join(f"{c} {pct(gm[c]['share_zero_geo_weeks'])}" for c in CHANNELS) + ".",
-             "Share of last-52-week region-weeks above the region's historical maximum if spend is "
-             "raised 20%: " + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.2'])}" for c in CHANNELS)
+             "Median non-zero week as a share of the region's maximum: "
+             + ", ".join(f"{c} {gm[c]['nonzero_ratio_to_geo_max_quantiles']['0.5']:.2f}" for c in CHANNELS) + ".",
+             "Share of last-52-week region-weeks above the region's historical maximum if spend is raised 20%: "
+             + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.2'])}" for c in CHANNELS)
              + "; raised 50%: " + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.5'])}" for c in CHANNELS) + "."),
     fig(gm["figure"]),
     "",
@@ -159,9 +194,11 @@ lines = [
     "variation in their estimated effects is real, not noise). Promo and organic media behave much more "
     "consistently. **For the model:** control effects are allowed to vary by region.",
     *details(het["model"], *[
-        f"{c}: average effect {het[c]['pooled_fixed_effect']:+.3f}; share of variation that is real (I2) "
-        f"{pct(het[c]['i2'])} (Cochran's Q = {het[c]['cochran_q']:.1f}, p = {het[c]['q_p_value']:.2g}); "
-        f"{pct(het[c]['share_geos_positive'], 0)} of regions positive."
+        f"{c}: pooled {het[c]['pooled_fixed_effect']:+.3f} (SE {het[c]['pooled_se']:.3f}), Cochran's Q = "
+        f"{het[c]['cochran_q']:.1f} on {het[c]['df']} df (p = {het[c]['q_p_value']:.2g}), I2 = {pct(het[c]['i2'])}, "
+        f"tau = {het[c]['tau']:.3f}, {pct(het[c]['share_geos_positive'])} of regions positive; Spearman with "
+        f"population {het[c]['spearman_estimate_vs_population']:+.2f}; I2 on the region-relative scale "
+        f"{pct(het['sensitivity_geo_relative_scale'][c]['i2'])}."
         for c in CONTROLS + ["Promo", "Organic_channel0_impression"]]),
     fig(het["figure"]),
     "",

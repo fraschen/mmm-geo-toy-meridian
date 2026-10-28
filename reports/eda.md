@@ -7,6 +7,15 @@ We have 40 regions (geos) observed every week for 156 weeks (2021-01-25 to 2024-
 
 Revenue per conversion barely changes (it varies by only 0.5%), so results in revenue and in conversions tell the same story.
 
+<details><summary>Technical details</summary>
+
+- 40 geos x 156 weeks, 6240 rows, weekly steps of 7 days; balanced panel: True; duplicates: 0; missing values: 0.
+- Negative values only in the centred controls (competitor_sales_control: 3238, sentiment_score_control: 3216); spend, impressions, KPI, population and revenue per conversion all non-negative: True.
+- Revenue per conversion: mean 0.0200, CV 0.5%, range 0.0197-0.0204.
+- Total spend 219.5M over 156 weeks; last 52 weeks 71.4M.
+
+</details>
+
 Channel3 takes the largest share of the budget; Channel2 the smallest:
 
 - Channel0 18.5%, Channel1 14.3%, Channel2 5.5%, Channel3 40.0%, Channel4 21.7%
@@ -43,8 +52,10 @@ Revenue shows no repeating yearly pattern beyond what chance would produce. Any 
 
 <details><summary>Technical details</summary>
 
-- Week-of-year pattern vs random noise: p = 0.28.
-- Fitted yearly wave: peak-to-trough 0.9%, 95% upper bound 4.1%.
+- Week-of-year averages explain R2 = 0.360 of detrended national revenue. Pure noise of the same length gives 0.330 on average (95th percentile 0.418); p = 0.28 (independent noise), 0.28 (autocorrelated noise, lag-1 = -0.025).
+- Fitted yearly wave (trend + one sine/cosine pair, HAC SEs): peak-to-trough 0.9% of mean revenue, 95% upper bound 4.1%, p = 0.83.
+- Per region: 6 of 40 are significant at 5% (2 expected by chance); there is no shared yearly cycle nationally.
+- These are frequentist screening tests used to inform the model specification; they do not enter the Bayesian model.
 
 </details>
 
@@ -55,8 +66,8 @@ A typical region's weekly revenue moves up and down by about 30% around its aver
 
 <details><summary>Technical details</summary>
 
-- Regional variation (CV) ranges from 21.5% to 49.4%.
-- Week-to-week correlation: 0.007 (regions, median), -0.025 (national).
+- Geo-week revenue: CV median 30.0% (range 21.5%-49.4%); detrended CV 29.9%; lag-1 autocorrelation of detrended revenue median 0.007; MAPE of a 13-week moving average 23.1%; median week-on-week change 28.1%.
+- National weekly revenue: CV 6.9%, lag-1 autocorrelation -0.025, MAPE of a 13-week moving average 5.1%, median week-on-week change 6.4%.
 
 </details>
 
@@ -65,9 +76,9 @@ Some weeks are up or down in every region at once: these shared weekly movements
 
 <details><summary>Technical details</summary>
 
-- Permutation test p < 0.001.
-- Meridian's automatic knot selection picks 66 of 156 weeks as knots.
-- Noise level vs region size: Spearman -0.33; the quietest region's noise is 0.60x the noisiest's.
+- Week dummies explain 5.3% of within-geo per-capita revenue variance; a within-geo permutation null gives 2.5% (95th percentile 3.0%, p < 0.001).
+- Meridian's Automatic Knot Selection on the outcome picks 66 of 156 weeks as knots.
+- Per-region per-capita revenue sd vs population: Spearman -0.33; smallest/largest sd 0.60 (input to the single-residual-variance choice).
 
 </details>
 
@@ -76,8 +87,9 @@ Within each region, weeks with more spend do not clearly have more revenue: ever
 
 <details><summary>Technical details</summary>
 
-- Same-week correlations, region averages removed: Channel0 +0.032, Channel1 -0.011, Channel2 -0.050, Channel3 -0.052, Channel4 -0.079; after removing the controls: Channel0 +0.001, Channel1 +0.013, Channel2 +0.014, Channel3 +0.024, Channel4 +0.011.
-- Range expected from pure chance: +/-0.025.
+- All within-region correlations are small (|r| <= 0.079; 95% band under zero correlation +/-0.025).
+- Same-week correlations with region averages removed: Channel0 +0.032, Channel1 -0.011, Channel2 -0.050, Channel3 -0.052, Channel4 -0.079; after removing the controls, Promo and organic: Channel0 +0.001, Channel1 +0.013, Channel2 +0.014, Channel3 +0.024, Channel4 +0.011. The negative raw same-week correlations come from the controls.
+- Lags (weeks) where the control-adjusted correlation is above the noise band: Channel0 [7]; Channel1 [7]; Channel2 [4]; Channel3 [1]; Channel4 [2, 3, 6]. No clear decay pattern, so the data do not settle the maximum lag.
 
 </details>
 
@@ -88,7 +100,8 @@ Channels are switched on and off at fairly different times, so the model can tel
 
 <details><summary>Technical details</summary>
 
-- Largest within-region correlation 0.50; national 0.70; variance inflation factor at most 2.11 (values above 5-10 would be a concern).
+- Within-region spend correlation: max |r| = 0.50; national weekly max |r| = 0.70. Within-region variance inflation factor (spend, Promo, organic, controls) at most 2.11 (values above 5-10 would be a concern).
+- Share of each variable's within-region variation that is common national timing: Channel0 18.1%, Channel1 19.6%, Channel2 17.7%, Channel3 29.7%, Channel4 25.0%, Promo 19.9%, Organic_channel0_impression 19.6%, competitor_sales_control 33.4%, sentiment_score_control 27.5%.
 
 </details>
 
@@ -99,7 +112,8 @@ Revenue and spend grow in step with population: double the population, roughly d
 
 <details><summary>Technical details</summary>
 
-- Revenue vs population: Spearman 0.978, log-log slope 1.04 (+/- 0.03); spend 0.995, slope 1.02 (+/- 0.01).
+- Total revenue vs population: Spearman 0.978, log-log slope 1.04 +/- 0.03; total spend: Spearman 0.995, slope 1.02 +/- 0.01.
+- Revenue per capita varies across regions by 10.0% (CV); spend per capita by 3.6%.
 - Control averages barely track population (Spearman competitor_sales_control -0.05, sentiment_score_control +0.23, Promo +0.18), so the controls are not scaled by population.
 
 </details>
@@ -112,6 +126,7 @@ Most weeks run well below each region's highest-ever spend, and some channels ar
 <details><summary>Technical details</summary>
 
 - Share of region-weeks with zero spend: Channel0 12.1%, Channel1 27.9%, Channel2 64.3%, Channel3 2.7%, Channel4 13.1%.
+- Median non-zero week as a share of the region's maximum: Channel0 0.35, Channel1 0.29, Channel2 0.24, Channel3 0.41, Channel4 0.34.
 - Share of last-52-week region-weeks above the region's historical maximum if spend is raised 20%: Channel0 3.2%, Channel1 1.9%, Channel2 1.4%, Channel3 2.6%, Channel4 2.2%; raised 50%: Channel0 10.4%, Channel1 5.8%, Channel2 3.4%, Channel3 10.3%, Channel4 7.1%.
 
 </details>
@@ -136,10 +151,10 @@ How much competitor sales and sentiment move revenue varies strongly from region
 <details><summary>Technical details</summary>
 
 - Per geo: y ~ const + linear trend + controls + Promo + organic/geo-mean + each spend/geo-mean; Newey-West SEs. Primary y = revenue per capita / panel-mean revenue per capita; sensitivity y = revenue / geo-mean revenue.
-- competitor_sales_control: average effect -0.077; share of variation that is real (I2) 93.7% (Cochran's Q = 615.1, p = 1.1e-104); 22% of regions positive.
-- sentiment_score_control: average effect -0.021; share of variation that is real (I2) 88.4% (Cochran's Q = 337.1, p = 4e-49); 35% of regions positive.
-- Promo: average effect +0.051; share of variation that is real (I2) 26.0% (Cochran's Q = 52.7, p = 0.07); 88% of regions positive.
-- Organic_channel0_impression: average effect +0.010; share of variation that is real (I2) 20.1% (Cochran's Q = 48.8, p = 0.14); 65% of regions positive.
+- competitor_sales_control: pooled -0.077 (SE 0.004), Cochran's Q = 615.1 on 39 df (p = 1.1e-104), I2 = 93.7%, tau = 0.099, 22.5% of regions positive; Spearman with population +0.21; I2 on the region-relative scale 93.6%.
+- sentiment_score_control: pooled -0.021 (SE 0.004), Cochran's Q = 337.1 on 39 df (p = 4e-49), I2 = 88.4%, tau = 0.075, 35.0% of regions positive; Spearman with population +0.06; I2 on the region-relative scale 88.5%.
+- Promo: pooled +0.051 (SE 0.006), Cochran's Q = 52.7 on 39 df (p = 0.07), I2 = 26.0%, tau = 0.021, 87.5% of regions positive; Spearman with population +0.04; I2 on the region-relative scale 25.3%.
+- Organic_channel0_impression: pooled +0.010 (SE 0.004), Cochran's Q = 48.8 on 39 df (p = 0.14), I2 = 20.1%, tau = 0.011, 65.0% of regions positive; Spearman with population +0.29; I2 on the region-relative scale 20.7%.
 
 </details>
 

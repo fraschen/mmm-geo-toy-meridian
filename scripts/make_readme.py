@@ -15,6 +15,10 @@ pct = lambda x, d=1: f"{100 * x:.{d}f}%"
 M = lambda x: f"{x / 1e6:,.1f}M"
 
 
+def details(*items):
+  return "\n<details><summary>Technical details</summary>\n\n" + "\n".join(f"- {i}" for i in items) + "\n\n</details>\n"
+
+
 def main():
   eda, gates, cv = J("eda/eda_summary.json"), J("gates/gates.json"), J("validation/cv_metrics.json")
   sel = json.load(open(HISTORY / "selection.json"))
@@ -65,6 +69,9 @@ uncertainty ranges are honest in-sample. But three things keep it from being cli
   less so about how much of it comes from media versus underlying demand.
 
 Anything shared from this model should come with these caveats.
+{details(f"Validation refits: train on weeks 1-104, 1-117, 1-130 and 1-143 (the last is the 13-week holdout), forecast the next 13 weeks; converged: {', '.join(k for k in conv_folds) or 'none'}." + (f" In the converged refit: geo-week forecast MAPE {pct(f0['geo_week']['forecast']['mape'])} (ratio to in-sample {f0['geo_week']['error_ratio']:.2f}, 94% coverage {pct(f0['geo_week']['forecast']['coverage_94'], 0)}); national MAPE {pct(f0['national']['forecast']['mape'])} (ratio {f0['national']['error_ratio']:.2f}, coverage {pct(f0['national']['forecast']['coverage_94'], 0)}, bias {100 * f0['national']['forecast']['mean_signed_pct_error']:+.1f}%)." if f0 else ""),
+          f"P(ROI > 1) by channel: " + ", ".join(f"{r.channel} {r.p_roi_gt_1:.2f}" for r in res.itertuples()) + "; every 94% ROI interval spans 1.",
+          f"Posterior correlation between total baseline and total paid-media contribution: {ident['corr_baseline_total_vs_paid_media_total']:.2f}.")}
 
 ## The model
 
@@ -84,23 +91,35 @@ Defined in [`config/model.toml`](config/model.toml):
 settle. The versions with a more flexible baseline did not run reliably. Two versions with a
 straight-line baseline did, and the simpler of the two was as good as the other, so we kept it.
 {gcfg['meta']['note_plain']} Full record: [docs/model_selection](docs/model_selection/README.md).
+{details("Spec: " + ", ".join(f"`{k} = {v}`" for k, v in cfg['model']['spec'].items()) + ".",
+          "Priors (others Meridian defaults): " + ", ".join(f"`{k} ~ {v['dist']}(" + ", ".join(f"{a}={x}" for a, x in v.items() if a != 'dist') + ")`" for k, v in cfg['model']['priors'].items()) + ".",
+          f"Sampler: {cfg['sampler']['n_chains']} chains, {cfg['sampler']['n_adapt']} adaptation + {cfg['sampler']['n_burnin']} burn-in + {cfg['sampler']['n_keep']} kept draws per chain, seed {cfg['sampler']['seed']}.",
+          "Round 1 (" + ", ".join(lab[n] for n in r1) + "): AKS (66 knots) or linear baseline x default or strong media pooling; none converged (failures in the baseline parameters `knot_values`, `mu_t`, `tau_g`).",
+          "Round 2 (R1, R2): linear baseline, strong pooling (`eta_m ~ HalfNormal(0.1)`), max lag 4 vs 8; both converged.",
+          (f"PSIS-LOO: R2 vs R1 ELPD difference {step['elpd_diff']:+.1f} (paired SE {step['se']:.1f}); switching needs more than {step['threshold']:.1f}, so R1 is kept." if step else sel['selection_basis']),
+          gcfg['meta']['note'])}
 
 ## The checks we trust
 
 All rules are in [`config/gates.toml`](config/gates.toml) and explained in
 [reports/gates.md](reports/gates.md); details in [reports/diagnostics.md](reports/diagnostics.md).
 
-- **Did the computation run reliably?** Yes. Meridian estimates the model by running {cfg['sampler']['n_chains']}
-  independent simulations, and they agree with each other. If they did not, we would report nothing.
+- **Did the computation run reliably?** {'Yes' if conv['converged'] else 'No'}. Meridian estimates the model by running {cfg['sampler']['n_chains']}
+  independent simulations, which {'agree' if conv['converged'] else 'do not agree'} with each other. If they did not, we would report nothing.
 - **Does it forecast weeks it has not seen?** This is the test that matters most, and the one the model
   does not pass yet (see above).
-- **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by
+- **Does it fit the past?** {'Yes, within the limits of the data' if g['insample_r2']['status'] == 'PASS' and g['insample_coverage']['status'] == 'PASS' else 'Not well enough'}. Nationally it misses a typical week by
   {pct(gates['insample']['national_mape'])}, better than a simple 13-week average ({pct(nf['national_mape_vs_13wk_ma'])}).
   Its 94% ranges contain {pct(cov['geo_week'], 0)} of regional weeks, close to the 94% they should.
-- **Did the data teach the model anything?** Yes. Every channel's estimate moved away from the
-  starting assumption.
+- **Did the data teach the model anything?** {'Yes. Every channel' if not any(v['prior_driven'] for v in contraction.values()) else 'Not for every channel. Some channels'}'s estimate moved away from the
+  starting assumption{'' if not any(v['prior_driven'] for v in contraction.values()) else ' only a little'}.
 - **What we don't rely on:** Meridian's built-in health score ({gates['meridian_health']['health_score']:.0f}/100). It only
   looks at how well the model fits the past, so it cannot see the forecasting problem.
+{details(f"Convergence gate: every element of every parameter needs R-hat <= {ct['rhat_max']}, bulk and tail ESS >= {ct['ess_min']}, and at most {pct(ct['divergent_share_max'])} divergent draws. Model: max R-hat {conv['max_rhat']:.4f}, min ESS {conv['min_ess_bulk']:.0f} (bulk) / {conv['min_ess_tail']:.0f} (tail), {conv['divergences']} divergence(s) in {conv['n_draws_total']} draws.",
+          f"In-sample R2: geo-week {ins['geo_week']:.2f}, national {ins['national']:.2f}; 94% coverage: geo-week {pct(cov['geo_week'])}, national {pct(cov['national'])}; MAPE: geo-week {pct(gates['insample']['geo_week_mape'])}, national {pct(gates['insample']['national_mape'])} (13-week moving average: {pct(nf['geo_mape_vs_13wk_ma']['median'])} and {pct(nf['national_mape_vs_13wk_ma'])}). The national R2 is modest because the national series barely varies (CV {pct(nf['national_weekly_cv'])}).",
+          "ROI contraction vs prior (1 - posterior sd / prior sd): " + ", ".join(f"{c} {v['roi_contraction']:.2f}" for c, v in contraction.items()) + ".",
+          f"Baseline-media posterior correlation {ident['corr_baseline_total_vs_paid_media_total']:.2f}.",
+          f"Meridian health score {gates['meridian_health']['health_score']:.1f}/100 ({gates['meridian_health']['overall_status']}); its convergence check uses R-hat < 1.2 only.")}
 
 ## What the model can tell a client
 
@@ -126,6 +145,10 @@ of spend: above 1, a channel pays for itself.
   is uncertain, and could even be a small loss
   ([scenarios](reports/measurement.md#budget-scenarios); Meridian's reports: [main](reports/meridian/optimization_main.html),
   [stress](reports/meridian/optimization_stress.html)).
+{details(f"Paid media contribution: {M(contrib['paid_total']['mean'])} (94% CI {M(contrib['paid_total']['ci_lo'])}-{M(contrib['paid_total']['ci_hi'])}), {pct(contrib['paid_total']['mean'] / contrib['observed_total'])} of revenue.",
+          f"Main scenario (+/-20%): {pos(main_s)}; gain {M(main_s['gain']['mean'])} (94% CI {M(main_s['gain']['ci_lo'])} to {M(main_s['gain']['ci_hi'])}), P(gain > 0) = {main_s['gain']['p_gain_gt_0']:.2f}.",
+          f"Stress scenario (+/-50%): {pos(stress)}; gain {M(stress['gain']['mean'])} (94% CI {M(stress['gain']['ci_lo'])} to {M(stress['gain']['ci_hi'])}), P(gain > 0) = {stress['gain']['p_gain_gt_0']:.2f}.",
+          f"Budget conserved to the optimizer's spend grid (difference {100 * main_s['budget_conserved']['relative_difference']:.3f}%). Beyond historical spend, results assume the response-curve shape.")}
 
 ## What the model cannot tell a client
 
@@ -139,6 +162,9 @@ of spend: above 1, a channel pays for itself.
 **Using a real experiment (optional, illustrative).** `make calibration` shows how the result
 of a lift test would sharpen the model. We used an invented (HYPOTHETICAL) Channel3 test: it
 narrowed Channel3's range and left the others unchanged. It is not part of the production model.
+{details(f"HYPOTHETICAL test: {cal['test']['channel']}, {cal['test']['start_date']} to {cal['test']['end_date']}, ROI {cal['test']['point_estimate_roi']} (SE {cal['test']['standard_error']}); calibrated prior mean {cal['prior_channel']['after_calibrated']['mean']:.2f}, sd {cal['prior_channel']['after_sd']:.2f}.",
+          f"Model-implied ROI for the test regions and weeks before calibration: {cal['implied_test_roi_before']['mean']:.2f} (94% CI {cal['implied_test_roi_before']['ci_lo']:.2f}-{cal['implied_test_roi_before']['ci_hi']:.2f}).",
+          f"Across {cal['geo_choice_check']['n_alternative_sets']} alternative test-region sets, implied ROI {cal['geo_choice_check']['implied_roi_mean_range'][0]:.2f}-{cal['geo_choice_check']['implied_roi_mean_range'][1]:.2f}: the choice of regions does not drive the result.")}
 
 ## Run it
 
@@ -168,6 +194,11 @@ before use. What we learned from it: [reports/eda.md](reports/eda.md).
 - **Noise:** weekly revenue is noisy, about {pct(nf['geo_weekly_cv']['median'], 0)} up or down per region and
   {pct(nf['national_weekly_cv'])} nationally, which limits how precise any model can be.
 - **Media signal:** media's effect is hard to see in the raw data, so the model has to pool regions to find it.
+{details(f"Balanced panel, {d['missing_values_total']} missing values; spend = impressions x a constant CPM. Spend shares: " + ", ".join(f"{c} {pct(d['spend_share'][c])}" for c in CHANNELS) + ".",
+          f"Trend {tr[tr['primary']]['slope_per_year_pct_of_mean']:+.2f}%/year (HAC p = {tr[tr['primary']]['p_value']:.3f}); yearly breaks do not improve on a line (p = {tr['piecewise_yearly_vs_linear']['p_value']:.2f}).",
+          f"Seasonality: p = {eda['seasonality']['p_value_ar1']:.2f} vs simulated noise; any yearly swing at most {pct(eda['seasonality']['bound']['peak_to_trough_upper_95'])} peak to trough (95% upper bound).",
+          f"Within-region spend-revenue correlations all |r| <= 0.08; within-region VIF at most {eda['collinearity']['max_vif']:.2f}.",
+          f"Controls correlate with spend up to {eda['controls_confounding']['max_abs_corr_control_with_spend_within_geo']:.2f}; their effects vary across regions (I2 {pct(eda['control_heterogeneity']['competitor_sales_control']['i2'], 0)} and {pct(eda['control_heterogeneity']['sentiment_score_control']['i2'], 0)}).")}
 
 ## Acceptance checks
 
