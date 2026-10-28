@@ -9,6 +9,9 @@ Specs (approved at the Phase 2 checkpoint, see reports/candidates.md):
   aks_default_pool     C1: AKS knots, eta_m ~ HalfNormal(1) (default).
   linear_default_pool  C2: knots=2 (linear trend), eta_m ~ HalfNormal(1).
   aks_strong_pool      C3: AKS knots, eta_m ~ HalfNormal(0.1).
+  Round 2 (after C1-C3 all failed the convergence gate):
+  linear_strong_pool_lag4  R1: knots=2, eta_m ~ HalfNormal(0.1), max_lag=4.
+  linear_strong_pool       R2: knots=2, eta_m ~ HalfNormal(0.1), max_lag=8.
 
 Usage (run from the project root):
   .venv/bin/python model_build/build_model.py --spec eda_default --eda-only
@@ -37,7 +40,8 @@ from meridian.schema.serde import meridian_serde  # noqa: E402
 SAMPLER = dict(n_chains=4, n_adapt=500, n_burnin=500, n_keep=1000, seed=SEED)
 N_PRIOR_DRAWS = 500
 
-CANDIDATES = ["aks_default_pool", "linear_default_pool", "aks_strong_pool"]
+CANDIDATES = ["aks_default_pool", "linear_default_pool", "aks_strong_pool",
+              "linear_strong_pool_lag4", "linear_strong_pool"]
 
 
 def make_spec(name: str, **overrides) -> ModelSpec:
@@ -57,6 +61,12 @@ def make_spec(name: str, **overrides) -> ModelSpec:
     return ModelSpec(prior=PriorDistribution(
         eta_m=tfd.HalfNormal(scale=np.float64(0.1), name="eta_m")),
                      enable_aks=True, **common)
+  strong_pool = PriorDistribution(
+      eta_m=tfd.HalfNormal(scale=np.float64(0.1), name="eta_m"))
+  if name == "linear_strong_pool_lag4":
+    return ModelSpec(prior=strong_pool, knots=2, **{**common, "max_lag": 4})
+  if name == "linear_strong_pool":
+    return ModelSpec(prior=strong_pool, knots=2, **common)
   raise ValueError(f"Unknown spec {name!r}")
 
 

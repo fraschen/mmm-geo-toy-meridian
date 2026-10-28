@@ -23,9 +23,12 @@ from scipy import stats
 
 from common import MODEL_BUILD, OUTPUTS, write_json
 
-# Complexity order, simplest first (C2 < C3 < C1).
-ORDER = ["linear_default_pool", "aks_strong_pool", "aks_default_pool"]
-LABEL = {"aks_default_pool": "C1", "linear_default_pool": "C2", "aks_strong_pool": "C3"}
+# Round 1 (C1-C3): no candidate converged; diagnostics kept for the record.
+ROUND1 = ["linear_default_pool", "aks_strong_pool", "aks_default_pool"]
+# Round 2, complexity order simplest first (R1 < R2). Selection uses round 2 only.
+ORDER = ["linear_strong_pool_lag4", "linear_strong_pool"]
+LABEL = {"aks_default_pool": "C1", "linear_default_pool": "C2", "aks_strong_pool": "C3",
+         "linear_strong_pool_lag4": "R1", "linear_strong_pool": "R2"}
 RHAT_MAX, ESS_MIN, SE_RULE = 1.01, 400, 2.0
 OUT = OUTPUTS / "selection"
 
@@ -117,6 +120,13 @@ def paired_diff(a, b) -> dict:
 def main():
   OUT.mkdir(parents=True, exist_ok=True)
   conv, loo = {}, {}
+  for name in ROUND1:
+    # Round 1 is never scored: convergence diagnostics only.
+    mmm = load(name)
+    conv[name] = convergence(mmm.inference_data)
+    write_json(conv[name], OUT / f"convergence_{name}.json")
+    print(f"[round 1] {LABEL[name]} {name}: converged={conv[name]['converged']}")
+    del mmm
   for name in ORDER:
     mmm = load(name)
     conv[name] = convergence(mmm.inference_data)
@@ -147,7 +157,11 @@ def main():
     basis = "convergence: the only converged candidate (won by convergence, not by fit)"
   else:
     basis = "PSIS-LOO with the 2-SE simplicity rule"
-  result = {"order_simplest_first": ORDER, "labels": LABEL,
+  result = {"round1_not_converged": {n: conv[n]["converged"] for n in ROUND1},
+            "round1_convergence_summary": {n: {k: conv[n][k] for k in
+                                               ("max_rhat", "min_ess_bulk", "min_ess_tail",
+                                                "divergences", "passed")} for n in ROUND1},
+            "order_simplest_first": ORDER, "labels": LABEL,
             "converged": {n: conv[n]["converged"] for n in ORDER},
             "convergence_summary": {n: {k: conv[n][k] for k in
                                         ("max_rhat", "min_ess_bulk", "min_ess_tail",

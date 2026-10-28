@@ -72,3 +72,28 @@ NUTS defaults otherwise (`max_tree_depth=10`). Each fit is saved as
    C2 vs C3, then the current choice vs C1.
 4. If only one candidate converges, it is selected, and the reports say plainly that it
    won by convergence, not by fit.
+
+## Round 2 (after round 1 failed the convergence gate)
+
+No round-1 candidate converged. C2 and C3 failed narrowly, in the baseline
+parameters only (`mu_t`, `knot_values`, `tau_g`). C1 failed broadly (max R-hat 1.22,
+39 divergences). Per the protocol, all three were dropped and none was rerun. Their
+convergence diagnostics are kept in `outputs/selection/convergence_*.json`. Round 2
+was chosen **after** seeing round 1 fail, following the docs' "Getting MCMC
+convergence" checklist ([model-debugging](https://developers.google.com/meridian/docs/post-modeling/model-debugging)):
+
+- **Knots:** a straight line. The EDA does not reject it (p = 0.10). AKS with the docs'
+  higher penalty range (`np.geomspace(10, 200, 100)`) selects 3 knots (weeks 0, 2, 155),
+  essentially a line. The 66-knot AKS baseline failed under both pooling settings.
+- **Pooling:** `eta_m ~ HalfNormal(0.1)`. This is the docs' suggestion when the geo
+  hierarchy is hard to identify, and in round 1 it brought AKS from R-hat 1.22 to 1.02.
+- **Max lag:** the dimension that differs. The EDA cannot set it, and the docs note that
+  smaller `max_lag` generally improves convergence.
+
+| | knots | `eta_m` | `max_lag` | complexity rank |
+|---|---|---|---|---|
+| R1 `linear_strong_pool_lag4` | 2 | `HalfNormal(0.1)` | 4 | 1 |
+| R2 `linear_strong_pool` | 2 | `HalfNormal(0.1)` | 8 | 2 |
+
+Everything else, the sampler, and the protocol (convergence gate, no reruns,
+PSIS-LOO with the 2-SE rule, R1 < R2) are unchanged.

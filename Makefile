@@ -6,7 +6,8 @@ RAW := data/raw/geo_all_channels.csv
 
 .PHONY: all data eda eda-meridian eda-extended fit clean-outputs
 
-CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool
+CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
+              linear_strong_pool_lag4 linear_strong_pool
 MODELS := $(foreach c,$(CANDIDATES),model_build/$(c)/meridian_model.binpb)
 
 all: eda fit
