@@ -1,10 +1,14 @@
 {
   "thresholds": {
-    "rhat_max": 1.01,
+    "rhat_max": 1.05,
     "ess_min": 400,
-    "divergences_max": 1.0,
-    "divergences_preregistered": 0,
-    "note": "Post-hoc relaxation: the pre-registered rule was 0 divergences; relaxed to <= 1 per 4000 draws after round 2 results."
+    "divergences_max": 20.0,
+    "preregistered": {
+      "rhat_max": 1.01,
+      "ess_min": 400,
+      "divergences": 0
+    },
+    "note": "Post-hoc gate (user decision before round 3): R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. Pre-registered: R-hat <= 1.01, ESS >= 400, 0 divergences."
   },
   "n_chains": 4,
   "n_draws_total": 4000,
@@ -13,15 +17,15 @@
   "min_ess_tail": 326.45035465463235,
   "divergences": 5,
   "n_failing_elements": {
-    "rhat": 209,
+    "rhat": 0,
     "ess_bulk": 220,
     "ess_tail": 82
   },
   "passed": {
-    "rhat": false,
+    "rhat": true,
     "ess_bulk": false,
     "ess_tail": false,
-    "divergences": false
+    "divergences": true
   },
   "converged": false,
   "skipped_constant_variables": [
@@ -35,7 +39,7 @@
       "max_rhat": 1.0188963421543398,
       "min_ess_bulk": 178.39326695078867,
       "min_ess_tail": 326.45035465463235,
-      "n_rhat_fail": 149,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 155,
       "n_ess_tail_fail": 79
     },
@@ -45,7 +49,7 @@
       "max_rhat": 1.0186524171045814,
       "min_ess_bulk": 192.6713289274244,
       "min_ess_tail": 387.33715225360885,
-      "n_rhat_fail": 59,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 65,
       "n_ess_tail_fail": 3
     },
@@ -95,7 +99,7 @@
       "max_rhat": 1.012093029521585,
       "min_ess_bulk": 622.0111803492573,
       "min_ess_tail": 1230.7342434113464,
-      "n_rhat_fail": 1,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 0,
       "n_ess_tail_fail": 0
     },

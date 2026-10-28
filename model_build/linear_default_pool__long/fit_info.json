@@ -1,0 +1,19 @@
+{
+  "spec": "linear_default_pool",
+  "train_weeks": null,
+  "sampler_name": "long",
+  "sampler": {
+    "n_chains": 4,
+    "n_adapt": 1000,
+    "n_burnin": 500,
+    "n_keep": 1000,
+    "seed": 20260128
+  },
+  "n_prior_draws": 500,
+  "knot_locations": [
+    0,
+    155
+  ],
+  "n_knots": 2,
+  "runtime_seconds": 1096.823186159134
+}

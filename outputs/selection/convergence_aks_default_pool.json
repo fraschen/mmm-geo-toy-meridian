@@ -1,10 +1,14 @@
 {
   "thresholds": {
-    "rhat_max": 1.01,
+    "rhat_max": 1.05,
     "ess_min": 400,
-    "divergences_max": 1.0,
-    "divergences_preregistered": 0,
-    "note": "Post-hoc relaxation: the pre-registered rule was 0 divergences; relaxed to <= 1 per 4000 draws after round 2 results."
+    "divergences_max": 20.0,
+    "preregistered": {
+      "rhat_max": 1.01,
+      "ess_min": 400,
+      "divergences": 0
+    },
+    "note": "Post-hoc gate (user decision before round 3): R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. Pre-registered: R-hat <= 1.01, ESS >= 400, 0 divergences."
   },
   "n_chains": 4,
   "n_draws_total": 4000,
@@ -13,7 +17,7 @@
   "min_ess_tail": 69.21599644668953,
   "divergences": 39,
   "n_failing_elements": {
-    "rhat": 307,
+    "rhat": 223,
     "ess_bulk": 267,
     "ess_tail": 230
   },
@@ -55,7 +59,7 @@
       "max_rhat": 1.0472444250848607,
       "min_ess_bulk": 90.61478115245693,
       "min_ess_tail": 695.6119964178849,
-      "n_rhat_fail": 36,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 2,
       "n_ess_tail_fail": 0
     },
@@ -95,7 +99,7 @@
       "max_rhat": 1.0557157628601086,
       "min_ess_bulk": 68.498191251223,
       "min_ess_tail": 306.09989938432057,
-      "n_rhat_fail": 39,
+      "n_rhat_fail": 1,
       "n_ess_bulk_fail": 37,
       "n_ess_tail_fail": 7
     },
@@ -105,7 +109,7 @@
       "max_rhat": 1.0117723349603962,
       "min_ess_bulk": 965.94011388643,
       "min_ess_tail": 1333.0464497568953,
-      "n_rhat_fail": 1,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 0,
       "n_ess_tail_fail": 0
     },
@@ -115,7 +119,7 @@
       "max_rhat": 1.0246353123997014,
       "min_ess_bulk": 236.1130286331895,
       "min_ess_tail": 1854.0944505033424,
-      "n_rhat_fail": 2,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 1,
       "n_ess_tail_fail": 0
     },
@@ -135,7 +139,7 @@
       "max_rhat": 1.013240222968325,
       "min_ess_bulk": 473.56109249458893,
       "min_ess_tail": 979.8554717253603,
-      "n_rhat_fail": 1,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 0,
       "n_ess_tail_fail": 0
     },
@@ -145,7 +149,7 @@
       "max_rhat": 1.0303849010933877,
       "min_ess_bulk": 241.41986383974034,
       "min_ess_tail": 670.9578595255792,
-      "n_rhat_fail": 3,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 2,
       "n_ess_tail_fail": 0
     },
@@ -155,7 +159,7 @@
       "max_rhat": 1.027869482696451,
       "min_ess_bulk": 150.39067145767086,
       "min_ess_tail": 312.36608287069754,
-      "n_rhat_fail": 2,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 2,
       "n_ess_tail_fail": 1
     },
@@ -245,7 +249,7 @@
       "max_rhat": 1.0106651142934382,
       "min_ess_bulk": 600.6448462572814,
       "min_ess_tail": 491.4158690865721,
-      "n_rhat_fail": 1,
+      "n_rhat_fail": 0,
       "n_ess_bulk_fail": 0,
       "n_ess_tail_fail": 0
     },

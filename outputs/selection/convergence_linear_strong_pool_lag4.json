@@ -1,10 +1,14 @@
 {
   "thresholds": {
-    "rhat_max": 1.01,
+    "rhat_max": 1.05,
     "ess_min": 400,
-    "divergences_max": 1.0,
-    "divergences_preregistered": 0,
-    "note": "Post-hoc relaxation: the pre-registered rule was 0 divergences; relaxed to <= 1 per 4000 draws after round 2 results."
+    "divergences_max": 20.0,
+    "preregistered": {
+      "rhat_max": 1.01,
+      "ess_min": 400,
+      "divergences": 0
+    },
+    "note": "Post-hoc gate (user decision before round 3): R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. Pre-registered: R-hat <= 1.01, ESS >= 400, 0 divergences."
   },
   "n_chains": 4,
   "n_draws_total": 4000,

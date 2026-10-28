@@ -4,13 +4,13 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: all data eda eda-meridian eda-extended fit select cv-fit validate clean-outputs
+.PHONY: all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
 
 CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
               linear_strong_pool_lag4 linear_strong_pool
 MODELS := $(foreach c,$(CANDIDATES),model_build/$(c)/meridian_model.binpb)
 
-all: eda fit select validate
+all: eda fit fit-long select validate
 
 data: $(RAW)
 
@@ -34,7 +34,15 @@ fit: $(MODELS)
 $(MODELS): model_build/%/meridian_model.binpb: $(RAW)
 	$(AWAKE) $(PY) model_build/build_model.py --spec $* > model_build/$*.log 2>&1
 
-select: $(MODELS)
+# Round 3 (post hoc): C1-C3 refit with the longer warm-up.
+ROUND3 := $(foreach c,aks_default_pool linear_default_pool aks_strong_pool,model_build/$(c)__long/meridian_model.binpb)
+
+fit-long: $(ROUND3)
+
+$(ROUND3): model_build/%__long/meridian_model.binpb: $(RAW)
+	$(AWAKE) $(PY) model_build/build_model.py --spec $* --sampler long > model_build/$*__long.log 2>&1
+
+select: $(MODELS) $(ROUND3)
 	$(PY) scripts/select_model.py
 
 # Phase 4: rolling-origin CV folds for the selected spec (the 143-week fold is

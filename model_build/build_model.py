@@ -39,8 +39,13 @@ from meridian.model.prior_distribution import PriorDistribution  # noqa: E402
 from meridian.model.spec import ModelSpec  # noqa: E402
 from meridian.schema.serde import meridian_serde  # noqa: E402
 
-# Approved MCMC settings (identical for every candidate).
-SAMPLER = dict(n_chains=4, n_adapt=500, n_burnin=500, n_keep=1000, seed=SEED)
+# Approved MCMC settings. "default" was used for rounds 1-2 and the first CV run;
+# "long" (warm-up of the Meridian getting-started notebook) was approved post hoc
+# for the round-3 refit of C1-C3.
+SAMPLERS = {
+    "default": dict(n_chains=4, n_adapt=500, n_burnin=500, n_keep=1000, seed=SEED),
+    "long": dict(n_chains=4, n_adapt=1000, n_burnin=500, n_keep=1000, seed=SEED),
+}
 N_PRIOR_DRAWS = 500
 
 CANDIDATES = ["aks_default_pool", "linear_default_pool", "aks_strong_pool",
@@ -77,14 +82,17 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--spec", default="eda_default")
   parser.add_argument("--eda-only", action="store_true")
+  parser.add_argument("--sampler", choices=list(SAMPLERS), default="default")
   parser.add_argument("--train-weeks", type=int, default=None,
                       help="CV fold: keep only the first N weeks; skips the EDA report.")
   args = parser.parse_args()
 
+  sampler = SAMPLERS[args.sampler]
+  run_name = args.spec if args.sampler == "default" else f"{args.spec}__{args.sampler}"
   if args.train_weeks:
-    output_dir = os.path.join("model_build", "cv", f"{args.spec}_train{args.train_weeks}")
+    output_dir = os.path.join("model_build", "cv", f"{run_name}_train{args.train_weeks}")
   else:
-    output_dir = os.path.join("model_build", args.spec)
+    output_dir = os.path.join("model_build", run_name)
   os.makedirs(output_dir, exist_ok=True)
 
   # 1. Load data & build InputData (approved column mapping).
@@ -110,14 +118,14 @@ def main():
 
   # 5. Fit.
   t0 = time.time()
-  mmm.sample_posterior(**SAMPLER)
+  mmm.sample_posterior(**sampler)
   runtime = time.time() - t0
 
   # 6. Save.
   save_path = os.path.join(output_dir, "meridian_model.binpb")
   meridian_serde.save_meridian(mmm, save_path)
   with open(os.path.join(output_dir, "fit_info.json"), "w") as f:
-    json.dump({"spec": args.spec, "train_weeks": args.train_weeks, "sampler": SAMPLER, "n_prior_draws": N_PRIOR_DRAWS,
+    json.dump({"spec": args.spec, "train_weeks": args.train_weeks, "sampler_name": args.sampler, "sampler": sampler, "n_prior_draws": N_PRIOR_DRAWS,
                "knot_locations": [int(k) for k in mmm.knot_info.knot_locations],
                "n_knots": int(len(mmm.knot_info.knot_locations)),
                "runtime_seconds": runtime}, f, indent=2)
