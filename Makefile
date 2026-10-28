@@ -4,7 +4,7 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: gates reports-meridian all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
+.PHONY: budget gates reports-meridian all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
 
 CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
               linear_strong_pool_lag4 linear_strong_pool
@@ -67,6 +67,10 @@ reports-meridian: model_build/linear_strong_pool_lag4/meridian_model.binpb
 # Phase 5: automated gates (exits non-zero on any blocking failure).
 gates:
 	$(PY) scripts/gates.py
+
+# Phase 7: budget scenarios (skill script).
+budget: model_build/linear_strong_pool_lag4/meridian_model.binpb
+	$(AWAKE) $(PY) model_build/run_budget_optimization.py
 
 clean-outputs:
 	rm -rf outputs reports/figures model_build/eda_default

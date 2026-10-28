@@ -1,0 +1,79 @@
+{
+  "scenario": "main",
+  "spend_constraint": 0.2,
+  "period": [
+    "2023-01-23",
+    "2024-01-15"
+  ],
+  "n_weeks": 52,
+  "budget": 71438676.00472197,
+  "budget_conserved": {
+    "optimal_total": 71440000.0,
+    "historical_total": 71440000.0,
+    "relative_difference": 1.8533312094781706e-05
+  },
+  "channels": {
+    "Channel0": {
+      "historical_spend": 14000000.0,
+      "optimal_spend": 11200000.0,
+      "change_pct": -0.19999999999999996,
+      "lower_bound": 11200000.0,
+      "upper_bound": 16800000.0,
+      "at_bound": true,
+      "incremental_revenue_historical": 10472318.381048515,
+      "incremental_revenue_optimal": 9449847.515977845
+    },
+    "Channel1": {
+      "historical_spend": 9910000.0,
+      "optimal_spend": 7930000.0,
+      "change_pct": -0.19979818365287594,
+      "lower_bound": 7928000.0,
+      "upper_bound": 11892000.0,
+      "at_bound": true,
+      "incremental_revenue_historical": 8298060.036428195,
+      "incremental_revenue_optimal": 7338733.281149844
+    },
+    "Channel2": {
+      "historical_spend": 4140000.0,
+      "optimal_spend": 4970000.0,
+      "change_pct": 0.20048309178743962,
+      "lower_bound": 3312000.0,
+      "upper_bound": 4968000.0,
+      "at_bound": true,
+      "incremental_revenue_historical": 5189711.637965624,
+      "incremental_revenue_optimal": 5709806.3758523865
+    },
+    "Channel3": {
+      "historical_spend": 27980000.0,
+      "optimal_spend": 33580000.0,
+      "change_pct": 0.20014295925661196,
+      "lower_bound": 22384000.0,
+      "upper_bound": 33576000.0,
+      "at_bound": true,
+      "incremental_revenue_historical": 40075360.11453618,
+      "incremental_revenue_optimal": 44205610.22015298
+    },
+    "Channel4": {
+      "historical_spend": 15410000.0,
+      "optimal_spend": 13760000.0,
+      "change_pct": -0.10707332900713817,
+      "lower_bound": 12328000.0,
+      "upper_bound": 18492000.0,
+      "at_bound": false,
+      "incremental_revenue_historical": 20144497.41780891,
+      "incremental_revenue_optimal": 19248315.659477815
+    }
+  },
+  "incremental_revenue_historical_mean": 84179947.58778742,
+  "incremental_revenue_optimal_mean": 85952313.05261087,
+  "gain": {
+    "mean": 1772365.4648234553,
+    "ci_lo": -1688300.2752391188,
+    "ci_hi": 5050511.2414268525,
+    "p_gain_gt_0": 0.8445,
+    "pct_of_historical_incremental": 0.021054485249888476
+  },
+  "check_optimizer_reported_optimal_mean": 85950356.51095667,
+  "check_relative_difference": 2.276362465059023e-05,
+  "report": "reports/meridian/optimization_main.html"
+}
