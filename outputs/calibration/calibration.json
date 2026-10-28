@@ -1,0 +1,147 @@
+{
+  "label": "HYPOTHETICAL lift test",
+  "test": {
+    "test_id": "HYPOTHETICAL-CH3-2023Q3",
+    "hypothetical": true,
+    "channel": "Channel3",
+    "kpi_type": "revenue",
+    "point_estimate_roi": 1.4,
+    "standard_error": 0.25,
+    "counterfactual": "zero_spend",
+    "total_spend": 1056061.92,
+    "start_date": "2023-07-03",
+    "end_date": "2023-08-27",
+    "test_geos": "Geo10;Geo16;Geo18;Geo21;Geo24;Geo30;Geo31;Geo32;Geo34;Geo5",
+    "control_geos": "Geo0;Geo1;Geo11;Geo12;Geo13;Geo14;Geo15;Geo17;Geo19;Geo2;Geo20;Geo22;Geo23;Geo25;Geo26;Geo27;Geo28;Geo29;Geo3;Geo33;Geo35;Geo36;Geo37;Geo38;Geo39;Geo4;Geo6;Geo7;Geo8;Geo9",
+    "source": "HYPOTHETICAL: invented for demonstration by scripts/make_hypothetical_lift_test.py"
+  },
+  "after_converged": true,
+  "after_convergence": {
+    "max_rhat": 1.009207460380646,
+    "min_ess_bulk": 606.6647615962763,
+    "min_ess_tail": 949.9619339474488,
+    "divergences": 0,
+    "passed": {
+      "rhat": true,
+      "ess_bulk": true,
+      "ess_tail": true,
+      "divergences": true
+    }
+  },
+  "prior_channel": {
+    "before": {
+      "mean": 1.8911539117911553,
+      "ci_lo": 0.26511653197014207,
+      "ci_hi": 6.860664880518601,
+      "p_roi_gt_1": 0.614
+    },
+    "after_calibrated": {
+      "mean": 1.2272627070808766,
+      "ci_lo": 0.5941508195679025,
+      "ci_hi": 2.307210660640929,
+      "p_roi_gt_1": 0.656
+    },
+    "after_sd": 0.46505262828256116
+  },
+  "implied_test_roi_before": {
+    "mean": 1.427620944559112,
+    "ci_lo": 0.6167829739468305,
+    "ci_hi": 2.398357093311865,
+    "p_roi_gt_1": 0.826
+  },
+  "implied_test_roi_after": {
+    "mean": 1.3286381292490348,
+    "ci_lo": 0.747889829793599,
+    "ci_hi": 2.0786765745475075,
+    "p_roi_gt_1": 0.8245
+  },
+  "roi_before_after": [
+    {
+      "channel": "Channel0",
+      "before_mean": 0.7597382242150388,
+      "before_ci_lo": 0.17910843037790242,
+      "before_ci_hi": 1.8085811618050047,
+      "before_p_roi_gt_1": 0.24225,
+      "after_mean": 0.7704059646104471,
+      "after_ci_lo": 0.18593585890256217,
+      "after_ci_hi": 1.8752972458967336,
+      "after_p_roi_gt_1": 0.24775
+    },
+    {
+      "channel": "Channel1",
+      "before_mean": 0.8205755999168747,
+      "before_ci_lo": 0.24961628610549275,
+      "before_ci_hi": 1.6746538675563922,
+      "before_p_roi_gt_1": 0.2735,
+      "after_mean": 0.8380934627262961,
+      "after_ci_lo": 0.2689490366374837,
+      "after_ci_hi": 1.6752776624225367,
+      "after_p_roi_gt_1": 0.28325
+    },
+    {
+      "channel": "Channel2",
+      "before_mean": 1.273442341989397,
+      "before_ci_lo": 0.392189752857501,
+      "before_ci_hi": 2.5358598550273626,
+      "before_p_roi_gt_1": 0.64225,
+      "after_mean": 1.2749636981062735,
+      "after_ci_lo": 0.3998961952149959,
+      "after_ci_hi": 2.479753996718717,
+      "after_p_roi_gt_1": 0.65575
+    },
+    {
+      "channel": "Channel3",
+      "before_mean": 1.399479695175383,
+      "before_ci_lo": 0.5958289620583606,
+      "before_ci_hi": 2.3439237289396497,
+      "before_p_roi_gt_1": 0.8135,
+      "after_mean": 1.3049084809141318,
+      "after_ci_lo": 0.7284534066644339,
+      "after_ci_hi": 2.0141395285540464,
+      "after_p_roi_gt_1": 0.813
+    },
+    {
+      "channel": "Channel4",
+      "before_mean": 1.2791035533629398,
+      "before_ci_lo": 0.26637411140450984,
+      "before_ci_hi": 3.243428456393902,
+      "before_p_roi_gt_1": 0.57,
+      "after_mean": 1.3106044656260538,
+      "after_ci_lo": 0.28292871665022495,
+      "after_ci_hi": 3.1728538933405948,
+      "after_p_roi_gt_1": 0.593
+    }
+  ],
+  "geo_choice_check": {
+    "n_alternative_sets": 20,
+    "chosen_set": {
+      "implied_roi_mean": 1.427620944559112,
+      "calibrated_prior": {
+        "mean": 1.2074751761835751,
+        "sd": 0.46777612148987574,
+        "p_roi_gt_1": 0.63755
+      },
+      "population_share": 0.2523812020057484
+    },
+    "implied_roi_mean_range": [
+      1.3472005940355658,
+      1.5047048244571677
+    ],
+    "implied_roi_mean_sd": 0.03597962722018982,
+    "chosen_implied_percentile": 0.35,
+    "calibrated_prior_mean_range": [
+      1.201141829732028,
+      1.2101138133279623
+    ],
+    "calibrated_prior_sd_range": [
+      0.46073283158965533,
+      0.48431239922656877
+    ],
+    "national_roi_before": {
+      "mean": 1.399479695175383,
+      "ci_lo": 0.5958289620583606,
+      "ci_hi": 2.3439237289396497,
+      "p_roi_gt_1": 0.8135
+    }
+  }
+}

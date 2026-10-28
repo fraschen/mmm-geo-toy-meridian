@@ -1,0 +1,10 @@
+{
+  "corr_baseline_total_vs_paid_media_total": -0.9733491967748239,
+  "corr_by_channel": {
+    "Channel0": -0.27773267797819795,
+    "Channel1": -0.043594968822592874,
+    "Channel2": 0.13419698895769186,
+    "Channel3": -0.5094457627829372,
+    "Channel4": -0.5814537838630726
+  }
+}
