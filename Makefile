@@ -4,7 +4,7 @@ AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dims
 
 RAW := data/raw/geo_all_channels.csv
 
-.PHONY: all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
+.PHONY: reports-meridian all data eda eda-meridian eda-extended fit fit-long select cv-fit validate clean-outputs
 
 CANDIDATES := aks_default_pool linear_default_pool aks_strong_pool \
               linear_strong_pool_lag4 linear_strong_pool
@@ -59,6 +59,10 @@ model_build/cv/$(SELECTED)_train%/meridian_model.binpb: $(RAW)
 
 validate: cv-fit
 	$(PY) scripts/validate_cv.py
+
+# Phase 5: Meridian health check + Model Results Summary (skill script).
+reports-meridian: model_build/linear_strong_pool_lag4/meridian_model.binpb
+	$(AWAKE) $(PY) model_build/results_report.py
 
 clean-outputs:
 	rm -rf outputs reports/figures model_build/eda_default
