@@ -20,15 +20,21 @@ installed `meridian.model.spec` / `prior_distribution` source (google-meridian 2
 
 ## What the EDA cannot settle (the candidates differ here)
 
-1. **How flexible the baseline is over time (knots).** There is no yearly seasonality
-   (p = 0.28 vs AR(1) noise), and the national trend is slow and linear (+1.46%/year, HAC
-   p = 0.010). But week dummies explain 5.3% of within-geo per-capita revenue variance,
-   against 2.5% under a permutation null. That common weekly variation mixes baseline
-   shocks with nationally timed media (18-30% of within-geo spend variance is common
-   timing) and controls. `knots = n_times` (Meridian's geo default) absorbs all of it, and
-   then media are identified only from cross-geo deviations. A smooth trend leaves
-   national timing to media and controls. AKS picks 66 knots, so the outcome alone does
-   not settle this either.
+1. **How flexible the baseline is over time (knots).** Two readings of the EDA conflict.
+   - *Smooth:* there is no yearly seasonality (p = 0.28 vs AR(1) noise), the national
+     trend is linear (+1.46%/year, HAC p = 0.010), and yearly breaks do not improve on a
+     straight line (HAC Wald p = 0.10, borderline). In Meridian, `knots = 2` puts knots at
+     weeks 0 and 155 and interpolates linearly between them (checked in
+     `meridian.model.knots.get_knot_info`), so it is exactly a linear-trend baseline: the
+     smallest knot count the EDA supports.
+   - *Flexible:* week dummies explain 5.3% of within-geo per-capita revenue variance,
+     against 2.5% under a permutation null. Some of that common weekly variation may be
+     baseline shocks that a straight line would push into media (18-30% of within-geo
+     spend variance is common national timing). Meridian's docs recommend starting with
+     Automatic Knot Selection, which picks 66 knots on this data.
+   The EDA cannot separate baseline shocks from nationally timed media and control
+   effects, so both ends are candidates. AKS learns from the data, so in Phase 4 CV it is
+   rerun inside each training fold.
 2. **How much media effects are pooled across geos (`eta_m`).** Within-geo spend-revenue
    correlations are tiny (|r| <= 0.079), and Channel2 is off in 64% of geo-weeks. Per-geo
    media effects are therefore barely informed by each geo's own data. Meridian's default
@@ -36,13 +42,13 @@ installed `meridian.model.spec` / `prior_distribution` source (google-meridian 2
    `HalfNormal(0.1)` when data are scarce. The EDA cannot measure geo heterogeneity of
    media effects directly.
 
-| | C1 `trend_default_pool` | C2 `weekly_default_pool` | C3 `trend_strong_pool` |
+| | C1 `aks_default_pool` | C2 `linear_default_pool` | C3 `aks_strong_pool` |
 |---|---|---|---|
-| knots | 4 (evenly spaced, about yearly: a piecewise-linear trend) | 156 = n_times (Meridian geo default) | 4 |
+| knots | AKS (`knots.AKS(data).automatic_knot_selection()`, 66 knots on the full data) | 2 (linear trend) | AKS (66) |
 | `eta_m` (geo spread of media effects) | `HalfNormal(1)` (default) | `HalfNormal(1)` (default) | `HalfNormal(0.1)` |
 | `media_effects_dist` | `log_normal` (default) | `log_normal` | `log_normal` |
 | everything else | as in the table above | same | same |
-| complexity rank | 2 | 3 (most) | 1 (least) |
+| complexity rank | 3 (most) | 1 (least: 64 fewer time parameters) | 2 (C1 with a tighter pooling prior) |
 
 ## Sampler (identical for all candidates; not changed after seeing results)
 
@@ -61,8 +67,8 @@ NUTS defaults otherwise (`max_tree_depth=10`). Each fit is saved as
    transformed KPI, which is identical across candidates). ELPD is estimated with
    ArviZ PSIS-LOO. Pointwise values and Pareto-k go to `outputs/selection/`.
 3. **Simplicity rule.** Start from the simplest converged candidate, in the order
-   C3 < C1 < C2. Move to the next more complex converged candidate only if its ELPD
+   C2 < C3 < C1. Move to the next more complex converged candidate only if its ELPD
    exceeds the current choice's by more than 2 SE of the paired difference. Steps:
-   C3 vs C1, then the winner vs C2.
+   C2 vs C3, then the current choice vs C1.
 4. If only one candidate converges, it is selected, and the reports say plainly that it
    won by convergence, not by fit.

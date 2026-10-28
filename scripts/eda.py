@@ -159,6 +159,15 @@ def trend_test(nat):
   res["log_revenue_growth_pct_per_year"] = float(100 * (np.exp(fit_log.params[1]) - 1))
   res["log_revenue_p_value"] = float(fit_log.pvalues[1])
   res["primary"] = f"hac_maxlags_{nw_lags(n)}"
+  # Is a straight line enough? Add yearly hinge terms (a piecewise-linear trend
+  # with breaks at weeks 52 and 104) and test them jointly with HAC SEs.
+  tw = np.arange(n)
+  Xh = np.column_stack([X, np.maximum(0, tw - 52) / 52.0, np.maximum(0, tw - 104) / 52.0])
+  fit_h = sm.OLS(y, Xh).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
+  wald = fit_h.wald_test(np.eye(4)[2:], scalar=True)
+  res["piecewise_yearly_vs_linear"] = {
+      "wald_stat": float(wald.statistic), "df": 2, "p_value": float(wald.pvalue),
+      "linear_rejected_5pct": bool(wald.pvalue < 0.05)}
   res["first_52_vs_last_52_revenue_pct"] = float(100 * (y[-52:].sum() / y[:52].sum() - 1))
 
   fig, ax = plt.subplots(figsize=(8, 3.2))

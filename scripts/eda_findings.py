@@ -50,6 +50,11 @@ lines = [
     f"(HAC SE, Newey-West {tr['primary'].split('_')[-1]} lags: t = {t['t']:.2f}, "
     f"p = {t['p_value']:.3f}; with 13 lags p = {tr['hac_maxlags_13']['p_value']:.3f}). "
     f"Last 52 weeks vs first 52: {tr['first_52_vs_last_52_revenue_pct']:+.1f}%.",
+    f"- Is a straight line enough? Adding yearly breaks (weeks 52 and 104) to the trend: "
+    f"HAC Wald chi2({tr['piecewise_yearly_vs_linear']['df']}) = "
+    f"{tr['piecewise_yearly_vs_linear']['wald_stat']:.2f}, p = "
+    f"{tr['piecewise_yearly_vs_linear']['p_value']:.2f}; linear rejected at 5%: "
+    f"{tr['piecewise_yearly_vs_linear']['linear_rejected_5pct']}.",
     "",
     fig(tr["figure"]),
     "",
