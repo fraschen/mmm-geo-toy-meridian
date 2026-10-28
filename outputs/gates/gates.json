@@ -1,0 +1,337 @@
+{
+  "selected": "linear_strong_pool_lag4",
+  "selection_basis": "fallback: no round-3 candidate converged; R1 (won by convergence, not by fit)",
+  "thresholds": {
+    "prior_predictive_national_coverage_min": 0.8,
+    "insample_geo_week_r2_min": 0.5,
+    "insample_national_r2_min": 0.25,
+    "insample_coverage_range": [
+      0.85,
+      0.99
+    ],
+    "warn_within_geo_r2_min": 0.1,
+    "warn_residual_lag1_abs_max": 0.2,
+    "cv_error_ratio_max": 1.25,
+    "cv_national_mape_max": 0.1,
+    "cv_coverage_min": 0.8,
+    "roi_fold_ratio_warn": 2.0,
+    "roi_fold_ratio_fail": 5.0,
+    "roi_contraction_min": 0.3,
+    "p_roi_gt_1_determined": [
+      0.1,
+      0.9
+    ]
+  },
+  "threshold_basis": {
+    "cv_national_mape_max": "PROMPT.md value (10%). National noise floor: a 13-week moving average has MAPE 5.1%, so 10% is about 1.9x the floor; kept unchanged.",
+    "insample_geo_week_r2_min": "Not set by PROMPT.md. Geo levels dominate geo-week variance (revenue scales with population), so a model must explain at least half of it.",
+    "insample_national_r2_min": "Not set by PROMPT.md. National weekly revenue has CV 6.9% and is close to white noise (lag-1 -0.02), so a modest R2 is the realistic bar.",
+    "insample_coverage_range": "Not set by PROMPT.md. Nominal 94%; 85-99% allows sampling noise.",
+    "roi_contraction_min": "Not set by PROMPT.md. Contraction = 1 - posterior sd / prior sd of ROI; below 0.30 the posterior keeps > 70% of the prior spread (prior-driven, warn).",
+    "warn_within_geo_r2_min": "Not set by PROMPT.md. Share of within-geo variance explained.",
+    "warn_residual_lag1_abs_max": "Not set by PROMPT.md. |lag-1 autocorrelation| of residuals.",
+    "prior_predictive_national_coverage_min": "Not set by PROMPT.md. Share of national weeks inside the prior predictive 94% interval."
+  },
+  "gates": [
+    {
+      "gate": "data_integrity",
+      "status": "PASS",
+      "value": {
+        "checksum_ok": true,
+        "balanced_panel": true,
+        "missing": 0,
+        "duplicates": 0,
+        "nonnegative": true
+      },
+      "threshold": "all true",
+      "blocking": true,
+      "note": ""
+    },
+    {
+      "gate": "prior_predictive_coverage",
+      "status": "PASS",
+      "value": 1.0,
+      "threshold": 0.8,
+      "blocking": true,
+      "note": "prior predictive 94% interval width / observed mean: 7.06"
+    },
+    {
+      "gate": "convergence",
+      "status": "PASS",
+      "value": {
+        "max_rhat": 1.0091139545555818,
+        "min_ess_bulk": 441.1680564540055,
+        "min_ess_tail": 690.0086171905064,
+        "divergences": 1
+      },
+      "threshold": {
+        "rhat_max": 1.05,
+        "ess_min": 400,
+        "divergences_max": 20.0
+      },
+      "blocking": true,
+      "note": "Post-hoc gate (user decision before round 3): R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws. Pre-registered: R-hat <= 1.01, ESS >= 400, 0 divergences."
+    },
+    {
+      "gate": "insample_r2",
+      "status": "PASS",
+      "value": {
+        "geo_week": 0.7668751322409831,
+        "national": 0.4762979811670618
+      },
+      "threshold": {
+        "geo_week_min": 0.5,
+        "national_min": 0.25
+      },
+      "blocking": true,
+      "note": ""
+    },
+    {
+      "gate": "insample_coverage",
+      "status": "PASS",
+      "value": {
+        "geo_week": 0.9463141025641025,
+        "national": 0.9038461538461539
+      },
+      "threshold": [
+        0.85,
+        0.99
+      ],
+      "blocking": true,
+      "note": ""
+    },
+    {
+      "gate": "within_geo_r2",
+      "status": "PASS",
+      "value": 0.27413646728822083,
+      "threshold": 0.1,
+      "blocking": false,
+      "note": ""
+    },
+    {
+      "gate": "residual_autocorrelation",
+      "status": "PASS",
+      "value": {
+        "national_lag1": 0.011158217123427485,
+        "median_geo_lag1": 0.0006571120019805958
+      },
+      "threshold": 0.2,
+      "blocking": false,
+      "note": ""
+    },
+    {
+      "gate": "cv_fold_104",
+      "status": "FAIL",
+      "value": {
+        "geo_error_ratio": 1.039370876035575,
+        "national_error_ratio": 1.0936752546915678,
+        "national_mape": 0.04463171538546965,
+        "geo_coverage": 0.9365384615384615,
+        "national_coverage": 0.7692307692307693,
+        "national_bias": 0.03119192655513334,
+        "failed": [
+          "national_coverage"
+        ]
+      },
+      "threshold": {
+        "error_ratio_max": 1.25,
+        "national_mape_max": 0.1,
+        "coverage_min": 0.8
+      },
+      "blocking": true,
+      "note": ""
+    },
+    {
+      "gate": "cv_fold_117",
+      "status": "FAIL",
+      "value": {
+        "converged": false
+      },
+      "threshold": "fold fit must converge",
+      "blocking": true,
+      "note": "Fold fit did not converge; no forecast evidence (diagnostics only)."
+    },
+    {
+      "gate": "cv_fold_130",
+      "status": "FAIL",
+      "value": {
+        "converged": false
+      },
+      "threshold": "fold fit must converge",
+      "blocking": true,
+      "note": "Fold fit did not converge; no forecast evidence (diagnostics only)."
+    },
+    {
+      "gate": "cv_holdout",
+      "status": "FAIL",
+      "value": {
+        "converged": false
+      },
+      "threshold": "fold fit must converge",
+      "blocking": true,
+      "note": "Fold fit did not converge; no forecast evidence (diagnostics only)."
+    },
+    {
+      "gate": "roi_fold_stability",
+      "status": "FAIL",
+      "value": {
+        "converged_folds": 1
+      },
+      "threshold": "at least 2 converged folds",
+      "blocking": true,
+      "note": "Not assessable: fewer than two converged fold fits."
+    },
+    {
+      "gate": "channel_roi_checks",
+      "status": "WARN",
+      "value": {
+        "Channel0": {
+          "roi_contraction": 0.7782305480782037,
+          "prior_driven": false,
+          "p_roi_gt_1": 0.24225,
+          "payback_determined": false,
+          "status": "WARN"
+        },
+        "Channel1": {
+          "roi_contraction": 0.8324571615657423,
+          "prior_driven": false,
+          "p_roi_gt_1": 0.2735,
+          "payback_determined": false,
+          "status": "WARN"
+        },
+        "Channel2": {
+          "roi_contraction": 0.6829628624522903,
+          "prior_driven": false,
+          "p_roi_gt_1": 0.64225,
+          "payback_determined": false,
+          "status": "WARN"
+        },
+        "Channel3": {
+          "roi_contraction": 0.7731877699884881,
+          "prior_driven": false,
+          "p_roi_gt_1": 0.8135,
+          "payback_determined": false,
+          "status": "WARN"
+        },
+        "Channel4": {
+          "roi_contraction": 0.608089236370491,
+          "prior_driven": false,
+          "p_roi_gt_1": 0.57,
+          "payback_determined": false,
+          "status": "WARN"
+        }
+      },
+      "threshold": {
+        "contraction_min": 0.3,
+        "p_roi_gt_1_determined": [
+          0.1,
+          0.9
+        ]
+      },
+      "blocking": false,
+      "note": ""
+    }
+  ],
+  "insample": {
+    "geo_week_mape": 0.2595597794437262,
+    "national_mape": 0.03959205264904867
+  },
+  "meridian_health": {
+    "overall_status": "PASS",
+    "health_score": 93.08284691170007,
+    "checks": [
+      {
+        "check": "Convergence",
+        "status": "PASS",
+        "details": {
+          "rhat": 1.0126123233898516,
+          "parameter": "xi_n",
+          "convergence_threshold": 1.2
+        },
+        "recommendation": "The model has likely converged, as all parameters have R-hat values < 1.2.",
+        "comparison": "Meridian passes R-hat < 1.2; our gate uses R-hat <= 1.05 plus ESS and divergences"
+      },
+      {
+        "check": "Baseline",
+        "status": "PASS",
+        "details": {
+          "negative_baseline_prob": 0.0,
+          "negative_baseline_prob_fail_threshold": 0.8,
+          "negative_baseline_prob_review_threshold": 0.2
+        },
+        "recommendation": "The posterior probability that the baseline is negative is 0.00. We recommend visually inspecting the baseline time series in the Model Fit charts to confirm this.",
+        "comparison": ""
+      },
+      {
+        "check": "BayesianPPP",
+        "status": "PASS",
+        "details": {
+          "bayesian_ppp": 0.99875
+        },
+        "recommendation": "The Bayesian posterior predictive p-value is 1.00. The observed total outcome is consistent with the model's posterior predictive distribution.",
+        "comparison": "Meridian checks only the total outcome; our gate checks weekly interval coverage"
+      },
+      {
+        "check": "GoodnessOfFit",
+        "status": "PASS",
+        "details": {
+          "r_squared": 0.47629798116706146,
+          "mape": 0.0395920526490487,
+          "wmape": 0.039160394089835834,
+          "r_squared_train": null,
+          "mape_train": null,
+          "wmape_train": null,
+          "r_squared_test": null,
+          "mape_test": null,
+          "wmape_test": null
+        },
+        "recommendation": "R-squared = 0.4763, MAPE = 0.0396, and wMAPE = 0.0392. These goodness-of-fit metrics are intended for guidance and relative comparison.",
+        "comparison": "Meridian reports R2/MAPE for guidance only (no pass/fail bar); our in-sample and CV gates are explicit"
+      },
+      {
+        "check": "PriorPosteriorShift",
+        "status": "PASS",
+        "details": {
+          "channels_str": ""
+        },
+        "recommendation": "The model has successfully learned from the data. This is a positive sign that your data was informative.",
+        "comparison": ""
+      },
+      {
+        "check": "ImplausibleROI",
+        "status": "PASS",
+        "details": {
+          "implausible_roi_msg": ""
+        },
+        "recommendation": "All channels have plausible ROI estimates.",
+        "comparison": ""
+      },
+      {
+        "check": "HighVariance",
+        "status": "PASS",
+        "details": {
+          "high_variance_channels_str": ""
+        },
+        "recommendation": "All channels have acceptable ROI variance.",
+        "comparison": ""
+      },
+      {
+        "check": "PotentialBias",
+        "status": "PASS",
+        "details": {
+          "low_correlation_channels_str": ""
+        },
+        "recommendation": "All channels have sufficient correlation with control variables.",
+        "comparison": ""
+      }
+    ]
+  },
+  "blocking_failures": [
+    "cv_fold_104",
+    "cv_fold_117",
+    "cv_fold_130",
+    "cv_holdout",
+    "roi_fold_stability"
+  ],
+  "passed": false
+}
