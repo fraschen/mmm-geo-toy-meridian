@@ -97,3 +97,21 @@ convergence" checklist ([model-debugging](https://developers.google.com/meridian
 
 Everything else, the sampler, and the protocol (convergence gate, no reruns,
 PSIS-LOO with the 2-SE rule, R1 < R2) are unchanged.
+
+## Round 3 (post hoc: longer warm-up, moderate gate)
+
+After no R1 CV fold converged, the gate was relaxed (user decision, before refitting)
+to R-hat <= 1.05, bulk/tail ESS >= 400, and <= 0.5% divergent draws. C1-C3 were refit
+with the Meridian getting-started notebook's warm-up (`n_adapt=1000, n_burnin=500`;
+4 chains x 1000 kept draws). None converged: C2-long had max R-hat 1.014, min bulk/tail
+ESS 206/111 and 72 divergences; C3-long 1.031, 130/179, 3; C1-long 1.069, 68/154, 52.
+R1 remains selected as the fallback. It won by convergence, not by fit.
+
+Where the failures sit: in C1-long and C2-long, every parameter behind reported
+quantities (ROI, media coefficients, adstock, Hill, `eta_m`, control geo effects,
+Promo, organic, sigma) has R-hat <= 1.007 and bulk ESS >= 516. The exception is one
+`beta_gm` element in C1-long (bulk ESS 343). The failures are in the baseline
+(`knot_values`, `mu_t`, `tau_g`), in the pooled control means (`gamma_c`), and in the
+divergences (1.3-1.8% of draws). The getting-started notebook uses C1's specification
+and checks only an R-hat boxplot against 1.2, a bar these fits would clear. Our gate is
+stricter: all parameters, ESS, and divergences.
