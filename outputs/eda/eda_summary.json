@@ -1,0 +1,835 @@
+{
+  "data": {
+    "n_rows": 6240,
+    "n_geos": 40,
+    "n_weeks": 156,
+    "first_week": "2021-01-25",
+    "last_week": "2024-01-15",
+    "time_step_days": [
+      7
+    ],
+    "rows_per_geo_min": 156,
+    "rows_per_geo_max": 156,
+    "balanced_panel": true,
+    "duplicate_geo_weeks": 0,
+    "missing_values_total": 0,
+    "negative_values": {
+      "competitor_sales_control": 3238,
+      "sentiment_score_control": 3216
+    },
+    "negative_values_note": "Controls are centred indices, so negatives are expected there.",
+    "nonnegative_required_columns_ok": true,
+    "population_constant_within_geo": true,
+    "spend_share": {
+      "Channel0": 0.1845244420592972,
+      "Channel1": 0.14269422479759583,
+      "Channel2": 0.05503310917455205,
+      "Channel3": 0.4002888360053137,
+      "Channel4": 0.2174593879632412
+    },
+    "total_spend": 219492402.35048598,
+    "last_52_weeks_spend": 71438676.00472197,
+    "last_52_weeks_spend_by_channel": {
+      "Channel0": 13995530.663663,
+      "Channel1": 9910013.659871599,
+      "Channel2": 4141974.5699182,
+      "Channel3": 27984683.908773996,
+      "Channel4": 15406473.20249517
+    },
+    "total_revenue": 1318699437.7351665,
+    "nonzero_spend_geo_weeks": {
+      "Channel0": 5485,
+      "Channel1": 4498,
+      "Channel2": 2230,
+      "Channel3": 6071,
+      "Channel4": 5420
+    },
+    "revenue_per_conversion": {
+      "mean": 0.02000151333942308,
+      "cv": 0.0049588969574893725,
+      "min": 0.019650234,
+      "max": 0.02036254
+    },
+    "figure_spend_share": "reports/figures/eda/spend_share.png"
+  },
+  "cpm": {
+    "Channel0": {
+      "cpm_median": 7.332723135848411,
+      "cpm_cv": 3.319006311087166e-08,
+      "cpm_p01": 7.332722547311789,
+      "cpm_p99": 7.332723728706244,
+      "cpm_min": 7.332722186565266,
+      "cpm_max": 7.332724060927241,
+      "share_within_1pct_of_median": 1.0,
+      "max_abs_relative_deviation_from_median": 1.2945847371881314e-07,
+      "spend_on_impressions_r2_no_intercept": 0.9999999999999988,
+      "geo_median_cpm_cv": 3.960385985588683e-09,
+      "national_weekly_cpm_cv": 7.773837117954513e-09,
+      "rows_spend_without_impressions": 0,
+      "rows_impressions_without_spend": 0
+    },
+    "Channel1": {
+      "cpm_median": 9.641231543844807,
+      "cpm_cv": 3.3473511232589357e-08,
+      "cpm_p01": 9.641230782914084,
+      "cpm_p99": 9.641232313133354,
+      "cpm_min": 9.641230206544124,
+      "cpm_max": 9.641232699702647,
+      "share_within_1pct_of_median": 1.0,
+      "max_abs_relative_deviation_from_median": 1.3870641701885233e-07,
+      "spend_on_impressions_r2_no_intercept": 0.999999999999999,
+      "geo_median_cpm_cv": 4.528413657179309e-09,
+      "national_weekly_cpm_cv": 7.779434268576306e-09,
+      "rows_spend_without_impressions": 0,
+      "rows_impressions_without_spend": 0
+    },
+    "Channel2": {
+      "cpm_median": 7.430924412665986,
+      "cpm_cv": 3.4761052299247336e-08,
+      "cpm_p01": 7.43092382097134,
+      "cpm_p99": 7.430925039480297,
+      "cpm_min": 7.430923592506953,
+      "cpm_max": 7.430925271561315,
+      "share_within_1pct_of_median": 1.0,
+      "max_abs_relative_deviation_from_median": 1.1558391421750969e-07,
+      "spend_on_impressions_r2_no_intercept": 0.999999999999999,
+      "geo_median_cpm_cv": 5.508684054184166e-09,
+      "national_weekly_cpm_cv": 1.6621248515179934e-08,
+      "rows_spend_without_impressions": 0,
+      "rows_impressions_without_spend": 0
+    },
+    "Channel3": {
+      "cpm_median": 7.792840481468117,
+      "cpm_cv": 3.3132667948342574e-08,
+      "cpm_p01": 7.792839859703299,
+      "cpm_p99": 7.792841115899879,
+      "cpm_min": 7.792839602751531,
+      "cpm_max": 7.7928413907123035,
+      "share_within_1pct_of_median": 1.0,
+      "max_abs_relative_deviation_from_median": 1.1667686372618391e-07,
+      "spend_on_impressions_r2_no_intercept": 0.9999999999999987,
+      "geo_median_cpm_cv": 3.986683891936022e-09,
+      "national_weekly_cpm_cv": 6.95049277422022e-09,
+      "rows_spend_without_impressions": 0,
+      "rows_impressions_without_spend": 0
+    },
+    "Channel4": {
+      "cpm_median": 7.791911599513699,
+      "cpm_cv": 3.3098515794507447e-08,
+      "cpm_p01": 7.791910960865548,
+      "cpm_p99": 7.791912216941434,
+      "cpm_min": 7.791910662610373,
+      "cpm_max": 7.791912487463223,
+      "share_within_1pct_of_median": 1.0,
+      "max_abs_relative_deviation_from_median": 1.2024049733661002e-07,
+      "spend_on_impressions_r2_no_intercept": 0.9999999999999988,
+      "geo_median_cpm_cv": 4.034472258357475e-09,
+      "national_weekly_cpm_cv": 7.590034358505861e-09,
+      "rows_spend_without_impressions": 0,
+      "rows_impressions_without_spend": 0
+    },
+    "constant_cpm_verdict": {
+      "Channel0": true,
+      "Channel1": true,
+      "Channel2": true,
+      "Channel3": true,
+      "Channel4": true
+    },
+    "note": "Deviations are at float32 rounding level, so spend = impressions x a constant CPM; Meridian's cost-per-media-unit 'outliers' are rounding noise.",
+    "figure": "reports/figures/eda/cpm_relative.png"
+  },
+  "trend": {
+    "hac_maxlags_4": {
+      "slope_per_year": 123541.51726070108,
+      "slope_per_year_pct_of_mean": 1.4614760681000492,
+      "se": 47658.78785357317,
+      "t": 2.592208547986364,
+      "p_value": 0.00953619443126921
+    },
+    "hac_maxlags_13": {
+      "slope_per_year": 123541.51726070108,
+      "slope_per_year_pct_of_mean": 1.4614760681000492,
+      "se": 45516.53174815848,
+      "t": 2.714212012994583,
+      "p_value": 0.006643363425727912
+    },
+    "log_revenue_growth_pct_per_year": 1.5111075542780572,
+    "log_revenue_p_value": 0.008931316507010498,
+    "primary": "hac_maxlags_4",
+    "first_52_vs_last_52_revenue_pct": 2.5762106689648734,
+    "figure": "reports/figures/eda/national_trend.png"
+  },
+  "seasonality": {
+    "method": "Detrended national revenue; R2 of week-of-year means (52 groups x 3 years) vs 10000 simulated noise series of the same length: iid Gaussian and AR(1) with the observed lag-1 autocorrelation.",
+    "observed_r2": 0.36031184639956626,
+    "null_iid_mean": 0.3300382505385119,
+    "null_iid_p95": 0.41844260885787454,
+    "p_value_iid": 0.2777,
+    "detrended_lag1_autocorr": -0.024866315449246446,
+    "null_ar1_mean": 0.33005820518137985,
+    "null_ar1_p95": 0.4206391887450931,
+    "p_value_ar1": 0.2776,
+    "geo_r2_median": 0.347109097397609,
+    "geos_significant_5pct_iid": 6,
+    "geos_expected_by_chance": 2.0,
+    "seasonality_detected": false,
+    "figure": "reports/figures/eda/seasonality_null.png"
+  },
+  "noise_floor": {
+    "definition": "CV = sd/mean of weekly revenue; detrended CV removes a linear trend; MAPE vs 13-week centred moving average approximates the error floor of a smooth predictor; lag-1 autocorrelation of detrended revenue.",
+    "geo_weekly_cv": {
+      "median": 0.300369133482736,
+      "min": 0.21523317047310353,
+      "max": 0.4942870190921175
+    },
+    "geo_detrended_cv": {
+      "median": 0.29929150983689945,
+      "min": 0.21420786286349563,
+      "max": 0.4913144619204597
+    },
+    "geo_lag1_autocorr": {
+      "median": 0.007448136120956329,
+      "min": -0.1422400745818405,
+      "max": 0.15186158602471406
+    },
+    "geo_mape_vs_13wk_ma": {
+      "median": 0.23063598954797943,
+      "min": 0.1550692734377039,
+      "max": 0.3973754812747756
+    },
+    "geo_median_abs_week_on_week_change": {
+      "median": 0.2813403351277337,
+      "min": 0.17443031119173058,
+      "max": 0.5253077028151426
+    },
+    "national_weekly_cv": 0.0690814906008424,
+    "national_detrended_cv": 0.06790458040809742,
+    "national_lag1_autocorr": -0.024866315449246446,
+    "national_mape_vs_13wk_ma": 0.05146468432693258,
+    "national_median_abs_week_on_week_change": 0.06412514611031929
+  },
+  "lag_correlation": {
+    "geo_demeaned": {
+      "Channel0": [
+        0.03171334255864699,
+        0.02544663289276806,
+        0.017597398320849174,
+        0.00224890616899189,
+        0.018528149475958097,
+        0.02282242499265926,
+        0.010163951531489933,
+        0.03217895513845339,
+        0.0005308844889326057
+      ],
+      "Channel1": [
+        -0.01054748202041918,
+        0.023949405687815704,
+        0.009893431001779626,
+        0.028180402655930213,
+        0.013183947651337088,
+        0.00023087654254585956,
+        0.005284702395665496,
+        0.030512101570292684,
+        0.0028568277639932013
+      ],
+      "Channel2": [
+        -0.04960104984608002,
+        0.03371764867115554,
+        0.014136902456495442,
+        0.014363985762299792,
+        0.039793089309392675,
+        0.025319735633090423,
+        -0.01403443978776868,
+        0.017545887982984096,
+        -0.030603176743255862
+      ],
+      "Channel3": [
+        -0.05177300287579023,
+        0.04010433388228955,
+        0.0036726875417091454,
+        0.0030946740485595908,
+        0.013375186436372493,
+        0.013174692376208653,
+        0.002853519168007346,
+        0.027249232071852394,
+        -0.021377045155720642
+      ],
+      "Channel4": [
+        -0.07885915399824493,
+        0.010100565397012509,
+        0.04300528847125316,
+        0.03872089594038738,
+        -0.001787074644513986,
+        0.019086096565297198,
+        0.012383353724330094,
+        0.018955150271016935,
+        -0.018093512121160504
+      ]
+    },
+    "geo_and_week_demeaned": {
+      "Channel0": [
+        0.03076272313221801,
+        0.021855612100953298,
+        0.012091030408581682,
+        0.004186641305949233,
+        0.020055246176937647,
+        0.01963918095960053,
+        0.006802377148429637,
+        0.03459580926619497,
+        0.0028618515768765594
+      ],
+      "Channel1": [
+        -0.013430033583878953,
+        0.017239763825557534,
+        0.01901242101982639,
+        0.0371990357442688,
+        0.010344407124468045,
+        -0.009062028279838732,
+        -0.0012783550548150838,
+        0.026110014288751957,
+        -0.00017957196664406777
+      ],
+      "Channel2": [
+        -0.044893573805902906,
+        0.026831205097465786,
+        0.011033983686047681,
+        0.012246535168918752,
+        0.035695735498317414,
+        0.011277304873451398,
+        -0.018625801078368264,
+        0.013988030095479017,
+        -0.03089879162069458
+      ],
+      "Channel3": [
+        -0.045798290146489104,
+        0.030434224274031977,
+        0.007354894243492015,
+        0.004853958751343627,
+        0.006499755653648881,
+        0.008268421071465252,
+        -0.0039837838339525115,
+        0.023697479679320902,
+        -0.02000352307859923
+      ],
+      "Channel4": [
+        -0.07083093772599282,
+        0.006591393049012276,
+        0.036096545896664944,
+        0.04862106503432021,
+        -0.0020584809562868844,
+        0.016532086628670284,
+        0.012503208676838715,
+        0.004968060765933077,
+        -0.007268965949971041
+      ]
+    },
+    "geo_demeaned_partial_controls": {
+      "Channel0": [
+        0.0007076179030110112,
+        0.014629189100452007,
+        0.0054411087896749635,
+        -0.00433279363230248,
+        0.01069684790705934,
+        0.017897584341394834,
+        0.02040746472548777,
+        0.024862163270497648,
+        0.012391844321583446
+      ],
+      "Channel1": [
+        0.013192355583174765,
+        0.011836909947238343,
+        0.007720593372928789,
+        0.023174825115662382,
+        0.009445959470945913,
+        -0.006228859780112423,
+        0.008098693053422283,
+        0.03214339668240481,
+        0.009937911973088966
+      ],
+      "Channel2": [
+        0.014209254601863487,
+        0.020643237413211998,
+        -0.00993291990844686,
+        -0.0002523159965764539,
+        0.03341873307692068,
+        0.0056441744627478444,
+        -0.015024891711180256,
+        0.00725760402905558,
+        -0.021807231429351173
+      ],
+      "Channel3": [
+        0.02381480571493314,
+        0.02672894985964351,
+        -0.012666734651317171,
+        -0.00023005716054909053,
+        0.00021156614975789573,
+        5.381738921754126e-05,
+        0.013263604587085009,
+        0.01658024460241466,
+        -0.01033130298962207
+      ],
+      "Channel4": [
+        0.010823308056558607,
+        -0.00690071970080868,
+        0.02694281022021146,
+        0.03264049863744921,
+        -0.011413538651290783,
+        0.0004071440920746365,
+        0.02570521405310421,
+        0.005624822158412108,
+        -0.008211471611876547
+      ]
+    },
+    "null_95pct_band": 0.024812114493549833,
+    "max_partial_corr_lag": {
+      "Channel0": 7,
+      "Channel1": 7,
+      "Channel2": 4,
+      "Channel3": 1,
+      "Channel4": 3
+    },
+    "lags_above_null_band_partial": {
+      "Channel0": [
+        7
+      ],
+      "Channel1": [
+        7
+      ],
+      "Channel2": [
+        4
+      ],
+      "Channel3": [
+        1
+      ],
+      "Channel4": [
+        2,
+        3,
+        6
+      ]
+    },
+    "figure": "reports/figures/eda/lag_correlation.png"
+  },
+  "collinearity": {
+    "within_geo_spend_corr": {
+      "Channel0": {
+        "Channel0": 1.0,
+        "Channel1": 0.1934141521268134,
+        "Channel2": 0.24274539281189153,
+        "Channel3": 0.33158030408279526,
+        "Channel4": 0.17121213159375054
+      },
+      "Channel1": {
+        "Channel0": 0.1934141521268134,
+        "Channel1": 1.0,
+        "Channel2": 0.24417899006241883,
+        "Channel3": 0.30126213944107094,
+        "Channel4": 0.2244866017596266
+      },
+      "Channel2": {
+        "Channel0": 0.24274539281189153,
+        "Channel1": 0.24417899006241883,
+        "Channel2": 1.0,
+        "Channel3": 0.5035495464518134,
+        "Channel4": 0.435982831611006
+      },
+      "Channel3": {
+        "Channel0": 0.33158030408279526,
+        "Channel1": 0.30126213944107094,
+        "Channel2": 0.5035495464518134,
+        "Channel3": 1.0,
+        "Channel4": 0.4799587629867696
+      },
+      "Channel4": {
+        "Channel0": 0.17121213159375054,
+        "Channel1": 0.2244866017596266,
+        "Channel2": 0.435982831611006,
+        "Channel3": 0.4799587629867696,
+        "Channel4": 1.0
+      }
+    },
+    "within_geo_max_abs_corr": 0.5035495464518134,
+    "national_spend_corr": {
+      "Channel0": {
+        "Channel0": 1.0,
+        "Channel1": 0.3260642713712874,
+        "Channel2": 0.3847334722105976,
+        "Channel3": 0.43669531579626947,
+        "Channel4": 0.26824912854447264
+      },
+      "Channel1": {
+        "Channel0": 0.3260642713712874,
+        "Channel1": 1.0,
+        "Channel2": 0.42764562011684065,
+        "Channel3": 0.4508752403238931,
+        "Channel4": 0.3735868248546777
+      },
+      "Channel2": {
+        "Channel0": 0.3847334722105976,
+        "Channel1": 0.42764562011684065,
+        "Channel2": 1.0,
+        "Channel3": 0.7002853280627723,
+        "Channel4": 0.6424522750547254
+      },
+      "Channel3": {
+        "Channel0": 0.43669531579626947,
+        "Channel1": 0.4508752403238931,
+        "Channel2": 0.7002853280627723,
+        "Channel3": 1.0,
+        "Channel4": 0.6150332744513177
+      },
+      "Channel4": {
+        "Channel0": 0.26824912854447264,
+        "Channel1": 0.3735868248546777,
+        "Channel2": 0.6424522750547254,
+        "Channel3": 0.6150332744513177,
+        "Channel4": 1.0
+      }
+    },
+    "national_max_abs_corr": 0.7002853280627723,
+    "vif_within_geo_media_only": {
+      "Channel0": 1.143844046209124,
+      "Channel1": 1.1295431468468318,
+      "Channel2": 1.4561654719490968,
+      "Channel3": 1.638953178162871,
+      "Channel4": 1.3978152706249076
+    },
+    "vif_within_geo_all_treatments_and_controls": {
+      "Channel0_spend": 1.3612737845773253,
+      "Channel1_spend": 1.1932915693964166,
+      "Channel2_spend": 1.6162856512502646,
+      "Channel3_spend": 2.111746481421072,
+      "Channel4_spend": 1.6475812026718608,
+      "Promo": 1.281982330053689,
+      "Organic_channel0_impression": 1.5415520537660685,
+      "competitor_sales_control": 1.8287269532548927,
+      "sentiment_score_control": 1.8785744390731638
+    },
+    "max_vif": 2.111746481421072,
+    "within_geo_variance_share_explained_by_week": {
+      "Channel0_spend": 0.18137954624297548,
+      "Channel1_spend": 0.1962068169136143,
+      "Channel2_spend": 0.17653308826087266,
+      "Channel3_spend": 0.2968257513924233,
+      "Channel4_spend": 0.25006566786126605,
+      "Promo": 0.1994629124171785,
+      "Organic_channel0_impression": 0.19595149577123727,
+      "competitor_sales_control": 0.3339967912791738,
+      "sentiment_score_control": 0.2751065212622169
+    },
+    "figure": "reports/figures/eda/collinearity.png"
+  },
+  "population": {
+    "revenue": {
+      "pearson": 0.9693608341901978,
+      "spearman": 0.9784240150093809,
+      "loglog_slope": 1.0372140215298726,
+      "loglog_slope_se": 0.02843033897323327
+    },
+    "spend": {
+      "pearson": 0.9967823863620844,
+      "spearman": 0.9949343339587244,
+      "loglog_slope": 1.016561733348975,
+      "loglog_slope_se": 0.010479868217044984
+    },
+    "Channel0": {
+      "pearson": 0.9927181850142646,
+      "spearman": 0.9932457786116325,
+      "loglog_slope": 1.0245829453784965,
+      "loglog_slope_se": 0.016923734140172744
+    },
+    "Channel1": {
+      "pearson": 0.9883544807209106,
+      "spearman": 0.9874296435272046,
+      "loglog_slope": 1.000457696919656,
+      "loglog_slope_se": 0.020231275040719386
+    },
+    "Channel2": {
+      "pearson": 0.9620792533064175,
+      "spearman": 0.9664165103189495,
+      "loglog_slope": 1.0668127469068884,
+      "loglog_slope_se": 0.03795831439727528
+    },
+    "Channel3": {
+      "pearson": 0.9955247132083902,
+      "spearman": 0.9936210131332085,
+      "loglog_slope": 1.0086982369421331,
+      "loglog_slope_se": 0.011129706343943217
+    },
+    "Channel4": {
+      "pearson": 0.9942338223963504,
+      "spearman": 0.9930581613508443,
+      "loglog_slope": 1.0231272461533059,
+      "loglog_slope_se": 0.014238449652262317
+    },
+    "revenue_per_capita_cv_across_geos": 0.10002297657636174,
+    "spend_per_capita_cv_across_geos": 0.03577141386990323,
+    "control_geo_mean_spearman_with_population": {
+      "competitor_sales_control": -0.04596622889305817,
+      "sentiment_score_control": 0.22926829268292684,
+      "Promo": 0.1803001876172608
+    },
+    "population_min": 136670.94,
+    "population_max": 994048.94,
+    "figure": "reports/figures/eda/population.png"
+  },
+  "spend_vs_geo_max": {
+    "Channel0": {
+      "share_zero_geo_weeks": 0.12099358974358974,
+      "share_zero_by_geo_min": 0.07692307692307693,
+      "share_zero_by_geo_max": 0.21794871794871795,
+      "nonzero_ratio_to_geo_max_quantiles": {
+        "0.1": 0.0957647115048356,
+        "0.25": 0.1975898556353598,
+        "0.5": 0.3456843015374247,
+        "0.75": 0.5180413174137382,
+        "0.9": 0.6835786028599472
+      },
+      "share_nonzero_above_80pct_of_geo_max": 0.04138559708295351,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.2": 0.03221153846153846,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.5": 0.10432692307692308
+    },
+    "Channel1": {
+      "share_zero_geo_weeks": 0.2791666666666667,
+      "share_zero_by_geo_min": 0.20512820512820512,
+      "share_zero_by_geo_max": 0.3717948717948718,
+      "nonzero_ratio_to_geo_max_quantiles": {
+        "0.1": 0.06404758911148807,
+        "0.25": 0.14770929335200988,
+        "0.5": 0.2891488709075364,
+        "0.75": 0.46731276795472204,
+        "0.9": 0.6460448194962858
+      },
+      "share_nonzero_above_80pct_of_geo_max": 0.03712761227212094,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.2": 0.01875,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.5": 0.058173076923076925
+    },
+    "Channel2": {
+      "share_zero_geo_weeks": 0.6426282051282052,
+      "share_zero_by_geo_min": 0.5576923076923077,
+      "share_zero_by_geo_max": 0.717948717948718,
+      "nonzero_ratio_to_geo_max_quantiles": {
+        "0.1": 0.04168020417200364,
+        "0.25": 0.10945574288750616,
+        "0.5": 0.24238702657012692,
+        "0.75": 0.42520225782046983,
+        "0.9": 0.6545867869299455
+      },
+      "share_nonzero_above_80pct_of_geo_max": 0.05201793721973094,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.2": 0.014423076923076924,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.5": 0.03365384615384615
+    },
+    "Channel3": {
+      "share_zero_geo_weeks": 0.027083333333333334,
+      "share_zero_by_geo_min": 0.01282051282051282,
+      "share_zero_by_geo_max": 0.057692307692307696,
+      "nonzero_ratio_to_geo_max_quantiles": {
+        "0.1": 0.16075672511167738,
+        "0.25": 0.2707754720358873,
+        "0.5": 0.41058509164756546,
+        "0.75": 0.5618986305853048,
+        "0.9": 0.7033526232720028
+      },
+      "share_nonzero_above_80pct_of_geo_max": 0.04562675012353813,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.2": 0.025961538461538463,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.5": 0.10336538461538461
+    },
+    "Channel4": {
+      "share_zero_geo_weeks": 0.13141025641025642,
+      "share_zero_by_geo_min": 0.0641025641025641,
+      "share_zero_by_geo_max": 0.17307692307692307,
+      "nonzero_ratio_to_geo_max_quantiles": {
+        "0.1": 0.0903174396908943,
+        "0.25": 0.1913105634523504,
+        "0.5": 0.3362981721447301,
+        "0.75": 0.5013278209300415,
+        "0.9": 0.6605761105032962
+      },
+      "share_nonzero_above_80pct_of_geo_max": 0.041328413284132844,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.2": 0.022115384615384617,
+      "last52_share_geo_weeks_beyond_geo_max_if_x1.5": 0.07115384615384615
+    },
+    "figure": "reports/figures/eda/spend_vs_geo_max.png"
+  },
+  "controls_confounding": {
+    "within_geo_corr": {
+      "competitor_sales_control": {
+        "revenue": -0.20098261127402584,
+        "Channel0": 0.06781226890585013,
+        "Channel1": 0.181538191597841,
+        "Channel2": 0.43803778798936666,
+        "Channel3": 0.49853174993471105,
+        "Channel4": 0.550355679551241
+      },
+      "sentiment_score_control": {
+        "revenue": -0.03159958601142897,
+        "Channel0": 0.399150702218571,
+        "Channel1": 0.3498003960214306,
+        "Channel2": 0.402762711810653,
+        "Channel3": 0.5060639602183238,
+        "Channel4": 0.2634455815880436
+      },
+      "Promo": {
+        "revenue": 0.13294838654108615,
+        "Channel0": 0.328342566209342,
+        "Channel1": 0.10411021512490538,
+        "Channel2": 0.19501560749273814,
+        "Channel3": 0.24809875095038045,
+        "Channel4": 0.17928923071801667
+      },
+      "Organic_channel0_impression": {
+        "revenue": 0.03370808520980501,
+        "Channel0": 0.3348155310870636,
+        "Channel1": 0.28451455486824473,
+        "Channel2": 0.3997742201217412,
+        "Channel3": 0.4549427027164542,
+        "Channel4": 0.3031488741056738
+      }
+    },
+    "national_weekly_corr": {
+      "competitor_sales_control": {
+        "revenue": -0.385686115690491,
+        "Channel0": 0.25572893607062014,
+        "Channel1": 0.34682585403536254,
+        "Channel2": 0.6571426142646561,
+        "Channel3": 0.696931188197443,
+        "Channel4": 0.7352223001694295
+      },
+      "sentiment_score_control": {
+        "revenue": -0.06368291566159222,
+        "Channel0": 0.5267922897082634,
+        "Channel1": 0.4965725574080119,
+        "Channel2": 0.6280224100975016,
+        "Channel3": 0.6899877713995088,
+        "Channel4": 0.4287783387986056
+      },
+      "Promo": {
+        "revenue": 0.3015391525502514,
+        "Channel0": 0.4613200088009537,
+        "Channel1": 0.27303958114403615,
+        "Channel2": 0.3331873315559501,
+        "Channel3": 0.38082238513106803,
+        "Channel4": 0.25650508512573916
+      },
+      "Organic_channel0_impression": {
+        "revenue": 0.016237731920942886,
+        "Channel0": 0.4615221626856212,
+        "Channel1": 0.522602807558219,
+        "Channel2": 0.585817316614508,
+        "Channel3": 0.6470211225412184,
+        "Channel4": 0.48945164159757315
+      }
+    },
+    "max_abs_corr_control_with_spend_within_geo": 0.550355679551241,
+    "figure": "reports/figures/eda/controls_correlation.png"
+  },
+  "control_heterogeneity": {
+    "model": "Per geo: y ~ const + linear trend + controls + Promo + organic/geo-mean + each spend/geo-mean; Newey-West SEs. Primary y = revenue per capita / panel-mean revenue per capita; sensitivity y = revenue / geo-mean revenue.",
+    "sensitivity_geo_relative_scale": {
+      "competitor_sales_control": {
+        "pooled_fixed_effect": -0.07797040151879454,
+        "pooled_se": 0.004040265328174739,
+        "cochran_q": 605.1281213895572,
+        "df": 39,
+        "q_p_value": 1.195804246492703e-102,
+        "i2": 0.935550838539045,
+        "tau": 0.09745778523303174,
+        "geo_estimate_min": -0.3093420866605562,
+        "geo_estimate_max": 0.11121182462658626,
+        "share_geos_positive": 0.225,
+        "spearman_estimate_vs_population": 0.22476547842401504
+      },
+      "sentiment_score_control": {
+        "pooled_fixed_effect": -0.020204131152307514,
+        "pooled_se": 0.004225415849839063,
+        "cochran_q": 339.59063599406716,
+        "df": 39,
+        "q_p_value": 1.3162836503190564e-49,
+        "i2": 0.8851558439300389,
+        "tau": 0.07439468658997851,
+        "geo_estimate_min": -0.22890193807021902,
+        "geo_estimate_max": 0.1382791435620409,
+        "share_geos_positive": 0.35,
+        "spearman_estimate_vs_population": 0.04371482176360226
+      },
+      "Promo": {
+        "pooled_fixed_effect": 0.05170338830024106,
+        "pooled_se": 0.005530871938990517,
+        "cochran_q": 52.195196204906644,
+        "df": 39,
+        "q_p_value": 0.07690066786134407,
+        "i2": 0.25280480129062566,
+        "tau": 0.020367411569255225,
+        "geo_estimate_min": -0.03778833951683859,
+        "geo_estimate_max": 0.12399357127336721,
+        "share_geos_positive": 0.875,
+        "spearman_estimate_vs_population": 0.009568480300187619
+      },
+      "Organic_channel0_impression": {
+        "pooled_fixed_effect": 0.009720649321876504,
+        "pooled_se": 0.003505820104786552,
+        "cochran_q": 49.17867201549574,
+        "df": 39,
+        "q_p_value": 0.12729861134274387,
+        "i2": 0.2069732995695479,
+        "tau": 0.011344304655264807,
+        "geo_estimate_min": -0.0403296535468657,
+        "geo_estimate_max": 0.05555096743961471,
+        "share_geos_positive": 0.65,
+        "spearman_estimate_vs_population": 0.28667917448405256
+      }
+    },
+    "competitor_sales_control": {
+      "pooled_fixed_effect": -0.0770961007769611,
+      "pooled_se": 0.004049690635187054,
+      "cochran_q": 615.1264385897682,
+      "df": 39,
+      "q_p_value": 1.090843773057414e-104,
+      "i2": 0.9365984006647301,
+      "tau": 0.0985075324676185,
+      "geo_estimate_min": -0.2717463949319506,
+      "geo_estimate_max": 0.10456271610172742,
+      "share_geos_positive": 0.225,
+      "spearman_estimate_vs_population": 0.21144465290806758
+    },
+    "sentiment_score_control": {
+      "pooled_fixed_effect": -0.021458932198568644,
+      "pooled_se": 0.00426369685248837,
+      "cochran_q": 337.1235799278575,
+      "df": 39,
+      "q_p_value": 3.9524408057660834e-49,
+      "i2": 0.8843154192645148,
+      "tau": 0.07464662284944461,
+      "geo_estimate_min": -0.24495229915121203,
+      "geo_estimate_max": 0.1443105612614245,
+      "share_geos_positive": 0.35,
+      "spearman_estimate_vs_population": 0.0577861163227017
+    },
+    "Promo": {
+      "pooled_fixed_effect": 0.05139000113155873,
+      "pooled_se": 0.005513982409602928,
+      "cochran_q": 52.72166032807593,
+      "df": 39,
+      "q_p_value": 0.07007920251176314,
+      "i2": 0.26026608878948215,
+      "tau": 0.020703934119136232,
+      "geo_estimate_min": -0.03529902644559048,
+      "geo_estimate_max": 0.12187368460878431,
+      "share_geos_positive": 0.875,
+      "spearman_estimate_vs_population": 0.03714821763602252
+    },
+    "Organic_channel0_impression": {
+      "pooled_fixed_effect": 0.00999035851267887,
+      "pooled_se": 0.0035177809286788667,
+      "cochran_q": 48.801260204536334,
+      "df": 39,
+      "q_p_value": 0.13511191037433382,
+      "i2": 0.20084030952186877,
+      "tau": 0.01116459116354489,
+      "geo_estimate_min": -0.039653214110585214,
+      "geo_estimate_max": 0.05627238938994869,
+      "share_geos_positive": 0.65,
+      "spearman_estimate_vs_population": 0.28855534709193253
+    },
+    "figure": "reports/figures/eda/control_heterogeneity.png"
+  }
+}
