@@ -36,19 +36,19 @@ def main():
               geo_floor=nf["geo_mape_vs_13wk_ma"]["median"],
               ratio=cfg["gates"]["cv"]["thresholds"]["cv_national_mape_max"] / nf["national_mape_vs_13wk_ma"])
 
-  summary = ["| gate | blocking | latest status |", "|---|---|---|"]
+  summary = ["| gate | the question it answers | blocking | latest status |", "|---|---|---|---|"]
   body = []
   for name, g in cfg["gates"].items():
     hits = [r for k, r in results.items() if k == name or k.startswith(f"{name}_")]
     status = ", ".join(f"{r['gate']} {r['status']}" for r in hits) or "-"
-    summary.append(f"| [{name}](#{name.replace('_', '-')}) | {'yes' if g['blocking'] else 'no (warn only)'} | {status} |")
+    summary.append(f"| [{name}](#{name.replace('_', '-')}) | {g['plain']} | {'yes' if g['blocking'] else 'no (warn only)'} | {status} |")
     th = "\n".join(f"| `{k}` | {fmt(v)} |" for k, v in g["thresholds"].items()) or "| (none) | |"
     rows = "\n".join(f"| {r['gate']} | {r['status']} | {fmt(r['value'])} |" for r in hits
                      if not isinstance(r["value"], dict) or len(r["value"]) < 8)
     if name == "channel_roi_checks" and hits:
       rows = "\n".join(f"| {c} | {v['status']} | contraction {v['roi_contraction']:.2f}, P(ROI>1) {v['p_roi_gt_1']:.2f} |"
                        for c, v in hits[0]["value"].items())
-    body += [f"### {name}", "",
+    body += [f"### {name}", "", f"**{g['plain']}**", "",
              f"- **Blocking:** {'yes' if g['blocking'] else 'no (WARN only)'}",
              f"- **Applies to:** {g['applies_to']}",
              f"- **Rule:** {g['checks']}",
@@ -70,7 +70,8 @@ def main():
   lines = [
       "# Gates",
       "",
-      "Automated acceptance checks for the selected model. Rules and thresholds live in "
+      "These are the checks the model must pass before its numbers go to a client. A **blocking** check "
+      "that fails means the model is not client-ready; a non-blocking check only adds a caveat. Rules and thresholds live in "
       "[`config/gates.toml`](../config/gates.toml), which the scripts read; this page is generated "
       "from it and from the latest outputs (`make gates`, then `make reports`). "
       "`make gates` exits non-zero if any blocking gate fails.",

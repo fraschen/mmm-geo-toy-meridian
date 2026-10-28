@@ -5,6 +5,7 @@
 # plus the latest results in outputs/gates/gates.json.
 #
 # Fields per gate:
+#   plain       the question the gate answers, in plain words.
 #   blocking    true: a FAIL makes `make gates` exit non-zero (model not client-ready).
 #               false: the gate can only WARN (reportable with caveats).
 #   applies_to  which fits or quantities the gate evaluates.
@@ -19,10 +20,12 @@
 note = """The candidate set and the convergence criteria were revised after earlier rounds \
 failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 \
 and 0 divergences."""
+note_plain = """We loosened the reliability criteria after the first attempts failed to meet them; the original, stricter criteria are recorded in config/gates.toml."""
 interval = "94% (3rd-97th percentile of the predictive or posterior draws)"
 
 # ---------------------------------------------------------------------------- data
 [gates.data_integrity]
+plain = "Is the data file the one we expect, complete and free of impossible values?"
 blocking = true
 applies_to = "raw data file"
 checks = """Raw CSV matches its pinned SHA-256; balanced 40 x 156 geo-week panel; no missing \
@@ -35,6 +38,7 @@ enforced_in = "scripts/gates.py (data_integrity), values from scripts/eda.py"
 
 # --------------------------------------------------------------------------- prior
 [gates.prior_predictive_coverage]
+plain = "Before seeing the data, can the model's starting assumptions produce numbers like the real ones?"
 blocking = true
 applies_to = "selected model, prior draws"
 checks = """Share of national weekly revenue observations inside the prior predictive 94% \
@@ -47,6 +51,7 @@ enforced_in = "scripts/gates.py"
 
 # --------------------------------------------------------------------- convergence
 [gates.convergence]
+plain = "Did the computation run reliably? The model is estimated by several independent simulations; they must agree."
 blocking = true
 applies_to = "every fit: the production model, its CV refits, the optional calibrated refit"
 checks = """For every element of every posterior variable (elements constant across all draws, \
@@ -72,6 +77,7 @@ enforced_in = "docs/model_selection/select_model.py (record)"
 
 # ------------------------------------------------------------------ in-sample fit
 [gates.insample_r2]
+plain = "Does the model explain a reasonable share of what happened in the past?"
 blocking = true
 applies_to = "selected model, all 156 weeks"
 checks = "R2 of the posterior-mean prediction at geo-week and national weekly level. FAIL if either is below its minimum."
@@ -84,6 +90,7 @@ R2 is the realistic bar."""
 enforced_in = "scripts/gates.py"
 
 [gates.insample_coverage]
+plain = "Do the model's 94% ranges contain about 94% of past weeks, neither too narrow nor too wide?"
 blocking = true
 applies_to = "selected model, all 156 weeks"
 checks = "Share of observations inside the 94% posterior predictive interval, at geo-week and national level. FAIL outside the range."
@@ -93,6 +100,7 @@ basis = "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too nar
 enforced_in = "scripts/gates.py"
 
 [gates.within_geo_r2]
+plain = "Does the model pick up week-to-week movements within each region, not just the differences between regions?"
 blocking = false
 applies_to = "selected model"
 checks = "R2 after removing each geo's mean (week-to-week signal within geos). WARN below the minimum."
@@ -103,6 +111,7 @@ most within-geo variance is unexplainable; this flags a model with almost no wit
 enforced_in = "scripts/gates.py"
 
 [gates.residual_autocorrelation]
+plain = "Are the model's misses random, or does it repeatedly miss in the same direction week after week?"
 blocking = false
 applies_to = "selected model"
 checks = "Lag-1 autocorrelation of residuals: national weekly series and median across geos. WARN if either absolute value exceeds the maximum."
@@ -113,6 +122,7 @@ enforced_in = "scripts/gates.py"
 
 # ------------------------------------------------------------- out-of-sample (CV)
 [gates.cv]
+plain = "Does the model forecast weeks it has not seen? We refit it on shorter histories and check the next 13 weeks."
 blocking = true
 applies_to = """holdout (train 1-143, forecast 144-156) and each rolling-origin fold (train 1-104, \
 1-117, 1-130; forecast the next 13 weeks); reported as cv_fold_104, cv_fold_117, cv_fold_130, \
@@ -130,6 +140,7 @@ its noise floor is {geo_floor:.0%}."""
 enforced_in = "scripts/validate_cv.py (metrics), scripts/gates.py (gate)"
 
 [gates.roi_fold_stability]
+plain = "Do the channel ROIs stay roughly the same when the model is refitted on less data?"
 blocking = true
 applies_to = "converged CV fold fits"
 checks = """Per channel, max/min of the posterior-mean ROI across converged folds. WARN above the \
@@ -141,6 +152,7 @@ enforced_in = "scripts/gates.py"
 
 # -------------------------------------------------------------------- per channel
 [gates.channel_roi_checks]
+plain = "For each channel: did the data actually inform the ROI, and is it clear whether the channel pays back?"
 blocking = false
 applies_to = "selected model, each paid channel"
 checks = """Two warnings per channel. Prior-driven: ROI contraction (1 - posterior sd / prior sd) \

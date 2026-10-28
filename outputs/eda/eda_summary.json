@@ -179,7 +179,12 @@
     "geos_significant_5pct_iid": 6,
     "geos_expected_by_chance": 2.0,
     "seasonality_detected": false,
-    "figure": "reports/figures/eda/seasonality_null.png"
+    "figure": "reports/figures/eda/seasonality_null.png",
+    "bound": {
+      "peak_to_trough_estimate": 0.00913675419739353,
+      "peak_to_trough_upper_95": 0.040611005446706046,
+      "p_value": 0.8341870424438272
+    }
   },
   "noise_floor": {
     "definition": "CV = sd/mean of weekly revenue; detrended CV removes a linear trend; MAPE vs 13-week centred moving average approximates the error floor of a smooth predictor; lag-1 autocorrelation of detrended revenue.",

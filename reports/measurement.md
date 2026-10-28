@@ -4,6 +4,8 @@ National channel results for the selected model over all 156 weeks (2021-01-25 t
 
 ## Channel results
 
+For each channel: what it contributed, its ROI (revenue returned per unit of spend) and marginal ROI (return on the next unit of spend), with 94% ranges. P(ROI > 1) is the probability that the channel pays for itself.
+
 | channel | spend | spend share | contribution (94% CI) | share of revenue | ROI (94% CI) | mROI (94% CI) | P(ROI>1) | gate |
 |---|---|---|---|---|---|---|---|---|
 | Channel0 | 40.5M | 18.5% | 30.8M (7.3M-73.3M) | 2.3% | 0.76 (0.18-1.81) | 0.34 (0.06-0.80) | 0.24 | WARN |
@@ -21,30 +23,44 @@ National channel results for the selected model over all 156 weeks (2021-01-25 t
 
 ## Model fit and baseline
 
+The model's weekly revenue against the actual, and the baseline: what revenue would have been with no media, promotion or organic activity.
+
 ![](figures/measurement/fit_baseline.png)
 
-## Contribution waterfall
+## Where revenue comes from
+
+Total revenue broken down into the baseline and each driver's contribution.
 
 ![](figures/measurement/waterfall.png)
 
 ## Spend share vs contribution share
+
+Channels whose contribution share exceeds their spend share are doing more than their budget would suggest.
 - Channels whose share of paid-media contribution exceeds their spend share: Channel2, Channel3, Channel4.
 
 ![](figures/measurement/share.png)
 
 ## Weekly contribution by channel
 
+How much revenue each channel drove, week by week.
+
 ![](figures/measurement/weekly_contribution.png)
 
-## Saturation curves
+## Diminishing returns (saturation curves)
+
+How each channel's effect flattens as its activity grows, before (grey) and after (colour) seeing the data, over the range of activity actually observed.
 
 ![](figures/measurement/saturation.png)
 
-## Response curves
+## Revenue vs spend (response curves)
+
+How much revenue each channel would drive at different spend levels. Beyond the dashed line (historical spend) the curve is an assumption, not an observation.
 
 ![](figures/measurement/response_curves.png)
 
 ## Budget scenarios
+
+How to split the same total budget to get more revenue, allowing each channel to move up to 20% (main) or 50% (stress).
 Fixed total budget equal to the last 52 weeks' spend (71.4M), optimized over 2023-01-23 to 2024-01-15. The gain is incremental revenue at the optimal allocation minus at the historical allocation, computed per posterior draw.
 
 | scenario | constraint | budget (52 wk) | change vs last 52 weeks | gain (94% CI) | P(gain>0) | budget diff |
@@ -59,7 +75,9 @@ Fixed total budget equal to the last 52 weeks' spend (71.4M), optimized over 202
 
 ![](figures/measurement/budget.png)
 
-## Calibration with a HYPOTHETICAL lift test
+## Using a lift test (HYPOTHETICAL)
+
+How a real experiment would sharpen the model. The test here is invented, to show the method.
 **HYPOTHETICAL** test (`data/lift_tests/lift_tests.csv`, schema in `data/lift_tests/README.md`): Channel3, 2023-07-03 to 2023-08-27, 10 test geos, ROI 1.4 (SE 0.25). It was fed to Meridian's `CalibrationBuilder` (baseline prior LogNormal(0.2, 0.9), geometric decay, max lag 4). The resulting Channel3 ROI prior has mean 1.23 and sd 0.47: the spend adjustment widens the test's uncertainty because the test covered a fraction of the channel's national spend. The calibrated refit converged (max R-hat 1.0092, min bulk ESS 607, 0 divergences).
 
 | channel | ROI before (94% CI) | P(ROI>1) before | ROI after (94% CI) | P(ROI>1) after |
@@ -77,6 +95,8 @@ Fixed total budget equal to the last 52 weeks' spend (71.4M), optimized over 202
 ![](figures/measurement/calibration.png)
 
 ## Caveats
+
+Read these before sharing any number from this page.
 - Read [diagnostics.md](diagnostics.md) first: out-of-sample validation is thin, and the candidate set and convergence criteria were revised after earlier rounds failed to converge.
 - Baseline and media trade off almost one-for-one; totals are firmer than channel splits.
 - National results only; no geo-level ROI.

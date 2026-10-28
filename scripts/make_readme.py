@@ -42,188 +42,158 @@ def main():
   r1 = [n for n in sel["rounds"]["round_1"]]
   contraction = g["channel_roi_checks"]["value"]
 
-  text = f"""# Geo-level Bayesian MMM with Google Meridian
+  text = f"""# Marketing mix model with Google Meridian
 
-One production Meridian model (JAX backend) of Meridian's simulated geo dataset: 40 geos x
-156 weeks, 5 paid channels, revenue as the outcome. This README covers the choices we
-made, the diagnostics we trust, and what the model can and cannot tell a client.
+This project measures how much five paid media channels contribute to revenue, using
+Google's Meridian marketing mix model on 3 years of weekly data from 40 regions (Meridian's
+simulated dataset). It runs one model, in a container, from one command.
 
-## Verdict
+This page explains the choices we made, which checks we trust, and what the model can and
+cannot tell a client.
 
-**Not yet good enough for a client decision.** The model converges on the full data, fits
-well in sample, and its in-sample intervals are well calibrated. Three things stop it from
-being client-ready:
+## The short answer
 
-- **Out-of-sample evidence is thin.** Only {len(conv_folds)} of {len(cv['folds'])} validation refits
-  converged.{f" In that one, national 94% interval coverage was {pct(f0['national']['forecast']['coverage_94'], 0)}, below the 80% gate." if f0 else ""}
-  ROI stability across refits could not be assessed.
-- **No channel's payback is determined.** P(ROI > 1) ranges from {res.p_roi_gt_1.min():.2f} to
-  {res.p_roi_gt_1.max():.2f}, and every 94% ROI interval spans 1.
-- **Baseline and media are only weakly separated.** Total baseline and total media contribution
-  correlate at {ident['corr_baseline_total_vs_paid_media_total']:.2f} across posterior draws, so totals
-  are firmer than channel splits.
+**The model is useful for direction, not yet for decisions.** It fits the past well and its
+uncertainty ranges are honest in-sample. But three things keep it from being client-ready:
 
-Any number shared from this model should carry these caveats: national results only, wide
-ROI intervals, thin out-of-sample validation, and budget gains whose credible intervals
-include losses.
+- **We could not confirm it forecasts well.** We refit the model on shorter stretches of history
+  to see how it predicts the weeks that follow. Only {len(conv_folds)} of those {len(cv['folds'])} refits
+  ran reliably.{f" In that one, the forecast ranges were too narrow nationally: they captured {pct(f0['national']['forecast']['coverage_94'], 0)} of weeks, below our 80% bar." if f0 else ""}
+- **No channel clearly pays for itself, or clearly doesn't.** The probability that a channel's ROI is
+  above 1 ranges from {pct(res.p_roi_gt_1.min(), 0)} to {pct(res.p_roi_gt_1.max(), 0)}; we would need 90% (or 10%) to call it.
+- **The model struggles to separate media from everything else.** It is confident about total revenue,
+  less so about how much of it comes from media versus underlying demand.
+
+Anything shared from this model should come with these caveats.
 
 ## The model
 
-Defined in [`config/model.toml`](config/model.toml) and fitted by
-[`model_build/build_model.py`](model_build/build_model.py) (Meridian's model-building skill):
+Defined in [`config/model.toml`](config/model.toml):
 
-- **Baseline:** a straight line over time (`knots = 2`). The EDA finds a linear trend and no
+- **Underlying demand** follows a straight-line trend, because the data show steady growth and no
   yearly seasonality.
-- **Media:** five paid channels with geometric adstock (max lag 4) and Hill saturation.
-  Effects are strongly pooled across geos (`eta_m ~ HalfNormal(0.1)`), because each geo's own
-  media signal is weak. Every channel gets the same ROI prior, `LogNormal(0.2, 0.9)`, so
-  differences between channels come from the data.
-- **Other inputs:** competitor sales and sentiment as controls (they confound spend and
-  revenue), Promo, and organic media.
-- **Scaling:** KPI and media are population-scaled.
-- **Sampler:** NUTS with {cfg['sampler']['n_chains']} chains x {cfg['sampler']['n_keep']} draws, seed {cfg['sampler']['seed']}.
+- **Media** has effects that carry over for up to 4 weeks and that flatten out as spend grows.
+- **Regions share information:** a channel is assumed to work similarly across regions, because
+  each region's own data are too noisy to estimate it alone.
+- **Every channel starts from the same prior belief** about its return, so differences between
+  channels come from the data.
+- **Competitor sales and consumer sentiment** are included, because they move with both our spend
+  and our revenue. Leaving them out would distort media's effect.
 
-**Why this model.** It was chosen once, from candidates that varied what the EDA cannot settle:
-baseline flexibility, media pooling and max lag. The full record is in
-[docs/model_selection](docs/model_selection/README.md); those candidates are not part of the pipeline.
+**How we chose it.** We tried several versions that differed on what the data alone could not
+settle. The versions with a more flexible baseline did not run reliably. Two versions with a
+straight-line baseline did, and the simpler of the two was as good as the other, so we kept it.
+{gcfg['meta']['note_plain']} Full record: [docs/model_selection](docs/model_selection/README.md).
 
-- **Round 1:** {", ".join(lab[n] for n in r1)} (an automatically selected 66-knot baseline or a
-  linear one, with default or strong pooling) did not converge. The failures sat in the baseline.
-- **Round 2:** two models with a linear baseline and strong pooling, with max lag 4 or 8, converged.
-- **Comparison:** {f"the lag-8 model's PSIS-LOO ELPD was higher by {step['elpd_diff']:.1f}, with paired SE {step['se']:.1f}, short of the {step['threshold']:.1f} needed to prefer the more complex model, so the lag-4 model was kept." if step else sel['selection_basis']}
-- {gcfg['meta']['note']}
+## The checks we trust
 
-## Diagnostics we trust
+All rules are in [`config/gates.toml`](config/gates.toml) and explained in
+[reports/gates.md](reports/gates.md); details in [reports/diagnostics.md](reports/diagnostics.md).
 
-Rules and thresholds: [`config/gates.toml`](config/gates.toml), documented in
-[reports/gates.md](reports/gates.md). Full report: [reports/diagnostics.md](reports/diagnostics.md).
-
-- **Convergence (blocking):** every element of every parameter must meet R-hat <= {ct['rhat_max']},
-  bulk and tail ESS >= {ct['ess_min']}, and at most {pct(ct['divergent_share_max'])} divergent draws.
-  The model has max R-hat {conv['max_rhat']:.4f}, min ESS {conv['min_ess_bulk']:.0f} (bulk) and
-  {conv['min_ess_tail']:.0f} (tail), and {conv['divergences']} divergence out of {conv['n_draws_total']} draws.
-  A fit that fails reports nothing else.
-- **Out-of-sample forecasts (blocking, the decisive test):** the model is refitted on weeks 1-104,
-  1-117, 1-130 and 1-143, each forecasting the next 13 weeks, with all scaling computed inside the
-  refit. Only {len(conv_folds)} refit converged, so this gate fails.
-- **In-sample fit, judged against the noise floor:** R2 is {ins['geo_week']:.2f} at geo-week level and
-  {ins['national']:.2f} nationally, and 94% coverage is {pct(cov['geo_week'], 0)} and {pct(cov['national'], 0)}.
-  National MAPE is {pct(gates['insample']['national_mape'])}, against {pct(nf['national_mape_vs_13wk_ma'])} for a
-  13-week moving average. The national R2 looks low because that series barely varies (CV
-  {pct(nf['national_weekly_cv'])}), not because the model misses it.
-- **Identification:** ROI posteriors contract by {min(v['roi_contraction'] for v in contraction.values()):.2f}-
-  {max(v['roi_contraction'] for v in contraction.values()):.2f} relative to the prior, so the data move every channel.
-  The baseline-media correlation of {ident['corr_baseline_total_vs_paid_media_total']:.2f} limits how far the channel
-  splits can be trusted.
-- **Not relied on:** Meridian's health score ({gates['meridian_health']['health_score']:.1f}/100,
-  {gates['meridian_health']['overall_status']}). It checks convergence only at R-hat < 1.2 and scores
-  fit in sample only, so it cannot see the out-of-sample failure above.
+- **Did the computation run reliably?** Yes. Meridian estimates the model by running {cfg['sampler']['n_chains']}
+  independent simulations, and they agree with each other. If they did not, we would report nothing.
+- **Does it forecast weeks it has not seen?** This is the test that matters most, and the one the model
+  does not pass yet (see above).
+- **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by
+  {pct(gates['insample']['national_mape'])}, better than a simple 13-week average ({pct(nf['national_mape_vs_13wk_ma'])}).
+  Its 94% ranges contain {pct(cov['geo_week'], 0)} of regional weeks, close to the 94% they should.
+- **Did the data teach the model anything?** Yes. Every channel's estimate moved away from the
+  starting assumption.
+- **What we don't rely on:** Meridian's built-in health score ({gates['meridian_health']['health_score']:.0f}/100). It only
+  looks at how well the model fits the past, so it cannot see the forecasting problem.
 
 ## What the model can tell a client
 
-From [reports/measurement.md](reports/measurement.md); file `outputs/results/channel_results.csv`,
-with column definitions and package versions in `channel_results_metadata.json`.
+Details in [reports/measurement.md](reports/measurement.md). ROI is revenue returned per unit
+of spend: above 1, a channel pays for itself.
 
-- **Paid media in total** drove {M(contrib['paid_total']['mean'])} of {M(contrib['observed_total'])} revenue
-  ({pct(contrib['paid_total']['mean'] / contrib['observed_total'])}; 94% CI {M(contrib['paid_total']['ci_lo'])}-{M(contrib['paid_total']['ci_hi'])}).
-- **Ranking of channels, with wide uncertainty:** highest mean ROI {best.channel.iloc[0]}
-  ({best.roi_mean.iloc[0]:.2f}) and {best.channel.iloc[1]} ({best.roi_mean.iloc[1]:.2f}); lowest
-  {best.channel.iloc[-1]} ({best.roi_mean.iloc[-1]:.2f}). Marginal ROI is below 1 for every channel, so
-  spending more on any single channel is unlikely to pay back at the margin.
+- **Media as a whole** drove about {M(contrib['paid_total']['mean'])} of {M(contrib['observed_total'])} revenue
+  ({pct(contrib['paid_total']['mean'] / contrib['observed_total'], 0)}), somewhere between {M(contrib['paid_total']['ci_lo'])}
+  and {M(contrib['paid_total']['ci_hi'])}.
+- **Which channels look stronger:** {best.channel.iloc[0]} and {best.channel.iloc[1]} have the highest
+  returns, and {best.channel.iloc[-1]} the lowest, but the ranges overlap a lot.
 
-  | channel | spend share | ROI (94% CI) | mROI | P(ROI>1) |
+  | channel | share of spend | ROI (94% range) | marginal ROI | P(ROI > 1) |
   |---|---|---|---|---|
 {chr(10).join('  ' + l for l in chan_rows.splitlines())}
 
-- **Direction of a reallocation** ([budget scenarios](reports/measurement.md#budget-scenarios); Meridian
-  reports [main](reports/meridian/optimization_main.html), [stress](reports/meridian/optimization_stress.html)).
-  The total is held at the last 52 weeks' spend ({M(main_s['budget'])}).
-  - Within +/-20% per channel: {pos(main_s)}. Expected gain {M(main_s['gain']['mean'])} (94% CI
-    {M(main_s['gain']['ci_lo'])} to {M(main_s['gain']['ci_hi'])}), P(gain > 0) = {main_s['gain']['p_gain_gt_0']:.2f}.
-  - Within +/-50%: {pos(stress)}. Expected gain {M(stress['gain']['mean'])}, P(gain > 0) = {stress['gain']['p_gain_gt_0']:.2f}.
-
-  Moving spend toward Channel3 and Channel2 is more likely than not to help; the size of the gain is uncertain.
+  Marginal ROI (the return on the next unit of spend) is below 1 for every channel, so adding
+  budget to any single channel is unlikely to pay back on its own.
+- **Which way to move budget:** with the total held at last year's spend ({M(main_s['budget'])}), shifting
+  up to 20% per channel toward Channel3 and Channel2 would add about {M(main_s['gain']['mean'])} of revenue
+  a year, with a {pct(main_s['gain']['p_gain_gt_0'], 0)} chance of being an improvement. Shifting up to 50% would
+  add about {M(stress['gain']['mean'])}, with a {pct(stress['gain']['p_gain_gt_0'], 0)} chance. The direction is fairly clear; the size
+  is uncertain, and could even be a small loss
+  ([scenarios](reports/measurement.md#budget-scenarios); Meridian's reports: [main](reports/meridian/optimization_main.html),
+  [stress](reports/meridian/optimization_stress.html)).
 
 ## What the model cannot tell a client
 
-- **Whether a specific channel pays back:** no channel has P(ROI > 1) >= 0.9 or <= 0.1.
-- **Forecasts:** the out-of-sample evidence comes from a single converged refit, and its national
-  intervals were too narrow.
-- **Geo-level ROI:** not reported; media effects are pooled across geos by design.
-- **Spend far outside history:** results beyond observed spend assume the shape of the response curve.
-- **A precise baseline/media split:** the two trade off almost one-for-one.
+- **Whether any specific channel pays back.** The ranges are too wide.
+- **Reliable forecasts.** Not yet tested well enough.
+- **Results by region.** The model shares information across regions, so it reports national results only.
+- **What happens at much higher spend than ever before.** Beyond past levels, results depend on
+  assumptions about how returns flatten.
+- **A precise split between media and underlying demand.**
 
-**Calibration (optional, HYPOTHETICAL).** `make calibration` refits the model with an invented
-Channel3 lift test (ROI {cal['test']['point_estimate_roi']}), to show how a real test would be used. It narrows
-Channel3's ROI interval and leaves the other channels almost unchanged. The model implied
-{cal['implied_test_roi_before']['mean']:.2f} for the test geos and weeks, and the choice of test geos does not drive
-the result. It is not part of the production model.
+**Using a real experiment (optional, illustrative).** `make calibration` shows how the result
+of a lift test would sharpen the model. We used an invented (HYPOTHETICAL) Channel3 test: it
+narrowed Channel3's range and left the others unchanged. It is not part of the production model.
 
 ## Run it
 
 ```bash
-make all      # production pipeline: data, EDA, fit, convergence gate, validation refits,
-              # Meridian health check and summary, budget scenarios, gates, results, reports
-make gates    # acceptance gates; exits non-zero on any blocking failure
-make docker   # build the image from requirements.lock, re-run the EDA inside it, sampling smoke test
-docker run --rm mmm-geo-toy-meridian   # the container's default command runs `make all`
+make all      # the full pipeline: data checks, fit, reliability check, forecast tests,
+              # Meridian reports, budget scenarios, gates, results and reports
+make gates    # the acceptance checks only; fails if a blocking check fails
+make docker   # build the container and check that it reproduces the analysis
+docker run --rm mmm-geo-toy-meridian   # run the full pipeline in the container
 ```
 
-- **Environment:** Python 3.11 in `.venv`, pinned in `requirements.lock`. google-meridian
-  {versions['google-meridian']}, JAX {versions['jax']}, jaxlib {versions['jaxlib']}, TensorFlow Probability
-  (tfp-nightly) {versions['tfp-nightly']}.
-- **Backend:** JAX, Meridian 2.x's default; `MERIDIAN_BACKEND` is not set. TensorFlow is installed
-  only as a transitive dependency.
-- **Runtime:** fits are skipped when a saved model matches `config/model.toml`. A cold run is one
-  full fit plus four validation refits, about 30 minutes of sampling on a laptop CPU.
+Pinned environment (`requirements.lock`): Python 3.11, google-meridian {versions['google-meridian']},
+JAX {versions['jax']}, jaxlib {versions['jaxlib']}, TensorFlow Probability (tfp-nightly)
+{versions['tfp-nightly']}, on Meridian's default JAX backend. A cold run takes about 30 minutes;
+saved models are reused when the configuration has not changed.
 
-## Data and EDA
+## The data
 
-[`geo_all_channels.csv`](https://github.com/google/meridian/blob/main/meridian/data/simulated_data/csv/geo_all_channels.csv)
-is downloaded from a pinned upstream commit and checked against a SHA-256 checksum, and is never
-modified. It has {d['n_geos']} geos x {d['n_weeks']} weeks ({d['first_week']} to {d['last_week']}).
-KPI: conversions x revenue per conversion. Full EDA: [reports/eda.md](reports/eda.md).
+Meridian's simulated [geo dataset](https://github.com/google/meridian/blob/main/meridian/data/simulated_data/csv/geo_all_channels.csv):
+{d['n_geos']} regions, {d['n_weeks']} weeks ({d['first_week']} to {d['last_week']}), five paid channels,
+two controls, a promotion and one organic channel. It is downloaded from a fixed version and checked
+before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
-- **Panel and spend:** balanced panel with {d['missing_values_total']} missing values. Spend is
-  impressions x a constant CPM. Spend shares: {", ".join(f"{c} {pct(d['spend_share'][c])}" for c in CHANNELS)}.
-- **Trend and seasonality:** trend {tr[tr['primary']]['slope_per_year_pct_of_mean']:+.2f}%/year
-  (HAC p = {tr[tr['primary']]['p_value']:.3f}); no yearly seasonality (p = {eda['seasonality']['p_value_ar1']:.2f}
-  against simulated noise).
-- **Noise floor:** geo-week revenue CV {pct(nf['geo_weekly_cv']['median'])}, national {pct(nf['national_weekly_cv'])}.
-- **Media signal:** within-geo spend-revenue correlations are all |r| <= 0.08.
-- **Controls:** they correlate with spend (up to {eda['controls_confounding']['max_abs_corr_control_with_spend_within_geo']:.2f}),
-  so they are confounders and stay in the model.
-- **Collinearity:** within-geo VIF is at most {eda['collinearity']['max_vif']:.2f}.
+- **Data quality:** the data are complete and clean.
+- **Trend and seasonality:** revenue grows about {tr[tr['primary']]['slope_per_year_pct_of_mean']:.1f}% a year, with no
+  meaningful yearly seasonality.
+- **Noise:** weekly revenue is noisy, about {pct(nf['geo_weekly_cv']['median'], 0)} up or down per region and
+  {pct(nf['national_weekly_cv'])} nationally, which limits how precise any model can be.
+- **Media signal:** media's effect is hard to see in the raw data, so the model has to pool regions to find it.
 
-## Gates
+## Acceptance checks
 
-| gate | status | blocking |
+| check | result | blocking |
 |---|---|---|
 {gate_rows}
 
 ## Next steps
 
-- **A real Channel3 lift test:** Channel3 is the largest channel with undetermined payback. Put the
-  result in `data/lift_tests/lift_tests.csv` (format in `data/lift_tests/README.md`).
-- **Reliable validation refits:** they need a sampler setup that converges on shorter windows,
-  for example a higher target acceptance.
-- **A baseline signal:** something that separates demand from media (e.g. category search
-  volume) would reduce the baseline-media trade-off.
+- **Run a real lift test for Channel3,** the biggest budget line with an unclear payback. The
+  pipeline is ready to use it.
+- **Make the forecast tests run reliably,** so the model's predictions can be checked.
+- **Add a measure of underlying demand,** such as category search volume, to help separate media
+  from everything else.
 
 ## Repository layout
 
 ```
-config/model.toml         the production model (spec, priors, sampler, paths)
-config/gates.toml         acceptance gates (rules, thresholds, rationale)
-data/raw/                 downloaded CSV (gitignored, checksum-verified)
-data/lift_tests/          HYPOTHETICAL lift test + file-format README
-model_build/              Meridian skill scripts: build_model.py, results_report.py,
-                          run_budget_optimization.py; fitted models (*.binpb, gitignored)
-scripts/                  EDA, convergence gate, validation, gates, results, reports
-outputs/                  JSON/CSV behind every reported number
-reports/                  eda.md, diagnostics.md, measurement.md, gates.md, figures/,
-                          meridian/ (Meridian HTML reports)
-docs/model_selection/     how the model was chosen: candidates, diagnostics, comparison
+config/model.toml         the model we run
+config/gates.toml         the acceptance checks
+data/                     data download (raw file not committed) and the lift-test format
+model_build/              Meridian scripts: build the model, health report, budget scenarios
+scripts/                  data checks, forecast tests, gates, results, reports
+outputs/                  the numbers behind every report
+reports/                  eda.md, diagnostics.md, measurement.md, gates.md, figures, Meridian reports
+docs/model_selection/     how the model was chosen
 Makefile, Dockerfile, requirements.lock
 ```
 """

@@ -1,6 +1,6 @@
 # Gates
 
-Automated acceptance checks for the selected model. Rules and thresholds live in [`config/gates.toml`](../config/gates.toml), which the scripts read; this page is generated from it and from the latest outputs (`make gates`, then `make reports`). `make gates` exits non-zero if any blocking gate fails.
+These are the checks the model must pass before its numbers go to a client. A **blocking** check that fails means the model is not client-ready; a non-blocking check only adds a caveat. Rules and thresholds live in [`config/gates.toml`](../config/gates.toml), which the scripts read; this page is generated from it and from the latest outputs (`make gates`, then `make reports`). `make gates` exits non-zero if any blocking gate fails.
 
 - **PASS:** the check meets its threshold. **WARN:** a non-blocking check misses it (report with caveats). **FAIL:** a blocking check misses it (not client-ready).
 - Intervals: 94% (3rd-97th percentile of the predictive or posterior draws).
@@ -10,18 +10,18 @@ Automated acceptance checks for the selected model. Rules and thresholds live in
 
 Model: `mmm` (selected as R1 (linear_strong_pool_lag4)). Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_stability.
 
-| gate | blocking | latest status |
-|---|---|---|
-| [data_integrity](#data-integrity) | yes | data_integrity PASS |
-| [prior_predictive_coverage](#prior-predictive-coverage) | yes | prior_predictive_coverage PASS |
-| [convergence](#convergence) | yes | convergence PASS |
-| [insample_r2](#insample-r2) | yes | insample_r2 PASS |
-| [insample_coverage](#insample-coverage) | yes | insample_coverage PASS |
-| [within_geo_r2](#within-geo-r2) | no (warn only) | within_geo_r2 PASS |
-| [residual_autocorrelation](#residual-autocorrelation) | no (warn only) | residual_autocorrelation PASS |
-| [cv](#cv) | yes | cv_fold_104 FAIL, cv_fold_117 FAIL, cv_fold_130 FAIL, cv_holdout FAIL |
-| [roi_fold_stability](#roi-fold-stability) | yes | roi_fold_stability FAIL |
-| [channel_roi_checks](#channel-roi-checks) | no (warn only) | channel_roi_checks WARN |
+| gate | the question it answers | blocking | latest status |
+|---|---|---|---|
+| [data_integrity](#data-integrity) | Is the data file the one we expect, complete and free of impossible values? | yes | data_integrity PASS |
+| [prior_predictive_coverage](#prior-predictive-coverage) | Before seeing the data, can the model's starting assumptions produce numbers like the real ones? | yes | prior_predictive_coverage PASS |
+| [convergence](#convergence) | Did the computation run reliably? The model is estimated by several independent simulations; they must agree. | yes | convergence PASS |
+| [insample_r2](#insample-r2) | Does the model explain a reasonable share of what happened in the past? | yes | insample_r2 PASS |
+| [insample_coverage](#insample-coverage) | Do the model's 94% ranges contain about 94% of past weeks, neither too narrow nor too wide? | yes | insample_coverage PASS |
+| [within_geo_r2](#within-geo-r2) | Does the model pick up week-to-week movements within each region, not just the differences between regions? | no (warn only) | within_geo_r2 PASS |
+| [residual_autocorrelation](#residual-autocorrelation) | Are the model's misses random, or does it repeatedly miss in the same direction week after week? | no (warn only) | residual_autocorrelation PASS |
+| [cv](#cv) | Does the model forecast weeks it has not seen? We refit it on shorter histories and check the next 13 weeks. | yes | cv_fold_104 FAIL, cv_fold_117 FAIL, cv_fold_130 FAIL, cv_holdout FAIL |
+| [roi_fold_stability](#roi-fold-stability) | Do the channel ROIs stay roughly the same when the model is refitted on less data? | yes | roi_fold_stability FAIL |
+| [channel_roi_checks](#channel-roi-checks) | For each channel: did the data actually inform the ROI, and is it clear whether the channel pays back? | no (warn only) | channel_roi_checks WARN |
 
 ## Model selection rule (applied once, when the model was chosen)
 
@@ -34,6 +34,8 @@ Model: `mmm` (selected as R1 (linear_strong_pool_lag4)). Blocking failures: cv_f
 ## Gate definitions and latest results
 
 ### data_integrity
+
+**Is the data file the one we expect, complete and free of impossible values?**
 
 - **Blocking:** yes
 - **Applies to:** raw data file
@@ -53,6 +55,8 @@ Latest result:
 | data_integrity | PASS | checksum_ok True, balanced_panel True, missing 0, duplicates 0, nonnegative True |
 
 ### prior_predictive_coverage
+
+**Before seeing the data, can the model's starting assumptions produce numbers like the real ones?**
 
 - **Blocking:** yes
 - **Applies to:** selected model, prior draws
@@ -74,6 +78,8 @@ Latest result:
 Note: prior predictive 94% interval width / observed mean: 7.06
 
 ### convergence
+
+**Did the computation run reliably? The model is estimated by several independent simulations; they must agree.**
 
 - **Blocking:** yes
 - **Applies to:** every fit: the production model, its CV refits, the optional calibrated refit
@@ -98,6 +104,8 @@ Note: R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws (config/gates
 
 ### insample_r2
 
+**Does the model explain a reasonable share of what happened in the past?**
+
 - **Blocking:** yes
 - **Applies to:** selected model, all 156 weeks
 - **Rule:** R2 of the posterior-mean prediction at geo-week and national weekly level. FAIL if either is below its minimum.
@@ -118,6 +126,8 @@ Latest result:
 
 ### insample_coverage
 
+**Do the model's 94% ranges contain about 94% of past weeks, neither too narrow nor too wide?**
+
 - **Blocking:** yes
 - **Applies to:** selected model, all 156 weeks
 - **Rule:** Share of observations inside the 94% posterior predictive interval, at geo-week and national level. FAIL outside the range.
@@ -136,6 +146,8 @@ Latest result:
 | insample_coverage | PASS | geo_week 0.9463, national 0.9038 |
 
 ### within_geo_r2
+
+**Does the model pick up week-to-week movements within each region, not just the differences between regions?**
 
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model
@@ -156,6 +168,8 @@ Latest result:
 
 ### residual_autocorrelation
 
+**Are the model's misses random, or does it repeatedly miss in the same direction week after week?**
+
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model
 - **Rule:** Lag-1 autocorrelation of residuals: national weekly series and median across geos. WARN if either absolute value exceeds the maximum.
@@ -174,6 +188,8 @@ Latest result:
 | residual_autocorrelation | PASS | national_lag1 0.01116, median_geo_lag1 0.0006571 |
 
 ### cv
+
+**Does the model forecast weeks it has not seen? We refit it on shorter histories and check the next 13 weeks.**
 
 - **Blocking:** yes
 - **Applies to:** holdout (train 1-143, forecast 144-156) and each rolling-origin fold (train 1-104, 1-117, 1-130; forecast the next 13 weeks); reported as cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout
@@ -201,6 +217,8 @@ Note: Fold fit did not converge; no forecast evidence (diagnostics only).
 
 ### roi_fold_stability
 
+**Do the channel ROIs stay roughly the same when the model is refitted on less data?**
+
 - **Blocking:** yes
 - **Applies to:** converged CV fold fits
 - **Rule:** Per channel, max/min of the posterior-mean ROI across converged folds. WARN above the warn ratio, FAIL above the fail ratio. FAIL (not assessable) with fewer than 2 converged folds.
@@ -222,6 +240,8 @@ Latest result:
 Note: Not assessable: fewer than two converged fold fits.
 
 ### channel_roi_checks
+
+**For each channel: did the data actually inform the ROI, and is it clear whether the channel pays back?**
 
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model, each paid channel

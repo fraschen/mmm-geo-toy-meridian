@@ -200,6 +200,25 @@ def detrend(y):
   return y - np.polyval(b, t)
 
 
+def seasonality_bound(nat):
+  """Upper bound on the size of any yearly seasonality.
+
+  Fits national revenue on a linear trend plus one yearly sine/cosine pair (HAC
+  standard errors) and reports the peak-to-trough swing of the seasonal wave as a
+  share of mean revenue, with a 95% upper bound from coefficient draws.
+  """
+  y = nat.to_numpy()
+  n, t = len(y), np.arange(len(y))
+  w = 2 * np.pi * t / SEASON
+  X = np.column_stack([np.ones(n), t / 52.0, np.sin(w), np.cos(w)])
+  fit = sm.OLS(y, X).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
+  swing = lambda b: 2 * np.hypot(b[2], b[3]) / y.mean()
+  draws = np.random.default_rng(SEED).multivariate_normal(fit.params, fit.cov_params(), 5000)
+  return {"peak_to_trough_estimate": float(swing(fit.params)),
+          "peak_to_trough_upper_95": float(np.quantile([swing(b) for b in draws], .95)),
+          "p_value": float(fit.wald_test(np.eye(4)[2:], scalar=True).pvalue)}
+
+
 def seasonality_test(df, nat):
   rng = np.random.default_rng(SEED)
   y = detrend(nat.to_numpy())
@@ -610,6 +629,7 @@ def main():
   summary["cpm"] = cpm_check(df)
   summary["trend"] = trend_test(nat)
   summary["seasonality"] = seasonality_test(df, nat)
+  summary["seasonality"]["bound"] = seasonality_bound(nat)
   summary["noise_floor"] = noise_floor(df, nat)
   summary["time_effects"] = time_effects(df)
   summary["lag_correlation"] = lag_correlations(df)

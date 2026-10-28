@@ -365,6 +365,19 @@ def fig_cal(d):
   return save(fig, FM, "calibration.png")
 
 
+
+def with_leads(text, leads):
+  """Renames section headings and adds a plain-language lead under each one."""
+  out = []
+  for line in text.split("\n"):
+    if line.startswith("## ") and line[3:] in leads:
+      title, lead = leads[line[3:]]
+      out += [f"## {title}", "", lead]
+    else:
+      out.append(line)
+  return "\n".join(out)
+
+
 # ---------------------------------------------------------------- reports ----
 def table(df):
   cols = list(df.columns)
@@ -531,7 +544,37 @@ def diagnostics(d, figs):
       "some common weekly variation beyond noise.",
       "",
   ]
-  (ROOT / "reports" / "diagnostics.md").write_text("\n".join(lines))
+  n_conv = sum(f["converged"] for f in d["cv"]["folds"].values())
+  leads = {
+      "Why this model": ("Why this model",
+          "We chose one model and run only that one. Here is how we got to it."),
+      "Data and prior checks": ("Are the inputs and starting assumptions sound?",
+          "The data are checked for completeness, and the model's starting assumptions are checked "
+          "for whether they can produce numbers like the real ones. Result: "
+          f"data {g['data_integrity']['status']}, starting assumptions {g['prior_predictive_coverage']['status']}."),
+      "Convergence": ("Did the computation run reliably? (convergence)",
+          f"Meridian estimates the model by running {conv['n_chains']} independent simulations. If they agree, the "
+          f"results can be trusted; if not, we report nothing. Result: {g['convergence']['status']}."),
+      "In-sample fit and residuals": ("How well does the model fit the past?",
+          "Judged against how noisy weekly revenue is: does it explain enough, are its misses random, and "
+          "do its uncertainty ranges contain about the right share of past weeks? Result: fit "
+          f"{g['insample_r2']['status']}, ranges {g['insample_coverage']['status']}, misses "
+          f"{g['residual_autocorrelation']['status']}."),
+      "Holdout and rolling-origin CV": ("Can it forecast weeks it has not seen? (holdout and CV)",
+          "This is the most important check. We refit the model on shorter stretches of history and see how "
+          f"well it predicts the next 13 weeks. Only {n_conv} of {len(d['cv']['folds'])} refits ran reliably, so "
+          "this check fails: we cannot yet vouch for the model's forecasts."),
+      "Identification": ("Can the model tell media apart from everything else?",
+          "Partly. The data clearly moved every channel's estimate away from the starting assumption, but "
+          "the model struggles to split revenue between media and underlying demand."),
+      "Meridian health checks": ("Meridian's own health checks",
+          "Meridian's built-in checks all pass, but they are more lenient than ours and only look at the past."),
+      "Gate summary (`make gates`)": ("Summary of the acceptance checks",
+          "Every check the model must pass, with its result. A failed blocking check means the model is not "
+          "client-ready."),
+      "Known limitations": ("Known limitations", "What a reader should keep in mind."),
+  }
+  (ROOT / "reports" / "diagnostics.md").write_text(with_leads("\n".join(lines), leads))
 
 
 def measurement(d, figs):
@@ -677,7 +720,35 @@ def measurement(d, figs):
       "- The lift test is HYPOTHETICAL; calibrated numbers illustrate the method, not real evidence.",
       "",
   ]
-  (ROOT / "reports" / "measurement.md").write_text("\n".join(lines))
+  leads = {
+      "Channel results": ("Channel results",
+          "For each channel: what it contributed, its ROI (revenue returned per unit of spend) and marginal "
+          "ROI (return on the next unit of spend), with 94% ranges. P(ROI > 1) is the probability that the "
+          "channel pays for itself."),
+      "Model fit and baseline": ("Model fit and baseline",
+          "The model's weekly revenue against the actual, and the baseline: what revenue would have been "
+          "with no media, promotion or organic activity."),
+      "Contribution waterfall": ("Where revenue comes from",
+          "Total revenue broken down into the baseline and each driver's contribution."),
+      "Spend share vs contribution share": ("Spend share vs contribution share",
+          "Channels whose contribution share exceeds their spend share are doing more than their budget "
+          "would suggest."),
+      "Weekly contribution by channel": ("Weekly contribution by channel",
+          "How much revenue each channel drove, week by week."),
+      "Saturation curves": ("Diminishing returns (saturation curves)",
+          "How each channel's effect flattens as its activity grows, before (grey) and after (colour) seeing "
+          "the data, over the range of activity actually observed."),
+      "Response curves": ("Revenue vs spend (response curves)",
+          "How much revenue each channel would drive at different spend levels. Beyond the dashed line "
+          "(historical spend) the curve is an assumption, not an observation."),
+      "Budget scenarios": ("Budget scenarios",
+          "How to split the same total budget to get more revenue, allowing each channel to move up to "
+          "20% (main) or 50% (stress)."),
+      "Calibration with a HYPOTHETICAL lift test": ("Using a lift test (HYPOTHETICAL)",
+          "How a real experiment would sharpen the model. The test here is invented, to show the method."),
+      "Caveats": ("Caveats", "Read these before sharing any number from this page."),
+  }
+  (ROOT / "reports" / "measurement.md").write_text(with_leads("\n".join(lines), leads))
 
 
 def main():
