@@ -153,11 +153,20 @@
     "figure": "reports/figures/eda/national_trend.png"
   },
   "seasonality": {
-    "peak_to_trough_estimate": 0.00913675419739353,
-    "peak_to_trough_upper_95": 0.040611005446706046,
-    "p_value": 0.8341870424438272,
+    "method": "Detrended national revenue; R2 of week-of-year means (52 groups x 3 years) vs 10000 simulated noise series of the same length: iid Gaussian and AR(1) with the observed lag-1 autocorrelation.",
+    "observed_r2": 0.36031184639956626,
+    "null_iid_mean": 0.3300382505385119,
+    "null_iid_p95": 0.41844260885787454,
+    "p_value_iid": 0.2777,
+    "detrended_lag1_autocorr": -0.024866315449246446,
+    "null_ar1_mean": 0.33005820518137985,
+    "null_ar1_p95": 0.4206391887450931,
+    "p_value_ar1": 0.2776,
+    "geo_r2_median": 0.347109097397609,
+    "geos_significant_5pct_iid": 6,
+    "geos_expected_by_chance": 2.0,
     "seasonality_detected": false,
-    "figure": "reports/figures/eda/seasonality.png"
+    "figure": "reports/figures/eda/seasonality_null.png"
   },
   "noise_floor": {
     "definition": "CV = sd/mean of weekly revenue; lag-1 autocorrelation of detrended revenue; MAPE of a 13-week centred moving average (the error floor of a smooth predictor).",

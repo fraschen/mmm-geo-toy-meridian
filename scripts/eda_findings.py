@@ -77,15 +77,16 @@ lines = [
              f"Last 52 weeks vs first 52 weeks: {tr['first_52_vs_last_52_revenue_pct']:+.1f}%."),
     fig(tr["figure"]),
     "",
-    "## No meaningful yearly seasonality",
-    "Revenue shows no repeating yearly pattern: the three years do not line up week by week. Any seasonal "
-    f"swing is at most about {pct(se['peak_to_trough_upper_95'], 0)} from peak to trough, no larger than ordinary "
-    "week-to-week noise. **For the model:** no seasonal component is needed.",
-    *details("National revenue fitted on a linear trend plus a yearly wave (one sine/cosine pair, "
-             f"autocorrelation-robust standard errors): wave p = {se['p_value']:.2f}; peak-to-trough "
-             f"{pct(se['peak_to_trough_estimate'])} of mean revenue, 95% upper bound {pct(se['peak_to_trough_upper_95'])}.",
-             "This is a frequentist screening test used to inform the model specification; it does not enter "
-             "the Bayesian model."),
+    "## No yearly seasonality",
+    "We checked whether the same week looks similar every year (for example, a peak every summer). It "
+    "does not, beyond what chance would produce: random noise of the same length shows a pattern at least "
+    f"this strong {pct(se['p_value_ar1'], 0)} of the time. **For the model:** no seasonal component is needed.",
+    *details(f"Week-of-year means explain R2 = {se['observed_r2']:.3f} of detrended national revenue. Pure noise "
+             f"of the same length gives {se['null_iid_mean']:.3f} on average (95th percentile {se['null_iid_p95']:.3f}); "
+             f"p = {se['p_value_iid']:.2f} (iid null), {se['p_value_ar1']:.2f} (AR(1) null, phi = "
+             f"{se['detrended_lag1_autocorr']:.3f}).",
+             f"Per region, {se['geos_significant_5pct_iid']} of {d['n_geos']} regions are significant at 5% "
+             f"({se['geos_expected_by_chance']:.0f} expected by chance)."),
     fig(se["figure"]),
     "",
     "## How noisy is revenue week to week?",

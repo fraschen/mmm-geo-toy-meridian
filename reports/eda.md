@@ -47,17 +47,17 @@ National revenue grows by about 1.5% a year, and a straight line describes that 
 
 ![](figures/eda/national_trend.png)
 
-## No meaningful yearly seasonality
-Revenue shows no repeating yearly pattern: the three years do not line up week by week. Any seasonal swing is at most about 4% from peak to trough, no larger than ordinary week-to-week noise. **For the model:** no seasonal component is needed.
+## No yearly seasonality
+We checked whether the same week looks similar every year (for example, a peak every summer). It does not, beyond what chance would produce: random noise of the same length shows a pattern at least this strong 28% of the time. **For the model:** no seasonal component is needed.
 
 <details><summary>Technical details</summary>
 
-- National revenue fitted on a linear trend plus a yearly wave (one sine/cosine pair, autocorrelation-robust standard errors): wave p = 0.83; peak-to-trough 0.9% of mean revenue, 95% upper bound 4.1%.
-- This is a frequentist screening test used to inform the model specification; it does not enter the Bayesian model.
+- Week-of-year means explain R2 = 0.360 of detrended national revenue. Pure noise of the same length gives 0.330 on average (95th percentile 0.418); p = 0.28 (iid null), 0.28 (AR(1) null, phi = -0.025).
+- Per region, 6 of 40 regions are significant at 5% (2 expected by chance).
 
 </details>
 
-![](figures/eda/seasonality.png)
+![](figures/eda/seasonality_null.png)
 
 ## How noisy is revenue week to week?
 A typical region's weekly revenue moves up and down by about 30% around its average; nationally, where regions offset each other, by 6.9%. These movements look random: one week tells you almost nothing about the next. **For the model:** this sets the bar for accuracy. Even a simple 13-week average misses a typical regional week by 23% and a national week by 5.1%, so the model cannot be expected to do much better.

@@ -29,6 +29,7 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 FIG = FIGURES / "eda"
 FIG.mkdir(parents=True, exist_ok=True)
 OUT = OUTPUTS / "eda"
+N_SIM = 10_000
 MAX_LAG = 8
 SEASON = 52
 # Newey-West bandwidth rule floor(4 (T/100)^(2/9)).
@@ -175,46 +176,69 @@ def trend_test(nat):
   return res
 
 
+def woy_r2(Y, period=SEASON):
+  """Share of variance explained by week-of-year means. Y: (..., T)."""
+  T = Y.shape[-1]
+  g = np.arange(T) % period
+  Yc = Y - Y.mean(-1, keepdims=True)
+  means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
+  fitted = means[..., g]
+  return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
+
+
 def detrend(y):
   t = np.arange(len(y))
   b = np.polyfit(t, y, 1)
   return y - np.polyval(b, t)
 
 
-def seasonality(nat):
-  """Is there yearly seasonality, and how big could it be?
+def seasonality_test(df, nat):
+  rng = np.random.default_rng(SEED)
+  y = detrend(nat.to_numpy())
+  T = len(y)
+  obs = float(woy_r2(y))
+  phi = float(np.corrcoef(y[:-1], y[1:])[0, 1])
+  iid = woy_r2(rng.standard_normal((N_SIM, T)))
+  e = rng.standard_normal((N_SIM, T))
+  ar = np.empty_like(e)
+  ar[:, 0] = e[:, 0] / np.sqrt(1 - phi ** 2)
+  for t in range(1, T):
+    ar[:, t] = phi * ar[:, t - 1] + e[:, t]
+  ar1 = woy_r2(ar)
 
-  Fits national revenue on a linear trend plus one yearly sine/cosine pair (HAC
-  standard errors). Reports the p-value that the seasonal terms are zero and the
-  peak-to-trough swing of the seasonal wave as a share of mean revenue, with a 95%
-  upper bound from coefficient draws.
-  """
-  y = nat.to_numpy()
-  n, t = len(y), np.arange(len(y))
-  w = 2 * np.pi * t / SEASON
-  X = np.column_stack([np.ones(n), t / 52.0, np.sin(w), np.cos(w)])
-  fit = sm.OLS(y, X).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
-  swing = lambda b: 2 * np.hypot(b[2], b[3]) / y.mean()
-  draws = np.random.default_rng(SEED).multivariate_normal(fit.params, fit.cov_params(), 5000)
-  res = {"peak_to_trough_estimate": float(swing(fit.params)),
-         "peak_to_trough_upper_95": float(np.quantile([swing(b) for b in draws], .95)),
-         "p_value": float(fit.wald_test(np.eye(4)[2:], scalar=True).pvalue)}
-  res["seasonality_detected"] = bool(res["p_value"] < 0.05)
+  # Per geo: detrended revenue, iid null (fraction of geos significant at 5%).
+  geo_y = df.pivot(index=GEO, columns=TIME, values="revenue").to_numpy()
+  geo_r2 = woy_r2(np.apply_along_axis(detrend, 1, geo_y))
+  geo_p = (iid[None, :] >= geo_r2[:, None]).mean(1)
 
-  # Figure: detrended revenue by week of year, one line per year, with the fitted wave.
-  det = (y - X[:, :2] @ fit.params[:2]) / y.mean() * 100
-  fig, ax = plt.subplots(figsize=(8, 3.2))
-  for k in range(n // SEASON):
-    ax.plot(range(1, SEASON + 1), det[k * SEASON:(k + 1) * SEASON], color=PALETTE[k], lw=1.2,
-            alpha=.8, label=f"Year {k + 1}")
-  wave = (X[:SEASON, 2:] @ fit.params[2:]) / y.mean() * 100
-  ax.plot(range(1, SEASON + 1), wave, color=INK_2, lw=2.5, label="Fitted yearly wave")
-  ax.axhline(0, color=MUTED, lw=1)
-  ax.set_xlabel("Week of year")
-  ax.set_ylabel("Revenue vs trend (%)")
-  ax.set_title("No repeating yearly pattern: the three years do not line up")
-  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=4)
-  res["figure"] = savefig(fig, "seasonality.png")
+  res = {
+      "method": ("Detrended national revenue; R2 of week-of-year means "
+                 f"(52 groups x 3 years) vs {N_SIM} simulated noise series of the "
+                 "same length: iid Gaussian and AR(1) with the observed lag-1 autocorrelation."),
+      "observed_r2": obs,
+      "null_iid_mean": float(iid.mean()), "null_iid_p95": float(np.quantile(iid, .95)),
+      "p_value_iid": float((iid >= obs).mean()),
+      "detrended_lag1_autocorr": phi,
+      "null_ar1_mean": float(ar1.mean()), "null_ar1_p95": float(np.quantile(ar1, .95)),
+      "p_value_ar1": float((ar1 >= obs).mean()),
+      "geo_r2_median": float(np.median(geo_r2)),
+      "geos_significant_5pct_iid": int((geo_p < .05).sum()),
+      "geos_expected_by_chance": 0.05 * len(geo_r2),
+  }
+  res["seasonality_detected"] = bool(res["p_value_ar1"] < 0.05)
+
+  fig, ax = plt.subplots(figsize=(7, 3.2))
+  bins = np.linspace(0.1, 0.65, 56)
+  ax.hist(iid, bins=bins, color=PALETTE[0], histtype="step", lw=2, label="Null: iid noise")
+  ax.hist(ar1, bins=bins, color=PALETTE[1], histtype="step", lw=2,
+          label=f"Null: AR(1) noise, phi={phi:.2f}")
+  ax.axvline(obs, color=INK_2, lw=2, ls="--",
+             label=f"Observed R2 = {obs:.2f} (p = {res['p_value_ar1']:.2f}, AR(1) null)")
+  ax.set_xlabel("Variance share explained by week-of-year means")
+  ax.set_ylabel("Simulations")
+  ax.set_title("Yearly seasonality vs chance (detrended national revenue)")
+  ax.legend(loc="upper left", fontsize=8)
+  res["figure"] = savefig(fig, "seasonality_null.png")
   return res
 
 
@@ -424,7 +448,7 @@ def main():
   summary["data"]["figure_spend_share"] = spend_share_fig(summary["data"])
   summary["cpm"] = cpm_check(df)
   summary["trend"] = trend_test(nat)
-  summary["seasonality"] = seasonality(nat)
+  summary["seasonality"] = seasonality_test(df, nat)
   summary["noise_floor"] = noise_floor(df, nat)
   summary["lag_correlation"] = lag_correlations(df)
   summary["collinearity"] = collinearity(df)

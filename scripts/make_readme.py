@@ -196,7 +196,7 @@ before use. What we learned from it: [reports/eda.md](reports/eda.md).
 - **Media signal:** media's effect is hard to see in the raw data, so the model has to pool regions to find it.
 {details(f"Balanced panel, {d['missing_values_total']} missing values; spend = impressions x a constant CPM. Spend shares: " + ", ".join(f"{c} {pct(d['spend_share'][c])}" for c in CHANNELS) + ".",
           f"Trend {tr['slope_per_year_pct_of_mean']:+.2f}%/year (HAC p = {tr['p_value']:.3f}); yearly breaks do not improve on a line (p = {tr['piecewise_yearly_vs_linear']['p_value']:.2f}).",
-          f"Seasonality: yearly wave p = {eda['seasonality']['p_value']:.2f}; any yearly swing at most {pct(eda['seasonality']['peak_to_trough_upper_95'])} peak to trough (95% upper bound).",
+          f"Seasonality: week-of-year means explain R2 = {eda['seasonality']['observed_r2']:.3f} of detrended national revenue vs {eda['seasonality']['null_iid_mean']:.3f} for pure noise (p = {eda['seasonality']['p_value_ar1']:.2f}).",
           f"Within-region spend-revenue correlations all |r| <= 0.08; within-region VIF at most {eda['collinearity']['max_vif']:.2f}.",
           f"Controls correlate with spend up to {eda['controls_confounding']['max_abs_corr_control_with_spend_within_geo']:.2f}, so they are confounders.",
           f"Conversions are inflated in this simulated dataset (about 19 per person per week), so revenue per conversion (about {d['revenue_per_conversion']['mean']:.2f}) looks low; revenue is on a realistic scale (paid spend is {pct(d['total_spend'] / d['total_revenue'], 0)} of revenue).")}
