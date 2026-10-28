@@ -1,8 +1,8 @@
 """Extended EDA (`make eda`): summary JSON and figures.
 
-Complements Meridian's EDA report (model_build/model/eda.html) with the
-tests PROMPT.md Phase 1 asks for. Every EDA number quoted in the README is
-read from outputs/eda/eda_summary.json produced here.
+Data checks and exploratory tests that inform the model specification. Every
+EDA number quoted in the README is read from outputs/eda/eda_summary.json
+produced here.
 
 Revenue is conversions x revenue_per_conversion (the modelled KPI is
 conversions, with revenue_per_conversion turning it into revenue).
@@ -117,7 +117,7 @@ def cpm_check(df):
   out["constant_cpm_verdict"] = {
       c: bool(out[c]["max_abs_relative_deviation_from_median"] < 1e-6) for c in CHANNELS}
   out["note"] = ("Deviations are at float32 rounding level, so spend = impressions x a "
-                 "constant CPM; Meridian's cost-per-media-unit 'outliers' are rounding noise.")
+                 "constant CPM; any apparent CPM variation is rounding.")
 
   allr = pd.concat(rows)
   fig, ax = plt.subplots(figsize=(7, 3.2))
