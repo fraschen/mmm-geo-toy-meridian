@@ -63,14 +63,13 @@ budget: $(MODEL)
 gates:
 	$(PY) scripts/gates.py
 
-# Channel results file + markdown reports + README.
+# Channel results file + the results report (the README is written by hand).
 results:
 	$(PY) scripts/analysis_data.py
 	$(PY) scripts/channel_results.py
 
 reports: results
 	$(PY) scripts/make_reports.py
-	$(PY) scripts/make_readme.py
 
 # Optional, not part of production: refit with a HYPOTHETICAL lift test.
 $(LIFT):

@@ -1,8 +1,8 @@
 """Extended EDA (`make eda`): summary JSON and figures.
 
-Data checks and exploratory tests that inform the model specification. Every
-EDA number quoted in the README is read from outputs/eda/eda_summary.json
-produced here.
+Data checks and exploratory tests that inform the model specification. The
+numbers in reports/eda.md are read from outputs/eda/eda_summary.json, produced
+here.
 
 Revenue is conversions x revenue_per_conversion (the modelled KPI is
 conversions, with revenue_per_conversion turning it into revenue).
