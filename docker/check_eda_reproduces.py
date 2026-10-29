@@ -1,4 +1,4 @@
-"""Compares two JSON files numerically (used to verify EDA reproduces in Docker)."""
+"""Container check: compares two EDA summary JSON files numerically."""
 
 import json
 import math

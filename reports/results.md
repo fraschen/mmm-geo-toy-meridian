@@ -257,7 +257,7 @@ Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_s
 - **Blocking:** yes
 - **Applies to:** raw data file
 - **Rule:** Raw CSV matches its pinned SHA-256; balanced 40 x 156 geo-week panel; no missing values; no duplicate geo-weeks; spend, impressions, KPI, population and revenue per KPI are non-negative. FAIL if any check is false.
-- **Source of threshold:** PROMPT.md
+- **Source of threshold:** study brief
 - **Basis:** Hard data checks; any failure means the inputs are not the documented dataset.
 - **Enforced in:** `scripts/gates.py (data_integrity), values from scripts/eda.py`
 
@@ -369,7 +369,7 @@ Latest result:
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model
 - **Rule:** R2 after removing each geo's mean (week-to-week signal within geos). WARN below the minimum.
-- **Source of threshold:** PROMPT.md (as a warning)
+- **Source of threshold:** study brief (as a warning)
 - **Basis:** Geo-week revenue has a within-geo CV of 30% and is close to white noise, so most within-geo variance is unexplainable; this flags a model with almost no within-geo signal.
 - **Enforced in:** `scripts/gates.py`
 
@@ -390,7 +390,7 @@ Latest result:
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model
 - **Rule:** Lag-1 autocorrelation of residuals: national weekly series and median across geos. WARN if either absolute value exceeds the maximum.
-- **Source of threshold:** PROMPT.md (as a warning)
+- **Source of threshold:** study brief (as a warning)
 - **Basis:** Revenue itself has lag-1 autocorrelation near 0 (EDA), so residual autocorrelation signals missing time structure.
 - **Enforced in:** `scripts/gates.py`
 
@@ -411,8 +411,8 @@ Latest result:
 - **Blocking:** yes
 - **Applies to:** holdout (train 1-143, forecast 144-156) and each rolling-origin fold (train 1-104, 1-117, 1-130; forecast the next 13 weeks); reported as cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout
 - **Rule:** Each fold is refitted on its training weeks only (all scaling inside the fold). FAIL if the fold fit does not pass the convergence gate (no forecast evidence), or if any of: forecast/in-sample MAPE ratio above the maximum (geo-week or national); national weekly MAPE above the maximum; 94% interval coverage below the minimum (geo-week or national).
-- **Source of threshold:** PROMPT.md
-- **Basis:** National MAPE: a 13-week moving average has MAPE 5.1% nationally, so 10% is about 1.9x the noise floor; kept at the PROMPT.md value. The error ratio and coverage are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: its noise floor is 23%.
+- **Source of threshold:** study brief
+- **Basis:** National MAPE: a 13-week moving average has MAPE 5.1% nationally, so 10% is about 1.9x the noise floor; kept at the study-brief value. The error ratio and coverage are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: its noise floor is 23%.
 - **Enforced in:** `scripts/validate_cv.py (metrics), scripts/gates.py (gate)`
 
 | threshold | value |
@@ -439,7 +439,7 @@ Note: Fold fit did not converge; no forecast evidence (diagnostics only).
 - **Blocking:** yes
 - **Applies to:** converged CV fold fits
 - **Rule:** Per channel, max/min of the posterior-mean ROI across converged folds. WARN above the warn ratio, FAIL above the fail ratio. FAIL (not assessable) with fewer than 2 converged folds.
-- **Source of threshold:** PROMPT.md
+- **Source of threshold:** study brief
 - **Basis:** ROI that changes several-fold when a quarter of data is added is not a stable estimate.
 - **Enforced in:** `scripts/gates.py`
 
@@ -463,7 +463,7 @@ Note: Not assessable: fewer than two converged fold fits.
 - **Blocking:** no (WARN only)
 - **Applies to:** selected model, each paid channel
 - **Rule:** Two warnings per channel. Prior-driven: ROI contraction (1 - posterior sd / prior sd) below the minimum. Payback undetermined: P(ROI > 1) strictly between the two bounds.
-- **Source of threshold:** PROMPT.md (bounds 0.1 / 0.9); project (contraction 0.30)
+- **Source of threshold:** study brief (bounds 0.1 / 0.9); project (contraction 0.30)
 - **Basis:** Contraction below 0.30 means the posterior keeps more than 70% of the prior spread, so the data say little. A payback call needs at least 90% posterior probability either way.
 - **Enforced in:** `scripts/gates.py`
 

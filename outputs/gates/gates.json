@@ -29,7 +29,7 @@
     "insample_coverage": "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too narrow; above: too wide.",
     "within_geo_r2": "Geo-week revenue has a within-geo CV of 30% and is close to white noise, so most within-geo variance is unexplainable; this flags a model with almost no within-geo signal.",
     "residual_autocorrelation": "Revenue itself has lag-1 autocorrelation near 0 (EDA), so residual autocorrelation signals missing time structure.",
-    "cv": "National MAPE: a 13-week moving average has MAPE 5.1% nationally, so 10% is about 1.9x the noise floor; kept at the PROMPT.md value. The error ratio and coverage are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: its noise floor is 23%.",
+    "cv": "National MAPE: a 13-week moving average has MAPE 5.1% nationally, so 10% is about 1.9x the noise floor; kept at the study-brief value. The error ratio and coverage are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: its noise floor is 23%.",
     "roi_fold_stability": "ROI that changes several-fold when a quarter of data is added is not a stable estimate.",
     "channel_roi_checks": "Contraction below 0.30 means the posterior keeps more than 70% of the prior spread, so the data say little. A payback call needs at least 90% posterior probability either way."
   },

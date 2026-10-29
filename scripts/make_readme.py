@@ -218,6 +218,7 @@ config/gates.toml         the acceptance checks
 data/                     the raw data file and the lift-test format
 model_build/              Meridian scripts: build the model, health report, budget scenarios
 scripts/                  data checks, forecast tests, gates, results, reports
+docker/                   container checks: the EDA reproduces, sampling runs
 outputs/                  the numbers behind every report
 reports/                  eda.md, results.md, figures, Meridian reports
 Makefile, Dockerfile, requirements.lock

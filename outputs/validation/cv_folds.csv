@@ -1,5 +1,0 @@
-fold,train_weeks,test_weeks,converged,geo_mape_in,geo_mape_fc,geo_error_ratio,geo_coverage_fc,nat_mape_in,nat_mape_fc,nat_error_ratio,nat_coverage_fc,nat_bias_fc
-fold_104,1-104,105-117,True,0.2555219080308955,0.2655820293963535,1.039370876035575,0.9365384615384615,0.040808928604731426,0.04463171538546965,1.0936752546915678,0.7692307692307693,0.03119192655513334
-fold_117,1-117,118-130,False,,,,,,,,,
-fold_130,1-130,131-143,False,,,,,,,,,
-holdout,1-143,144-156,False,,,,,,,,,

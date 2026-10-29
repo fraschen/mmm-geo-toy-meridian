@@ -1,4 +1,4 @@
-"""Sampling smoke test (used in Docker): short fit of the selected spec on JAX."""
+"""Container check: a short fit of the production model runs on the JAX backend."""
 
 import os
 import sys

@@ -1,7 +1,6 @@
 """Phase 5: automated gates for the selected spec (`make gates`).
 
-Exits non-zero if any blocking gate fails. Writes outputs/gates/gates.json and
-outputs/gates/insample_national.csv. Rules, thresholds and their basis are in
+Exits non-zero if any blocking gate fails. Writes outputs/gates/gates.json. Rules, thresholds and their basis are in
 config/gates.toml; accuracy thresholds are set against the EDA noise floor
 (eda_summary.json).
 """
@@ -120,7 +119,7 @@ def main():
   m = mean.mean((0, 1))
   g_r2, n_r2 = r2(obs, m), r2(obs.sum(0), m.sum(0))
   g_cov, _, _ = coverage(obs, pred)
-  n_cov, nlo, nhi = coverage(obs.sum(0), pred.sum(2))
+  n_cov, _, _ = coverage(obs.sum(0), pred.sum(2))
   lo_c, hi_c = T["insample_coverage_range"]
   gates.append(gate("insample_r2", "PASS" if (g_r2 >= T["insample_geo_week_r2_min"] and n_r2 >= T["insample_national_r2_min"]) else "FAIL",
                     {"geo_week": g_r2, "national": n_r2},
@@ -221,9 +220,6 @@ def main():
                                 "checks": meridian_checks},
             "blocking_failures": blocking_fail, "passed": not blocking_fail}
   write_json(result, OUT / "gates.json")
-  times = [str(t) for t in np.asarray(mmm.input_data.time)]
-  pd.DataFrame({"time": times, "observed": obs.sum(0), "mean": m.sum(0), "ci_lo": nlo,
-                "ci_hi": nhi}).to_csv(OUT / "insample_national.csv", index=False)
   for g in gates:
     print(f"{g['status']:5s} {'(blocking)' if g['blocking'] else '          '} {g['gate']}")
   print(f"Blocking failures: {blocking_fail or 'none'}")

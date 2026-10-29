@@ -2,11 +2,9 @@
 
 Builds the single production model defined in config/model.toml. Steps follow the
 skill: load data and map columns (DataFrameInputDataBuilder), configure ModelSpec,
-sample the prior, run Meridian EDA, fit with sample_posterior and save with
-meridian_serde.save_meridian.
+sample the prior, fit with sample_posterior and save with meridian_serde.save_meridian.
 
 Usage (run from the project root):
-  .venv/bin/python model_build/build_model.py --eda-only        # Meridian EDA report only
   .venv/bin/python model_build/build_model.py                   # full-data fit
   .venv/bin/python model_build/build_model.py --train-weeks 104 # CV refit on weeks 1-104
   .venv/bin/python model_build/build_model.py --calibrated      # optional: HYPOTHETICAL lift test
@@ -26,7 +24,6 @@ import pandas as pd  # noqa: E402
 from common import (RAW_CSV, ROOT, TIME, build_input_data, load_model_config,  # noqa: E402
                     model_dir)
 from meridian import backend  # noqa: E402
-from meridian.model.eda import meridian_eda  # noqa: E402
 from meridian.model.model import Meridian  # noqa: E402
 from meridian.model.prior_distribution import PriorDistribution  # noqa: E402
 from meridian.model.spec import ModelSpec  # noqa: E402
@@ -90,9 +87,8 @@ def make_spec(input_data=None, calibrated: bool = False) -> ModelSpec:
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument("--eda-only", action="store_true")
   parser.add_argument("--train-weeks", type=int, default=None,
-                      help="CV refit: keep only the first N weeks; skips the EDA report.")
+                      help="CV refit: keep only the first N weeks.")
   parser.add_argument("--calibrated", action="store_true",
                       help="Optional: ROI prior calibrated by the lift tests file.")
   args = parser.parse_args()
@@ -114,20 +110,12 @@ def main():
   # 3. Prior sampling (fixed seed).
   mmm.sample_prior(n_draws=CONFIG["sampler"]["n_prior_draws"], seed=CONFIG["sampler"]["seed"])
 
-  # 4. Meridian EDA report (full-data fits only).
-  if not args.train_weeks:
-    eda = meridian_eda.MeridianEDA(mmm)
-    eda.generate_and_save_report(filename="eda.html", filepath=str(output_dir))
-    print(f"EDA report written to {output_dir / 'eda.html'}")
-  if args.eda_only:
-    return
-
-  # 5. Fit.
+  # 4. Fit.
   t0 = time.time()
   mmm.sample_posterior(**sampler)
   runtime = time.time() - t0
 
-  # 6. Save.
+  # 5. Save.
   save_path = output_dir / "meridian_model.binpb"
   meridian_serde.save_meridian(mmm, str(save_path))
   with open(output_dir / "fit_info.json", "w") as f:

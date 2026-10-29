@@ -88,8 +88,6 @@ def main():
                    "ci_lo": np.quantile(x, CI[0]), "ci_hi": np.quantile(x, CI[1]),
                    "p_roi_gt_1": (x > 1).mean()})
   pd.DataFrame(rows).to_csv(OUT / "roi_prior_posterior.csv", index=False)
-  np.save(OUT / "roi_draws_posterior.npy", post)
-  np.save(OUT / "roi_draws_prior.npy", prior)
 
   # Curves.
   an.hill_curves(confidence_level=0.94).to_csv(OUT / "hill_curves.csv", index=False)

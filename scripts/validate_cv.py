@@ -145,7 +145,7 @@ def fold_roi(mmm):
 def main():
   OUT.mkdir(parents=True, exist_ok=True)
   raw = load_raw()
-  rows, roi_rows, nat_rows, folds = [], [], [], {}
+  roi_rows, nat_rows, folds = [], [], {}
   for t0 in FOLDS:
     mmm = load_fold(t0)
     conv = convergence(mmm.inference_data)
@@ -156,8 +156,6 @@ def main():
       # A non-converged fit records only its convergence diagnostics.
       folds[label] = {"label": label, "train_weeks": t0, "converged": False,
                       "convergence": conv_summary}
-      rows.append({"fold": label, "train_weeks": f"1-{t0}",
-                   "test_weeks": f"{t0 + 1}-{t0 + HORIZON}", "converged": False})
       print(f"{label}: NOT converged; diagnostics only: {conv_summary}")
       del mmm
       continue
@@ -175,15 +173,6 @@ def main():
            "national": {"in_sample": n_in, "forecast": n_out,
                         "error_ratio": n_out["mape"] / n_in["mape"]}}
     folds[label] = rec
-    rows.append({"fold": label, "train_weeks": f"1-{t0}", "test_weeks": f"{t0 + 1}-{t0 + HORIZON}",
-                 "converged": conv["converged"],
-                 "geo_mape_in": g_in["mape"], "geo_mape_fc": g_out["mape"],
-                 "geo_error_ratio": rec["geo_week"]["error_ratio"],
-                 "geo_coverage_fc": g_out["coverage_94"],
-                 "nat_mape_in": n_in["mape"], "nat_mape_fc": n_out["mape"],
-                 "nat_error_ratio": rec["national"]["error_ratio"],
-                 "nat_coverage_fc": n_out["coverage_94"],
-                 "nat_bias_fc": n_out["mean_signed_pct_error"]})
     for i, w in enumerate(weeks):
       nat_rows.append({"fold": label, "time": str(pd.Timestamp(w).date()), "week": i + 1,
                        "forecast_period": bool(test[i]), "observed": no[i], "mean": nm[i],
@@ -198,7 +187,6 @@ def main():
           f"cov {n_out['coverage_94']:.2f}, bias {n_out['mean_signed_pct_error']:+.3f})")
     del mmm
 
-  pd.DataFrame(rows).to_csv(OUT / "cv_folds.csv", index=False)
   pd.DataFrame(nat_rows).to_csv(OUT / "cv_national_forecasts.csv", index=False)
   pd.DataFrame(roi_rows).to_csv(OUT / "cv_roi.csv", index=False)
   write_json({"spec": SPEC, "folds": folds, "horizon_weeks": HORIZON, "interval": CI,

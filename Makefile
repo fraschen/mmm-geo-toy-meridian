@@ -10,7 +10,7 @@ FOLD_MODELS := $(foreach t,$(FOLDS),model_build/cv/train$(t)/meridian_model.binp
 CALIBRATED := model_build/model_calibrated/meridian_model.binpb
 LIFT := data/lift_tests/lift_tests.csv
 
-.PHONY: all data eda eda-meridian eda-extended fit convergence cv-fit validate \
+.PHONY: all data eda fit convergence cv-fit validate \
         reports-meridian budget gates results reports calibration docker clean-outputs
 
 # Production pipeline. Stops if the model fails its convergence gate. The acceptance
@@ -23,13 +23,8 @@ all: eda fit convergence validate reports-meridian budget
 data:
 	@test -f $(RAW) || { echo "Missing $(RAW)"; exit 1; }
 
-# EDA: Meridian's EDA report for the production spec (prior draws only) + extended EDA.
-eda: eda-meridian eda-extended
-
-eda-meridian: data
-	$(AWAKE) $(PY) model_build/build_model.py --eda-only
-
-eda-extended: data
+# EDA: data checks and exploratory tests -> outputs/eda/ and reports/eda.md.
+eda: data
 	$(PY) scripts/eda.py
 	$(PY) scripts/eda_findings.py
 
@@ -93,8 +88,8 @@ calibration: $(CALIBRATED)
 IMAGE := mmm-geo-toy-meridian
 docker:
 	docker build -t $(IMAGE) .
-	docker run --rm $(IMAGE) sh -c 'cp outputs/eda/eda_summary.json /tmp/ref.json && make eda-extended && .venv/bin/python scripts/compare_json.py /tmp/ref.json outputs/eda/eda_summary.json'
-	docker run --rm $(IMAGE) sh -c 'make data && .venv/bin/python scripts/docker_smoke.py'
+	docker run --rm $(IMAGE) sh -c 'cp outputs/eda/eda_summary.json /tmp/ref.json && make eda && .venv/bin/python docker/check_eda_reproduces.py /tmp/ref.json outputs/eda/eda_summary.json'
+	docker run --rm $(IMAGE) sh -c 'make data && .venv/bin/python docker/check_sampling.py'
 
 clean-outputs:
 	rm -rf outputs reports/figures
