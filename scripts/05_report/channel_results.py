@@ -14,15 +14,9 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import CHANNELS, OUTPUTS, load_model, load_model_config, load_raw, write_json
+from common import summarize, CHANNELS, OUTPUTS, load_model, load_model_config, load_raw, write_json
 
-CI = (0.03, 0.97)
 OUT = OUTPUTS / "05_report"
-
-
-def stats(x):
-  x = np.asarray(x).ravel()
-  return float(x.mean()), float(np.quantile(x, CI[0])), float(np.quantile(x, CI[1]))
 
 
 def main():
@@ -48,19 +42,19 @@ def main():
 
   rows = []
   for i, c in enumerate(CHANNELS):
-    cm, cl, ch = stats(inc[:, i])
-    rm, rl, rh = stats(roi[:, i])
-    mm, ml, mh = stats(mroi[:, i])
+    contribution = summarize(inc[:, i])
+    channel_roi = summarize(roi[:, i])
+    marginal_roi = summarize(mroi[:, i])
     folds = roi_cv[roi_cv.channel == c]["mean"] if n_conv_folds else pd.Series(dtype=float)
     g = ch_gate[c]
     rows.append({
         "channel": c, "period": period,
-        "contribution_mean": cm, "contribution_ci_lo": cl, "contribution_ci_hi": ch,
-        "roi_mean": rm, "roi_ci_lo": rl, "roi_ci_hi": rh,
-        "mroi_mean": mm, "mroi_ci_lo": ml, "mroi_ci_hi": mh,
+        **{f"contribution_{k}": v for k, v in contribution.items()},
+        **{f"roi_{k}": v for k, v in channel_roi.items()},
+        **{f"mroi_{k}": v for k, v in marginal_roi.items()},
         "p_roi_gt_1": float((roi[:, i] > 1).mean()),
         "spend": float(spend[i]), "spend_share": float(spend[i] / spend.sum()),
-        "share_of_revenue": cm / total_rev,
+        "share_of_revenue": contribution["mean"] / total_rev,
         "roi_cv_fold_min": float(folds.min()) if len(folds) >= 2 else None,
         "roi_cv_fold_max": float(folds.max()) if len(folds) >= 2 else None,
         "roi_cv_converged_folds": int(n_conv_folds),

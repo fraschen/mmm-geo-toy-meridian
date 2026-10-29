@@ -211,19 +211,22 @@ def seasonality_test(df, nat):
 
 
 def noise_floor(df, nat):
-  piv = df.pivot(index=TIME, columns=GEO, values="revenue")
-  def stats_for(Y):
+  def noise_stats(Y):
+    """Noise measures for each series (row) of Y: shape (series, weeks)."""
     Y = np.atleast_2d(Y)
-    cv = Y.std(1, ddof=1) / Y.mean(1)
-    det = np.apply_along_axis(detrend, 1, Y)
-    ac1 = np.array([np.corrcoef(x[:-1], x[1:])[0, 1] for x in det])
-    ma = pd.DataFrame(Y.T).rolling(13, center=True).mean().to_numpy().T
-    ape = np.nanmean(np.abs(Y / ma - 1), 1)
-    return cv, ac1, ape
-  g = stats_for(piv.to_numpy().T)
-  n = stats_for(nat.to_numpy())
-  q = lambda a: {"median": float(np.median(a)), "min": float(np.min(a)),
-                 "max": float(np.max(a))}
+    detrended = np.apply_along_axis(detrend, 1, Y)
+    moving_avg = pd.DataFrame(Y.T).rolling(13, center=True).mean().to_numpy().T
+    return {
+        "cv": Y.std(1, ddof=1) / Y.mean(1),
+        "lag1": np.array([np.corrcoef(x[:-1], x[1:])[0, 1] for x in detrended]),
+        "mape_vs_ma": np.nanmean(np.abs(Y / moving_avg - 1), 1),
+    }
+
+  def spread(values):
+    return {"median": float(np.median(values)), "min": float(np.min(values)), "max": float(np.max(values))}
+
+  geo = noise_stats(df.pivot(index=GEO, columns=TIME, values="revenue").to_numpy())
+  national = noise_stats(nat.to_numpy())
   # Noise vs geo size (input to using one residual variance for all geos).
   pc = df.assign(pc=df["revenue"] / df[POPULATION]).groupby(GEO).agg(
       pop=(POPULATION, "first"), sd=("pc", "std"))
@@ -231,36 +234,43 @@ def noise_floor(df, nat):
       "definition": ("CV = sd/mean of weekly revenue; lag-1 autocorrelation of detrended "
                      "revenue; MAPE of a 13-week centred moving average (the error floor of "
                      "a smooth predictor)."),
-      "geo_weekly_cv": q(g[0]), "geo_lag1_autocorr": q(g[1]), "geo_mape_vs_13wk_ma": q(g[2]),
-      "national_weekly_cv": float(n[0][0]), "national_lag1_autocorr": float(n[1][0]),
-      "national_mape_vs_13wk_ma": float(n[2][0]),
+      "geo_weekly_cv": spread(geo["cv"]),
+      "geo_lag1_autocorr": spread(geo["lag1"]),
+      "geo_mape_vs_13wk_ma": spread(geo["mape_vs_ma"]),
+      "national_weekly_cv": float(national["cv"][0]),
+      "national_lag1_autocorr": float(national["lag1"][0]),
+      "national_mape_vs_13wk_ma": float(national["mape_vs_ma"][0]),
       "per_capita_sd_spearman_with_population": float(stats.spearmanr(pc["pop"], pc["sd"])[0]),
       "per_capita_sd_min_over_max": float(pc["sd"].min() / pc["sd"].max()),
   }
 
 
 def lag_correlations(df):
-  d = df.copy()
-  d["rev_g"] = demean(d, ["revenue"], GEO)
-  # Partial version: geo-demeaned revenue and spend with controls, Promo and
-  # organic (geo-demeaned) regressed out of both.
-  Z = sm.add_constant(demean(d, CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA, GEO))
-  resid = lambda v: v - Z @ np.linalg.lstsq(Z, v, rcond=None)[0]
-  d["rev_p"] = resid(d["rev_g"])
+  # Everything is "within geo": each geo's own average is removed first.
+  controls = sm.add_constant(demean(df, CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA, GEO))
+
+  def remove_controls(values):
+    """What is left of a series after regressing it on the controls, Promo and organic."""
+    return values - controls @ np.linalg.lstsq(controls, values, rcond=None)[0]
+
+  def by_lag(revenue, spend):
+    """Correlation of revenue this week with spend 0, 1, ..., MAX_LAG weeks earlier."""
+    out = []
+    for lag in range(MAX_LAG + 1):
+      earlier_spend = spend.groupby(df[GEO]).shift(lag)
+      ok = earlier_spend.notna()
+      out.append(float(np.corrcoef(revenue[ok], earlier_spend[ok])[0, 1]))
+    return out
+
+  revenue = demean(df, ["revenue"], GEO)["revenue"]
+  revenue_adjusted = remove_controls(revenue)
   out = {"geo_demeaned": {}, "geo_demeaned_partial_controls": {}}
   for c, sp in zip(CHANNELS, SPEND_COLS):
-    s_g = demean(d, [sp], GEO)[sp]
-    s_p = resid(s_g)
-    for key, rv, sv in [("geo_demeaned", d["rev_g"], s_g),
-                        ("geo_demeaned_partial_controls", d["rev_p"], s_p)]:
-      vals = []
-      for lag in range(MAX_LAG + 1):
-        lagged = sv.groupby(d[GEO]).shift(lag)
-        m = lagged.notna()
-        vals.append(float(np.corrcoef(rv[m], lagged[m])[0, 1]))
-      out[key][c] = vals
+    spend = demean(df, [sp], GEO)[sp]
+    out["geo_demeaned"][c] = by_lag(revenue, spend)
+    out["geo_demeaned_partial_controls"][c] = by_lag(revenue_adjusted, remove_controls(spend))
   # Approximate 95% band for a zero correlation with n geo-weeks.
-  out["null_95pct_band"] = float(1.96 / np.sqrt(len(d)))
+  out["null_95pct_band"] = float(1.96 / np.sqrt(len(df)))
   part = out["geo_demeaned_partial_controls"]
   out["lags_above_null_band_partial"] = {
       c: [l for l, v in enumerate(vs) if v > out["null_95pct_band"]] for c, vs in part.items()}

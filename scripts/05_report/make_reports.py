@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 import gates_section
-from common import (AXIS, CHANNEL_COLOR, CHANNELS, FIGURES, INK_2, MUTED, OUTPUTS,
+from common import (AXIS, millions, pct, CHANNEL_COLOR, CHANNELS, FIGURES, INK_2, MUTED, OUTPUTS,
                     PALETTE, ROOT, load_gates_config, load_model_config, style_matplotlib)
 
 style_matplotlib()
@@ -24,9 +24,18 @@ import matplotlib.dates as mdates  # noqa: E402
 FD, FM = FIGURES / "diagnostics", FIGURES / "measurement"
 FD.mkdir(parents=True, exist_ok=True)
 FM.mkdir(parents=True, exist_ok=True)
-J = lambda p: json.load(open(OUTPUTS / p))
-pct = lambda x, d=1: f"{100 * x:.{d}f}%"
-M = lambda x: f"{x / 1e6:,.1f}M"
+M = millions  # short alias, used in many report tables
+
+
+def J(path):
+  """Load a JSON file from outputs/."""
+  with open(OUTPUTS / path) as f:
+    return json.load(f)
+
+
+def with_range(mean, lo, hi, show=lambda x: f"{x:.2f}"):
+  """'mean (lo-hi)': a value and its 94% range."""
+  return f"{show(mean)} ({show(lo)}-{show(hi)})"
 
 
 def save(fig, folder, name):
@@ -567,11 +576,11 @@ def measurement(d, figs):
   tab = pd.DataFrame({
       "channel": r.channel,
       "spend": [M(x) for x in r.spend], "spend share": [pct(x) for x in r.spend_share],
-      "contribution (94% CI)": [f"{M(m)} ({M(lo)}-{M(hi)})" for m, lo, hi in
-                                zip(r.contribution_mean, r.contribution_ci_lo, r.contribution_ci_hi)],
+      "contribution (94% CI)": [with_range(x.contribution_mean, x.contribution_ci_lo, x.contribution_ci_hi, M)
+                                for x in r.itertuples()],
       "share of revenue": [pct(x) for x in r.share_of_revenue],
-      "ROI (94% CI)": [f"{m:.2f} ({lo:.2f}-{hi:.2f})" for m, lo, hi in zip(r.roi_mean, r.roi_ci_lo, r.roi_ci_hi)],
-      "mROI (94% CI)": [f"{m:.2f} ({lo:.2f}-{hi:.2f})" for m, lo, hi in zip(r.mroi_mean, r.mroi_ci_lo, r.mroi_ci_hi)],
+      "ROI (94% CI)": [with_range(x.roi_mean, x.roi_ci_lo, x.roi_ci_hi) for x in r.itertuples()],
+      "mROI (94% CI)": [with_range(x.mroi_mean, x.mroi_ci_lo, x.mroi_ci_hi) for x in r.itertuples()],
       "P(ROI>1)": [f"{x:.2f}" for x in r.p_roi_gt_1], "gate": r.gate_status})
   paid_tot = c["paid_total"]
   top = r.sort_values("roi_mean", ascending=False)
@@ -579,20 +588,27 @@ def measurement(d, figs):
   rows = []
   for k in ("main", "stress"):
     s = d[k]
-    rows.append([k, f"+/-{100 * s['spend_constraint']:.0f}%", M(s["budget"]),
-                 ", ".join(f"{ch} {100 * v['change_pct']:+.0f}%" for ch, v in s["channels"].items()),
-                 f"{M(s['gain']['mean'])} ({M(s['gain']['ci_lo'])} to {M(s['gain']['ci_hi'])})",
-                 f"{s['gain']['p_gain_gt_0']:.2f}", f"{100 * s['budget_conserved']['relative_difference']:.3f}%"])
+    gain = s["gain"]
+    changes = ", ".join(f"{ch} {100 * v['change_pct']:+.0f}%" for ch, v in s["channels"].items())
+    rows.append([k, f"+/-{100 * s['spend_constraint']:.0f}%", M(s["budget"]), changes,
+                 f"{M(gain['mean'])} ({M(gain['ci_lo'])} to {M(gain['ci_hi'])})",
+                 f"{gain['p_gain_gt_0']:.2f}", f"{100 * s['budget_conserved']['relative_difference']:.3f}%"])
   bt = pd.DataFrame(rows, columns=["scenario", "constraint", "budget (52 wk)", "change vs last 52 weeks",
                                    "gain (94% CI)", "P(gain>0)", "budget diff"])
   eda_gm = d["eda"]["spend_vs_geo_max"]
   rba = d["rba"].set_index("channel")
-  cal_rows = [[ch, f"{rba.loc[ch, 'before_mean']:.2f} ({rba.loc[ch, 'before_ci_lo']:.2f}-{rba.loc[ch, 'before_ci_hi']:.2f})",
-               f"{rba.loc[ch, 'before_p_roi_gt_1']:.2f}",
-               f"{rba.loc[ch, 'after_mean']:.2f} ({rba.loc[ch, 'after_ci_lo']:.2f}-{rba.loc[ch, 'after_ci_hi']:.2f})",
-               f"{rba.loc[ch, 'after_p_roi_gt_1']:.2f}"] for ch in CHANNELS] if "after_mean" in rba else []
+  cal_rows = []
+  if "after_mean" in rba:  # only when the calibrated refit converged
+    for ch in CHANNELS:
+      x = rba.loc[ch]
+      cal_rows.append([ch,
+                       with_range(x.before_mean, x.before_ci_lo, x.before_ci_hi), f"{x.before_p_roi_gt_1:.2f}",
+                       with_range(x.after_mean, x.after_ci_lo, x.after_ci_hi), f"{x.after_p_roi_gt_1:.2f}"])
   t = cal["test"]
   gc = cal["geo_choice_check"]
+  prior_after = cal["prior_channel"]["after_calibrated"]
+  refit = cal["after_convergence"]
+  implied = cal["implied_test_roi_before"]
   lines = [
       "# Part 2: Measurement",
       "",
@@ -672,19 +688,19 @@ def measurement(d, figs):
       f"{t['channel']}, {t['start_date']} to {t['end_date']}, {len(t['test_geos'].split(';'))} test geos, "
       f"ROI {t['point_estimate_roi']} (SE {t['standard_error']}). It was fed to Meridian's `CalibrationBuilder` "
       f"(baseline prior LogNormal(0.2, 0.9), geometric decay, max lag 4). The resulting {t['channel']} ROI prior has "
-      f"mean {cal['prior_channel']['after_calibrated']['mean']:.2f} and sd {cal['prior_channel']['after_sd']:.2f}: "
+      f"mean {prior_after['mean']:.2f} and sd {cal['prior_channel']['after_sd']:.2f}: "
       "the spend adjustment widens the test's uncertainty because the test covered a fraction of the channel's "
       "national spend. The calibrated refit "
       + ("converged" if cal["after_converged"] else "did not converge")
-      + f" (max R-hat {cal['after_convergence']['max_rhat']:.4f}, min bulk ESS {cal['after_convergence']['min_ess_bulk']:.0f}, "
-      f"{cal['after_convergence']['divergences']} divergences).",
+      + f" (max R-hat {refit['max_rhat']:.4f}, min bulk ESS {refit['min_ess_bulk']:.0f}, "
+      f"{refit['divergences']} divergences).",
       "",
       table(pd.DataFrame(cal_rows, columns=["channel", "ROI before (94% CI)", "P(ROI>1) before",
                                             "ROI after (94% CI)", "P(ROI>1) after"])) if cal_rows else "",
       "",
       f"- Model vs test: for the test geos and weeks, the uncalibrated model implied {t['channel']} ROI "
-      f"{cal['implied_test_roi_before']['mean']:.2f} (94% CI {cal['implied_test_roi_before']['ci_lo']:.2f}-"
-      f"{cal['implied_test_roi_before']['ci_hi']:.2f}); the HYPOTHETICAL test said {t['point_estimate_roi']}."
+      f"{implied['mean']:.2f} (94% CI {implied['ci_lo']:.2f}-{implied['ci_hi']:.2f}); "
+      f"the HYPOTHETICAL test said {t['point_estimate_roi']}."
       + (f" After calibration the model implies {cal['implied_test_roi_after']['mean']:.2f}." if "implied_test_roi_after" in cal else ""),
       f"- Test-geo choice: across {gc['n_alternative_sets']} alternative stratified sets of the same size, the "
       f"model-implied ROI ranges {gc['implied_roi_mean_range'][0]:.2f}-{gc['implied_roi_mean_range'][1]:.2f} "

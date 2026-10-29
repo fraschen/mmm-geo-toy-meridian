@@ -6,13 +6,12 @@ the test statistics sit in a collapsed "Technical details" block.
 
 import json
 
-from common import CHANNELS, OUTPUTS, ROOT
+from common import CHANNELS, OUTPUTS, ROOT, pct
 
 s = json.load(open(OUTPUTS / "01_eda" / "eda_summary.json"))
 d, cpm, tr, se, nf = s["data"], s["cpm"], s["trend"], s["seasonality"], s["noise_floor"]
 lag, col, pop = s["lag_correlation"], s["collinearity"], s["population"]
 gm, cc = s["spend_vs_geo_max"], s["controls_confounding"]
-pct = lambda x, n=1: f"{100 * x:.{n}f}%"
 fig = lambda p: f"![]({p.replace('reports/', '')})"
 growth_text = " then ".join(pct(y["growth_vs_previous_year"]) for y in tr["years"][1:])
 # Noise in a 52-week total: weekly variation shrinks with the square root of the number of weeks.

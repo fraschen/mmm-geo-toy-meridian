@@ -224,9 +224,9 @@
   "noise_floor": {
     "definition": "CV = sd/mean of weekly revenue; lag-1 autocorrelation of detrended revenue; MAPE of a 13-week centred moving average (the error floor of a smooth predictor).",
     "geo_weekly_cv": {
-      "median": 0.300369133482736,
+      "median": 0.30036913348273603,
       "min": 0.21523317047310353,
-      "max": 0.4942870190921175
+      "max": 0.4942870190921177
     },
     "geo_lag1_autocorr": {
       "median": 0.007448136120956329,

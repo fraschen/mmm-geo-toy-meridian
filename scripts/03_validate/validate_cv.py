@@ -21,14 +21,13 @@ import dataclasses
 import numpy as np
 import pandas as pd
 
-from common import (GEO, OUTPUTS, RAW_CSV, SEED, TIME, convergence, load_model, load_model_config,
+from common import (CI, GEO, OUTPUTS, RAW_CSV, SEED, TIME, convergence, load_model, load_model_config,
                     build_input_data, load_raw, write_json)
 
 _VAL = load_model_config()["validation"]
 SPEC = load_model_config()["model"]["name"]
 FOLDS = _VAL["train_weeks"]
 HORIZON = _VAL["horizon"]
-CI = (0.03, 0.97)  # 94% interval
 OUT = OUTPUTS / "03_validate"
 
 

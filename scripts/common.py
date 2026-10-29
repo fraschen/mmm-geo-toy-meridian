@@ -134,6 +134,28 @@ def style_matplotlib():
   })
 
 
+# --- Summaries and number formatting shared by the scripts ---------------------
+CI = (0.03, 0.97)  # 94% credible / predictive interval
+
+
+def summarize(draws):
+  """Mean and 94% interval of a set of posterior draws."""
+  draws = np.asarray(draws).ravel()
+  return {"mean": float(draws.mean()),
+          "ci_lo": float(np.quantile(draws, CI[0])),
+          "ci_hi": float(np.quantile(draws, CI[1]))}
+
+
+def pct(x, digits=1):
+  """0.123 -> '12.3%'."""
+  return f"{100 * x:.{digits}f}%"
+
+
+def millions(x):
+  """1234567 -> '1.2M'."""
+  return f"{x / 1e6:,.1f}M"
+
+
 def to_jsonable(o):
   if isinstance(o, dict):
     return {str(k): to_jsonable(v) for k, v in o.items()}

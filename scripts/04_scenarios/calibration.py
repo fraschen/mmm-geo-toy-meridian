@@ -15,19 +15,17 @@ import sys
 import numpy as np
 import pandas as pd
 
-from common import (CHANNELS, GEO, OUTPUTS, ROOT, SEED, TIME, build_input_data,  # noqa: E402
+from common import (summarize, CHANNELS, GEO, OUTPUTS, ROOT, SEED, TIME, build_input_data,  # noqa: E402
                     convergence, load_model, load_raw, write_json)
 from make_hypothetical_lift_test import N_TEST_GEOS, stratified_geos  # noqa: E402
 
-CI = (0.03, 0.97)
 N_ALT = 20
 OUT = OUTPUTS / "04_scenarios"
 
 
-def summarize(draws):
-  draws = np.asarray(draws).ravel()
-  return {"mean": float(draws.mean()), "ci_lo": float(np.quantile(draws, CI[0])),
-          "ci_hi": float(np.quantile(draws, CI[1])), "p_roi_gt_1": float((draws > 1).mean())}
+def roi_summary(draws):
+  """Mean, 94% interval and P(ROI > 1) of ROI draws."""
+  return {**summarize(draws), "p_roi_gt_1": float((np.asarray(draws) > 1).mean())}
 
 
 def roi(mmm, **kw):
@@ -73,28 +71,28 @@ def main():
 
   prior_after = np.asarray(after.inference_data.prior["roi_m"]).reshape(-1, len(CHANNELS))
   prior_before = np.asarray(before.inference_data.prior["roi_m"]).reshape(-1, len(CHANNELS))
-  result["prior_channel"] = {"before": summarize(prior_before[:, ci]),
-                             "after_calibrated": summarize(prior_after[:, ci]),
+  result["prior_channel"] = {"before": roi_summary(prior_before[:, ci]),
+                             "after_calibrated": roi_summary(prior_after[:, ci]),
                              "after_sd": float(prior_after[:, ci].std())}
 
   # Implied ROI for the test geos and weeks (uncalibrated model is always valid).
   implied_before = roi(before, selected_geos=test_geos, selected_times=weeks)[:, ci]
-  result["implied_test_roi_before"] = summarize(implied_before)
+  result["implied_test_roi_before"] = roi_summary(implied_before)
 
   rows = []
   roi_b = roi(before)
   if conv["converged"]:
     roi_a = roi(after)
-    result["implied_test_roi_after"] = summarize(
+    result["implied_test_roi_after"] = roi_summary(
         roi(after, selected_geos=test_geos, selected_times=weeks)[:, ci])
     for i, c in enumerate(CHANNELS):
-      b, a = summarize(roi_b[:, i]), summarize(roi_a[:, i])
+      b, a = roi_summary(roi_b[:, i]), roi_summary(roi_a[:, i])
       rows.append({"channel": c, **{f"before_{k}": v for k, v in b.items()},
                    **{f"after_{k}": v for k, v in a.items()}})
   else:
     # A non-converged fit records only its convergence diagnostics.
     for i, c in enumerate(CHANNELS):
-      rows.append({"channel": c, **{f"before_{k}": v for k, v in summarize(roi_b[:, i]).items()}})
+      rows.append({"channel": c, **{f"before_{k}": v for k, v in roi_summary(roi_b[:, i]).items()}})
   pd.DataFrame(rows).to_csv(OUT / "roi_before_after.csv", index=False)
   result["roi_before_after"] = rows
 
@@ -123,7 +121,7 @@ def main():
       "chosen_implied_percentile": float((alt_df.implied_roi_mean < result["implied_test_roi_before"]["mean"]).mean()),
       "calibrated_prior_mean_range": [float(alt_df.calibrated_prior_mean.min()), float(alt_df.calibrated_prior_mean.max())],
       "calibrated_prior_sd_range": [float(alt_df.calibrated_prior_sd.min()), float(alt_df.calibrated_prior_sd.max())],
-      "national_roi_before": summarize(roi_b[:, ci]),
+      "national_roi_before": roi_summary(roi_b[:, ci]),
   }
   write_json(result, OUT / "calibration.json")
   print({k: result[k] for k in ("after_converged", "after_convergence", "prior_channel",

@@ -19,10 +19,9 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import (CHANNELS, GEO, OUTPUTS, TIME, load_model, load_raw, revenue_draws,
+from common import (CI, CHANNELS, summarize, GEO, OUTPUTS, TIME, load_model, load_raw, revenue_draws,
                     write_json)
 
-CI = (0.03, 0.97)
 OUT = OUTPUTS / "05_report"
 
 
@@ -56,19 +55,16 @@ def main():
   wc.insert(0, "time", times)
   wc.to_csv(OUT / "weekly_contribution.csv", index=False)
 
-  tot = lambda x: x.sum(2).ravel() if x.ndim == 3 else x.sum(2).reshape(-1, x.shape[-1])
   paid_tot = paid_w.sum(2).reshape(-1, n)
   nonpaid_tot = nonpaid_w.sum(2).reshape(-1, nonpaid_w.shape[-1])
   base_tot = baseline_w.sum(-1).ravel()
-  s = lambda x: {"mean": float(x.mean()), "ci_lo": float(np.quantile(x, CI[0])),
-                 "ci_hi": float(np.quantile(x, CI[1]))}
   nonpaid_names = [str(c) for c in np.asarray(mmm.input_data.organic_media_channel)] + \
       [str(c) for c in np.asarray(mmm.input_data.non_media_channel)]
-  contrib = {"observed_total": float(obs.sum()), "expected_total": s(exp_nat.sum(-1).ravel()),
-             "baseline": s(base_tot),
-             "paid": {c: s(paid_tot[:, i]) for i, c in enumerate(CHANNELS)},
-             "paid_total": s(paid_tot.sum(1)),
-             "non_paid": {c: s(nonpaid_tot[:, i]) for i, c in enumerate(nonpaid_names)}}
+  contrib = {"observed_total": float(obs.sum()), "expected_total": summarize(exp_nat.sum(-1).ravel()),
+             "baseline": summarize(base_tot),
+             "paid": {c: summarize(paid_tot[:, i]) for i, c in enumerate(CHANNELS)},
+             "paid_total": summarize(paid_tot.sum(1)),
+             "non_paid": {c: summarize(nonpaid_tot[:, i]) for i, c in enumerate(nonpaid_names)}}
   write_json(contrib, OUT / "contributions.json")
 
   # Identification: does the baseline level trade off with media?

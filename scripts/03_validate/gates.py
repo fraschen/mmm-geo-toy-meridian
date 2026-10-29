@@ -13,11 +13,10 @@ import sys
 import numpy as np
 import pandas as pd
 
-from common import (CHANNELS, GEO, OUTPUTS, TIME, load_raw, sha256, RAW_CSV,
+from common import (CI, CHANNELS, GEO, OUTPUTS, TIME, load_raw, sha256, RAW_CSV,
                     DATA_SHA256, load_gates_config, load_model, load_model_config, revenue_draws,
                     write_json)
 
-CI = (0.03, 0.97)
 OUT = OUTPUTS / "03_validate"
 
 # Rules, thresholds and their basis: config/gates.toml.
@@ -104,16 +103,21 @@ def main():
 
   # 4. In-sample fit.
   mean, pred = revenue_draws(mmm)
-  m = mean.mean((0, 1))
-  g_r2, n_r2 = r2(obs, m), r2(obs.sum(0), m.sum(0))
-  g_cov, _, _ = coverage(obs, pred)
-  n_cov, _, _ = coverage(obs.sum(0), pred.sum(2))
-  lo_c, hi_c = T["insample_coverage_range"]
-  gates.append(gate("insample_r2", "PASS" if (g_r2 >= T["insample_geo_week_r2_min"] and n_r2 >= T["insample_national_r2_min"]) else "FAIL",
-                    {"geo_week": g_r2, "national": n_r2},
-                    {"geo_week_min": T["insample_geo_week_r2_min"], "national_min": T["insample_national_r2_min"]}, True))
-  gates.append(gate("insample_coverage", "PASS" if (lo_c <= g_cov <= hi_c and lo_c <= n_cov <= hi_c) else "FAIL",
-                    {"geo_week": g_cov, "national": n_cov}, T["insample_coverage_range"], True))
+  m = mean.mean((0, 1))  # posterior-mean revenue per geo-week
+
+  r2_geo = r2(obs, m)
+  r2_national = r2(obs.sum(0), m.sum(0))
+  r2_min = {"geo_week_min": T["insample_geo_week_r2_min"], "national_min": T["insample_national_r2_min"]}
+  passed = r2_geo >= r2_min["geo_week_min"] and r2_national >= r2_min["national_min"]
+  gates.append(gate("insample_r2", "PASS" if passed else "FAIL",
+                    {"geo_week": r2_geo, "national": r2_national}, r2_min, True))
+
+  cov_geo, _, _ = coverage(obs, pred)
+  cov_national, _, _ = coverage(obs.sum(0), pred.sum(2))
+  low, high = T["insample_coverage_range"]
+  passed = low <= cov_geo <= high and low <= cov_national <= high
+  gates.append(gate("insample_coverage", "PASS" if passed else "FAIL",
+                    {"geo_week": cov_geo, "national": cov_national}, T["insample_coverage_range"], True))
   insample = {"geo_week_mape": float(np.mean(np.abs(m / obs - 1))),
               "national_mape": float(np.mean(np.abs(m.sum(0) / obs.sum(0) - 1)))}
 
@@ -124,10 +128,10 @@ def main():
   res = obs - m
   nat_ac = lag1(res.sum(0))
   geo_ac = float(np.median([lag1(r) for r in res]))
-  gates.append(gate("within_geo_r2", "PASS" if wg_r2 >= T["warn_within_geo_r2_min"] else "WARN",
-                    wg_r2, T["warn_within_geo_r2_min"], False))
-  gates.append(gate("residual_autocorrelation",
-                    "PASS" if max(abs(nat_ac), abs(geo_ac)) <= T["warn_residual_lag1_abs_max"] else "WARN",
+  passed = wg_r2 >= T["warn_within_geo_r2_min"]
+  gates.append(gate("within_geo_r2", "PASS" if passed else "WARN", wg_r2, T["warn_within_geo_r2_min"], False))
+  passed = max(abs(nat_ac), abs(geo_ac)) <= T["warn_residual_lag1_abs_max"]
+  gates.append(gate("residual_autocorrelation", "PASS" if passed else "WARN",
                     {"national_lag1": nat_ac, "median_geo_lag1": geo_ac},
                     T["warn_residual_lag1_abs_max"], False))
 
@@ -181,18 +185,22 @@ def main():
   for i, c in enumerate(CHANNELS):
     contraction = float(1 - post[:, i].std() / prior[:, i].std())
     p1 = float((post[:, i] > 1).mean())
+    prior_driven = contraction < T["roi_contraction_min"]
+    payback_determined = p1 >= hi_p or p1 <= lo_p
     channel_gates[c] = {
         "roi_contraction": contraction,
-        "prior_driven": contraction < T["roi_contraction_min"],
-        "p_roi_gt_1": p1, "payback_determined": p1 >= hi_p or p1 <= lo_p,
-        "status": "WARN" if (contraction < T["roi_contraction_min"] or lo_p < p1 < hi_p) else "PASS"}
-  gates.append(gate("channel_roi_checks",
-                    "WARN" if any(v["status"] == "WARN" for v in channel_gates.values()) else "PASS",
-                    channel_gates, {"contraction_min": T["roi_contraction_min"],
-                                    "p_roi_gt_1_determined": T["p_roi_gt_1_determined"]}, False))
+        "prior_driven": prior_driven,
+        "p_roi_gt_1": p1,
+        "payback_determined": payback_determined,
+        "status": "WARN" if prior_driven or not payback_determined else "PASS"}
+  any_warning = any(v["status"] == "WARN" for v in channel_gates.values())
+  gates.append(gate("channel_roi_checks", "WARN" if any_warning else "PASS", channel_gates,
+                    {"contraction_min": T["roi_contraction_min"],
+                     "p_roi_gt_1_determined": T["p_roi_gt_1_determined"]}, False))
 
   # 9. Meridian health checks (reported, not gating), with threshold comparison.
-  looser = {"Convergence": (f"Meridian passes R-hat < {next(c['details'].get('convergence_threshold') for c in health['checks'] if c['check'] == 'Convergence')}; "
+  meridian_rhat = next(c for c in health["checks"] if c["check"] == "Convergence")["details"]["convergence_threshold"]
+  looser = {"Convergence": (f"Meridian passes R-hat < {meridian_rhat}; "
                             f"our gate uses R-hat <= {th['rhat_max']} plus ESS and divergences"),
             "GoodnessOfFit": "Meridian reports R2/MAPE for guidance only (no pass/fail bar); our in-sample and CV gates are explicit",
             "BayesianPPP": "Meridian checks only the total outcome; our gate checks weekly interval coverage"}
