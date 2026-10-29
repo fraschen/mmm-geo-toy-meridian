@@ -547,7 +547,7 @@ def diagnostics(d, figs):
           f"{g['insample_r2']['status']}, ranges {g['insample_coverage']['status']}, misses "
           f"{g['residual_autocorrelation']['status']}."),
       "Holdout and rolling-origin CV": ("Can it forecast weeks it has not seen? (holdout and CV)",
-          "This is the most important check. We refit the model on shorter stretches of history and see how "
+          "We refit the model on shorter stretches of history and see how "
           f"well it predicts the next 13 weeks. Only {n_conv} of {len(d['cv']['folds'])} refits ran reliably, so "
           "this check fails: we cannot yet vouch for the model's forecasts."),
       "Identification": ("Can the model tell media apart from everything else?",

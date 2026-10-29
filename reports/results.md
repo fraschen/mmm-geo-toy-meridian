@@ -49,7 +49,7 @@ Judged against how noisy weekly revenue is: does it explain enough, are its miss
 
 ## Can it forecast weeks it has not seen? (holdout and CV)
 
-This is the most important check. We refit the model on shorter stretches of history and see how well it predicts the next 13 weeks. Only 1 of 4 refits ran reliably, so this check fails: we cannot yet vouch for the model's forecasts.
+We refit the model on shorter stretches of history and see how well it predicts the next 13 weeks. Only 1 of 4 refits ran reliably, so this check fails: we cannot yet vouch for the model's forecasts.
 
 Folds train on weeks 1-104, 1-117, 1-130 and 1-143 (the last is the 13-week holdout) and forecast the next 13 weeks. Each fold is refitted on the truncated data, so all scaling is computed inside the fold. Forecasts use Meridian's equations with the linear baseline extended, conditional on observed media, controls, Promo and organic.
 

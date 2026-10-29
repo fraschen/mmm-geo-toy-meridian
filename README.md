@@ -52,8 +52,7 @@ The rules are in [`config/gates.toml`](config/gates.toml) and explained in
   simulations, and they agree with each other. If they did not, we would report nothing.
   The candidate set and the convergence criteria were revised after earlier rounds failed to
   converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
-- **Does it forecast weeks it has not seen?** This is the test that matters most, and the one the
-  model does not pass yet (see above).
+- **Does it forecast weeks it has not seen?** Not yet: the model does not pass this check (see above).
 - **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by
   4.0%, better than a simple 13-week average (5.1%). Its 94% ranges contain 95% of geo-level weeks,
   close to the 94% they should.
