@@ -20,6 +20,17 @@ max_lag_r = max(abs(v) for k in ("geo_demeaned", "geo_demeaned_partial_controls"
 comp = cc["within_geo_corr"]["competitor_sales_control"]
 
 
+def rev(var):
+  """Within-geo correlation of a control with revenue, as text."""
+  return f"correlation {cc['within_geo_corr'][var]['revenue']:+.2f}"
+
+
+def spend_range(var):
+  """Range of a control's within-geo correlation with each channel's spend, as text."""
+  vals = [cc["within_geo_corr"][var][c] for c in CHANNELS]
+  return f"correlation {min(vals):+.2f} to {max(vals):+.2f} across channels"
+
+
 def details(*items):
   return ["", "<details><summary>Technical details</summary>", ""] + [f"- {i}" for i in items] + ["", "</details>", ""]
 
@@ -166,11 +177,24 @@ lines = [
              + "; raised 50%: " + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.5'])}" for c in CHANNELS) + "."),
     fig(gm["figure"]),
     "",
-    "## The controls must stay in the model",
-    "Competitor sales move with both revenue (down when competitors are up) and with our own spend "
-    f"(up to {cc['max_abs_corr_control_with_spend_within_geo']:.2f} correlation). Leaving them out would "
-    "make media look less effective than it is. Once they are accounted for, the odd negative link "
-    "between same-week spend and revenue disappears. **For the model:** both controls are included.",
+    "## Which controls to include, and why",
+    "A control belongs in the model if it moves with both our spend and our revenue: leaving it out "
+    "would credit its effect to media. The four non-media variables make that case with different strength.",
+    "",
+    f"- **Competitor sales: clearly needed.** They move with revenue ({rev('competitor_sales_control')}) and with "
+    f"our spend ({spend_range('competitor_sales_control')}). Leaving them out would make media look less effective "
+    "than it is; once they are accounted for, the odd negative link between same-week spend and revenue disappears.",
+    f"- **Promo: needed, as a marketing lever.** Promotions lift revenue ({rev('Promo')}) and run alongside paid "
+    f"media ({spend_range('Promo')}). Without them, their lift would be credited to the channels.",
+    f"- **Sentiment: kept as a precaution.** It moves with spend ({spend_range('sentiment_score_control')}) but "
+    f"barely with revenue ({rev('sentiment_score_control')}), so the evidence that it matters is weak.",
+    f"- **Organic media: kept as a precaution.** Same pattern: it moves with spend "
+    f"({spend_range('Organic_channel0_impression')}) but barely with revenue ({rev('Organic_channel0_impression')}).",
+    "",
+    "Keeping a variable that turns out not to matter costs little. But if advertising itself drives sentiment or "
+    "organic activity, controlling for them removes part of media's true effect, so keeping them could understate "
+    "paid media. The data cannot tell which way the influence runs. **For the model:** all four are included; "
+    "whether sentiment and organic change the results is worth checking with a refit without them.",
     *details("Correlation with revenue (within geos): "
              + ", ".join(f"{k} {v['revenue']:+.2f}" for k, v in cc["within_geo_corr"].items()) + ".",
              "Competitor sales vs each channel's spend: " + ", ".join(f"{c} {comp[c]:+.2f}" for c in CHANNELS) + "."),

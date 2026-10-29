@@ -156,6 +156,10 @@ what helped.
   parts to sample.* Give competitor sales and sentiment one effect for all geos. This simplifies the
   model and may help it converge, at the cost of ignoring any real differences between geos in how
   the controls matter.
+- **Refit without sentiment and organic media.** *Problem: the evidence for keeping them is weak, and if
+  advertising drives them, keeping them understates media.* If channel ROIs barely move, the choice does
+  not matter; if they move, the report should say which way and by how much. Fewer controls may also make
+  the model easier to sample.
 - **Test how much the answers depend on the starting belief about ROI.** *Problem: the ranges are
   wide, so the starting assumption matters.* Refit with a tighter and a wider starting belief. If the
   channel ranking and the direction of the budget move hold, we can trust them more; if they change,

@@ -122,8 +122,15 @@ Most weeks run well below each geo's highest-ever spend, and some channels are o
 
 ![](figures/eda/spend_vs_geo_max.png)
 
-## The controls must stay in the model
-Competitor sales move with both revenue (down when competitors are up) and with our own spend (up to 0.55 correlation). Leaving them out would make media look less effective than it is. Once they are accounted for, the odd negative link between same-week spend and revenue disappears. **For the model:** both controls are included.
+## Which controls to include, and why
+A control belongs in the model if it moves with both our spend and our revenue: leaving it out would credit its effect to media. The four non-media variables make that case with different strength.
+
+- **Competitor sales: clearly needed.** They move with revenue (correlation -0.20) and with our spend (correlation +0.07 to +0.55 across channels). Leaving them out would make media look less effective than it is; once they are accounted for, the odd negative link between same-week spend and revenue disappears.
+- **Promo: needed, as a marketing lever.** Promotions lift revenue (correlation +0.13) and run alongside paid media (correlation +0.10 to +0.33 across channels). Without them, their lift would be credited to the channels.
+- **Sentiment: kept as a precaution.** It moves with spend (correlation +0.26 to +0.51 across channels) but barely with revenue (correlation -0.03), so the evidence that it matters is weak.
+- **Organic media: kept as a precaution.** Same pattern: it moves with spend (correlation +0.28 to +0.45 across channels) but barely with revenue (correlation +0.03).
+
+Keeping a variable that turns out not to matter costs little. But if advertising itself drives sentiment or organic activity, controlling for them removes part of media's true effect, so keeping them could understate paid media. The data cannot tell which way the influence runs. **For the model:** all four are included; whether sentiment and organic change the results is worth checking with a refit without them.
 
 <details><summary>Technical details</summary>
 
