@@ -150,12 +150,13 @@ checked before use. What we learned from it: [reports/eda.md](reports/eda.md).
 config/model.toml         the model we run
 config/gates.toml         the acceptance checks
 data/                     the raw data file and the lift-test format
-common.py, model_spec.py  shared code: paths and data loading; the model definition
-01_eda/                   data checks and exploratory tests
-02_fit/                   fit the model, check that it converged
-03_validate/              forecast tests on shorter histories, Meridian health check, acceptance gates
-04_scenarios/             budget scenarios, the hypothetical lift test and calibration
-05_report/                channel results and the results report
+scripts/common.py         shared code: paths and data loading, convergence check
+scripts/model_spec.py     the model definition (from config/model.toml)
+scripts/01_eda/           data checks and exploratory tests
+scripts/02_fit/           fit the model, check that it converged
+scripts/03_validate/      forecast tests on shorter histories, Meridian health check, acceptance gates
+scripts/04_scenarios/     budget scenarios, the hypothetical lift test and calibration
+scripts/05_report/        channel results and the results report
 docker/                   container checks: the EDA reproduces, sampling runs
 models/                   fitted models (not committed) and their settings
 outputs/                  the numbers behind every report, in the folder of the phase that wrote them

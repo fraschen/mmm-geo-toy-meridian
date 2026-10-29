@@ -11,7 +11,7 @@ historical spend in every period; incremental revenue summed over the 52-week
 window; paid channels only), for the optimal and the historical allocation.
 
 Usage (from the project root):
-  .venv/bin/python 04_scenarios/run_budget_optimization.py
+  .venv/bin/python scripts/04_scenarios/run_budget_optimization.py
 """
 
 import json

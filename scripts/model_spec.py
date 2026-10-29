@@ -1,6 +1,6 @@
 """The production ModelSpec, built from config/model.toml.
 
-Used by 02_fit/build_model.py (fitting) and docker/check_sampling.py. Optionally the
+Used by scripts/02_fit/build_model.py (fitting) and docker/check_sampling.py. Optionally the
 ROI prior is calibrated with the HYPOTHETICAL lift test (data/lift_tests/).
 """
 

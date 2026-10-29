@@ -1,7 +1,7 @@
 """Model health check and Model Results Summary (meridian-result-visualization skill).
 
 Usage (from the project root):
-  .venv/bin/python 03_validate/results_report.py
+  .venv/bin/python scripts/03_validate/results_report.py
 """
 
 import json

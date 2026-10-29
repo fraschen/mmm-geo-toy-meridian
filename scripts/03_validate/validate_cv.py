@@ -2,7 +2,7 @@
 
 Folds train on weeks 1-104, 1-117, 1-130, 1-143 and forecast the next 13 weeks;
 the 1-143 fold is the final 13-week holdout. Each fold model is fitted on the
-truncated data (02_fit/build_model.py --train-weeks), so every data-derived
+truncated data (scripts/02_fit/build_model.py --train-weeks), so every data-derived
 scaling (KPI mean/sd, media medians, control centring) comes from training weeks.
 
 Forecasts use Meridian's own mean function (Analyzer.get_kpi_means) on inputs

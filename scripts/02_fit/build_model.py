@@ -4,11 +4,11 @@ Builds the single production model defined in config/model.toml. Steps follow th
 skill: load data and map columns (DataFrameInputDataBuilder), configure ModelSpec,
 sample the prior, fit with sample_posterior and save with meridian_serde.save_meridian.
 
-Usage (run from the project root with PYTHONPATH=. so that `common` is found;
+Usage (run from the project root with PYTHONPATH=scripts so that `common` is found;
 the Makefile does this):
-  PYTHONPATH=. .venv/bin/python 02_fit/build_model.py                    # full-data fit
-  PYTHONPATH=. .venv/bin/python 02_fit/build_model.py --train-weeks 104  # CV refit on weeks 1-104
-  PYTHONPATH=. .venv/bin/python 02_fit/build_model.py --calibrated       # HYPOTHETICAL lift test
+  PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py                    # full-data fit
+  PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py --train-weeks 104  # CV refit on weeks 1-104
+  PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py --calibrated       # HYPOTHETICAL lift test
 """
 
 import argparse
