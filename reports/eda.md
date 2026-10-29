@@ -40,17 +40,26 @@ Channel3 takes the largest share of the budget; Channel2 the smallest:
 
 ![](figures/eda/spend_share.png)
 
-## Spend and impressions carry the same information
-In every channel, spend is exactly impressions times a constant CPM: every percentile of CPM across geo-weeks is the same. So it makes no difference whether the model uses spend or impressions.
+## Meridian's standard checks
+Meridian runs its own checks on the model inputs ([full report](meridian/eda.html)). Nothing blocks the model. Two checks are flagged for review, and both turn out to be harmless.
 
-| channel | min | 5th pct | 25th pct | median | 75th pct | 95th pct | max |
-|---|---|---|---|---|---|---|---|
-| Channel0 | 7.33 | 7.33 | 7.33 | 7.33 | 7.33 | 7.33 | 7.33 |
-| Channel1 | 9.64 | 9.64 | 9.64 | 9.64 | 9.64 | 9.64 | 9.64 |
-| Channel2 | 7.43 | 7.43 | 7.43 | 7.43 | 7.43 | 7.43 | 7.43 |
-| Channel3 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 |
-| Channel4 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 |
+- **Enough data.** 6,240 geo-weeks for about 50 main parameters, roughly 125 data points each.
+- **Spend and impressions carry the same information.** In every channel, spend is impressions times a constant CPM (Channel0 7.33, Channel1 9.64, Channel2 7.43, Channel3 7.79, Channel4 7.79). Meridian flags 200 geo-weeks as unusual CPMs, but they differ only in the sixth decimal place: rounding, not real variation. So it makes no difference whether the model uses spend or impressions.
+- **Some weeks are unusually large (flagged).** Meridian flags values far from a variable's typical range: 36 geo-weeks of revenue and 1,461 media and control values (3% of them). Spend is often zero and occasionally large, so many such points are expected. They are real values, not errors, and we keep them.
+- **Inputs are not too entangled.** The strongest overlap between any two inputs is a correlation of 0.60 (Channel4 and competitor_sales_control), and no input is largely explained by the others (variance inflation factor at most 2.6). The model can tell them apart.
+- **Bigger geos spend more.** Each channel's spend tracks population almost perfectly (rank correlation 0.97 to 0.99), while the controls and Promo barely do. **For the model:** revenue and media are expressed per person; controls are not.
+- **Inputs vary both over time and across geos.** The week alone explains at most 33% of any input's variation (Channel3), so no input is just a national time pattern that the baseline could absorb.
 
+<details><summary>Technical details</summary>
+
+- Data-to-parameter ratio 124.8: (geos - 1) + knots (2) + controls + treatments, Meridian's rough count.
+- CPM range per channel (min to max): Channel0 7.332722-7.332724, Channel1 9.641230-9.641233, Channel2 7.430924-7.430925, Channel3 7.792840-7.792841, Channel4 7.791911-7.791912.
+- Pairwise correlation flag threshold 0.999; pairs flagged: 0. VIF: Channel0 1.46, Channel1 1.23, Channel2 1.72, Channel3 2.46, Channel4 1.77, Organic_channel0_impression 1.63, competitor_sales_control 2.41, sentiment_score_control 2.60, Promo 1.49.
+- Scaled revenue standard deviation 1.00 (Meridian flags revenue that barely varies).
+- Spearman with population, controls and Promo: competitor_sales_control -0.05, sentiment_score_control +0.23, Promo +0.18.
+- R2 explained by week: Channel0 0.19, Channel1 0.21, Channel2 0.18, Channel3 0.33, Channel4 0.27, Organic_channel0_impression 0.22, Promo 0.18, competitor_sales_control 0.32, sentiment_score_control 0.26; by geo at most 0.00.
+
+</details>
 
 ## Revenue grows slowly
 Revenue per year (each year is a block of 52 weeks, starting in late January):
@@ -102,30 +111,6 @@ Within each geo, weeks with more spend do not clearly have more revenue: every c
 </details>
 
 ![](figures/eda/lag_correlation.png)
-
-## Channels are not too entangled
-Channels are switched on and off at fairly different times, so the model can tell them apart. The strongest overlap between two channels is a correlation of 0.50 within geos.
-
-<details><summary>Technical details</summary>
-
-- Within-geo spend correlation: max |r| = 0.50. Within-geo variance inflation factor (spend, Promo, organic, controls) at most 2.11 (values above 5-10 would be a concern).
-
-</details>
-
-![](figures/eda/collinearity.png)
-
-## Bigger geos have proportionally bigger revenue and spend
-Revenue and spend grow in step with population: double the population, roughly double the revenue. **For the model:** revenue and media are expressed per person.
-
-<details><summary>Technical details</summary>
-
-- Total revenue vs population: Spearman 0.978, log-log slope 1.04 +/- 0.03; total spend: Spearman 0.995, slope 1.02 +/- 0.01.
-- Revenue per capita varies across geos by 10.0% (CV); spend per capita by 3.6%.
-- Control averages barely track population (Spearman competitor_sales_control -0.05, sentiment_score_control +0.23, Promo +0.18), so the controls are not scaled by population.
-
-</details>
-
-![](figures/eda/population.png)
 
 ## How much room there is to spend more
 Most weeks run well below each geo's highest-ever spend, and some channels are often off (Channel2 is off in 64% of geo-weeks). **For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed shape of the response curve.

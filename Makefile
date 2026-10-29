@@ -27,6 +27,7 @@ data:
 # EDA: data checks and exploratory tests -> outputs/01_eda/ and reports/eda.md.
 eda: data
 	$(PY) scripts/01_eda/eda.py
+	$(PY) scripts/01_eda/meridian_eda.py
 	$(PY) scripts/01_eda/eda_findings.py
 
 # Fit the production model (skill script); skipped if already saved.

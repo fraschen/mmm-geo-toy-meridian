@@ -1,4 +1,4 @@
-"""Writes reports/eda.md: EDA findings generated from outputs/01_eda/eda_summary.json.
+"""Writes reports/eda.md from outputs/01_eda/eda_summary.json and meridian_eda.json.
 
 Each section leads with a plain-language takeaway and what it means for the model;
 the test statistics sit in a collapsed "Technical details" block.
@@ -9,8 +9,12 @@ import json
 from common import CHANNELS, OUTPUTS, ROOT, pct
 
 s = json.load(open(OUTPUTS / "01_eda" / "eda_summary.json"))
-d, cpm, tr, se, nf = s["data"], s["cpm"], s["trend"], s["seasonality"], s["noise_floor"]
-lag, col, pop = s["lag_correlation"], s["collinearity"], s["population"]
+m = json.load(open(OUTPUTS / "01_eda" / "meridian_eda.json"))  # Meridian's own EDA checks
+ad, cpm, corr, vif, var, mpop, tg = (m[k] for k in ("data_adequacy", "cost_per_media_unit", "correlation",
+                                                    "vif", "variability", "population", "time_vs_geo"))
+d, tr, se, nf = s["data"], s["trend"], s["seasonality"], s["noise_floor"]
+lag = s["lag_correlation"]
+n_tc = d["n_rows"] * len(vif["vif"])  # geo-week values of all media, Promo, organic and controls
 gm, cc = s["spend_vs_geo_max"], s["controls_confounding"]
 fig = lambda p: f"![]({p.replace('reports/', '')})"
 growth_text = " then ".join(pct(y["growth_vs_previous_year"]) for y in tr["years"][1:])
@@ -92,16 +96,40 @@ lines = [
     "",
     fig(d["figure_spend_share"]),
     "",
-    "## Spend and impressions carry the same information",
-    "In every channel, spend is exactly impressions times a constant CPM: every percentile of CPM "
-    "across geo-weeks is the same. So it makes no difference whether the model uses spend or impressions.",
+    "## Meridian's standard checks",
+    "Meridian runs its own checks on the model inputs ([full report](meridian/eda.html)). Nothing blocks the "
+    "model. Two checks are flagged for review, and both turn out to be harmless.",
     "",
-    "| channel | min | 5th pct | 25th pct | median | 75th pct | 95th pct | max |",
-    "|---|---|---|---|---|---|---|---|",
-    *[f"| {c} | " + " | ".join(f"{cpm[c][k]:.2f}" for k in ("min", "p05", "p25", "median", "p75", "p95", "max")) + " |"
-      for c in CHANNELS],
-    "",
-    "",
+    f"- **Enough data.** {ad['n_data_points']:,} geo-weeks for about {ad['n_parameters']} main parameters, "
+    f"roughly {ad['ratio']:.0f} data points each.",
+    "- **Spend and impressions carry the same information.** In every channel, spend is impressions times a "
+    "constant CPM (" + ", ".join(f"{c} {cpm['cpm'][c]['median']:.2f}" for c in CHANNELS) + "). Meridian flags "
+    f"{cpm['n_outliers_flagged']} geo-weeks as unusual CPMs, but they differ only in the sixth decimal place: "
+    "rounding, not real variation. So it makes no difference whether the model uses spend or impressions.",
+    "- **Some weeks are unusually large (flagged).** Meridian flags values far from a variable's typical range: "
+    f"{var['outliers_flagged']['kpi_scaled']} geo-weeks of revenue and {var['outliers_flagged']['treatment_control_scaled']:,} "
+    f"media and control values ({pct(var['outliers_flagged']['treatment_control_scaled'] / n_tc, 0)} of them). Spend is often zero "
+    "and occasionally large, so many such points are expected. They are real values, not errors, and we keep them.",
+    f"- **Inputs are not too entangled.** The strongest overlap between any two inputs is a correlation of "
+    f"{corr['max_abs_corr']:.2f} ({' and '.join(corr['max_pair'])}), and no input is largely explained by the others "
+    f"(variance inflation factor at most {vif['max_vif']:.1f}). The model can tell them apart.",
+    "- **Bigger geos spend more.** Each channel's spend tracks population almost perfectly (rank correlation "
+    f"{min(mpop['raw_media_spearman'].values()):.2f} to {max(mpop['raw_media_spearman'].values()):.2f}), while the "
+    "controls and Promo barely do. **For the model:** revenue and media are expressed per person; controls are not.",
+    f"- **Inputs vary both over time and across geos.** The week alone explains at most {pct(tg['max_r2_time'], 0)} "
+    f"of any input's variation ({tg['max_r2_time_variable']}), so no input is just a national time pattern that "
+    "the baseline could absorb.",
+    *details(f"Data-to-parameter ratio {ad['ratio']:.1f}: (geos - 1) + knots ({ad['n_knots']}) + controls + "
+             "treatments, Meridian's rough count.",
+             "CPM range per channel (min to max): " + ", ".join(
+                 f"{c} {cpm['cpm'][c]['min']:.6f}-{cpm['cpm'][c]['max']:.6f}" for c in CHANNELS) + ".",
+             f"Pairwise correlation flag threshold {corr['flag_threshold']}; pairs flagged: {corr['n_pairs_flagged']}. "
+             "VIF: " + ", ".join(f"{k} {v:.2f}" for k, v in vif["vif"].items()) + ".",
+             f"Scaled revenue standard deviation {var['kpi_scaled_sd']:.2f} (Meridian flags revenue that barely varies).",
+             "Spearman with population, controls and Promo: "
+             + ", ".join(f"{k} {v:+.2f}" for k, v in mpop["controls_and_promo_spearman"].items()) + ".",
+             "R2 explained by week: " + ", ".join(f"{k} {v:.2f}" for k, v in tg["r2_time"].items())
+             + f"; by geo at most {max(tg['max_r2_geo'], 0):.2f}."),
     "## Revenue grows slowly",
     "Revenue per year (each year is a block of 52 weeks, starting in late January):",
     "",
@@ -170,27 +198,6 @@ lines = [
              + "; ".join(f"{c} {v or 'none'}" for c, v in lag["lags_above_null_band_partial"].items())
              + ". No clear decay pattern, so the data do not settle the maximum lag."),
     fig(lag["figure"]),
-    "",
-    "## Channels are not too entangled",
-    "Channels are switched on and off at fairly different times, so the model can tell them apart. "
-    f"The strongest overlap between two channels is a correlation of {col['within_geo_max_abs_corr']:.2f} within geos.",
-    *details(f"Within-geo spend correlation: max |r| = {col['within_geo_max_abs_corr']:.2f}. Within-geo "
-             f"variance inflation factor (spend, Promo, organic, controls) at most {col['max_vif']:.2f} "
-             "(values above 5-10 would be a concern)."),
-    fig(col["figure"]),
-    "",
-    "## Bigger geos have proportionally bigger revenue and spend",
-    "Revenue and spend grow in step with population: double the population, roughly double the revenue. "
-    "**For the model:** revenue and media are expressed per person.",
-    *details(f"Total revenue vs population: Spearman {pop['revenue']['spearman']:.3f}, log-log slope "
-             f"{pop['revenue']['loglog_slope']:.2f} +/- {pop['revenue']['loglog_slope_se']:.2f}; total spend: Spearman "
-             f"{pop['spend']['spearman']:.3f}, slope {pop['spend']['loglog_slope']:.2f} +/- {pop['spend']['loglog_slope_se']:.2f}.",
-             f"Revenue per capita varies across geos by {pct(pop['revenue_per_capita_cv_across_geos'])} (CV); spend per "
-             f"capita by {pct(pop['spend_per_capita_cv_across_geos'])}.",
-             "Control averages barely track population (Spearman "
-             + ", ".join(f"{k} {v:+.2f}" for k, v in pop["control_geo_mean_spearman_with_population"].items())
-             + "), so the controls are not scaled by population."),
-    fig(pop["figure"]),
     "",
     "## How much room there is to spend more",
     "Most weeks run well below each geo's highest-ever spend, and some channels are often off "

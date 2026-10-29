@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from scipy import stats
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 from common import (CHANNEL_COLOR, CHANNELS, CONTROLS, FIGURES, GEO, INK_2,
                     KPI, MUTED, NON_MEDIA_TREATMENTS, ORGANIC_MEDIA, OUTPUTS,
@@ -90,18 +89,6 @@ def sufficiency(df):
           "mean": float(rpk.mean()), "cv": float(rpk.std() / rpk.mean()),
           "min": float(rpk.min()), "max": float(rpk.max())},
   }
-
-
-def cpm_check(df):
-  """Distribution of CPM (spend per 1,000 impressions) per channel, over geo-weeks with impressions."""
-  out = {}
-  for c, imp, sp in zip(CHANNELS, IMPRESSION_COLS, SPEND_COLS):
-    with_impressions = df[df[imp] > 0]
-    cpm = 1000 * with_impressions[sp] / with_impressions[imp]
-    out[c] = {"min": float(cpm.min()), "p05": float(cpm.quantile(.05)), "p25": float(cpm.quantile(.25)),
-              "median": float(cpm.median()), "p75": float(cpm.quantile(.75)),
-              "p95": float(cpm.quantile(.95)), "max": float(cpm.max())}
-  return out
 
 
 def national_series(df):
@@ -311,65 +298,6 @@ def lag_correlations(df):
   return out
 
 
-def collinearity(df):
-  cols = SPEND_COLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA + CONTROLS
-  W = demean(df, cols, GEO)                  # within-geo: each geo's average removed
-  corr = W[SPEND_COLS].corr()
-  corr.index = corr.columns = CHANNELS
-  # VIF: how much each input's estimate would be inflated by its overlap with all the others.
-  vif = {c: float(variance_inflation_factor(W[cols].to_numpy(), i)) for i, c in enumerate(cols)}
-  # Correlations between different channels only (the diagonal, a channel with itself, is dropped).
-  off = corr.where(~np.eye(len(corr), dtype=bool)).abs().stack()
-
-  fig, ax = plt.subplots(figsize=(4.8, 3.8))
-  ax.imshow(corr.to_numpy(), cmap=DIVERGING, vmin=-1, vmax=1)
-  ax.set_xticks(range(5), CHANNELS, rotation=45, ha="right")
-  ax.set_yticks(range(5), CHANNELS)
-  ax.grid(False)
-  for i in range(5):
-    for j in range(5):
-      ax.text(j, i, f"{corr.iloc[i, j]:.2f}", ha="center", va="center", fontsize=8)
-  ax.set_title("Within-geo spend correlation")
-  return {"within_geo_spend_corr": corr.to_dict(), "within_geo_max_abs_corr": float(off.max()),
-          "vif_within_geo": vif, "max_vif": float(max(vif.values())),
-          "figure": savefig(fig, "collinearity.png")}
-
-
-def population_relation(df):
-  # One row per geo: its population and its total revenue and spend over all weeks.
-  g = df.groupby(GEO).agg(population=(POPULATION, "first"), revenue=("revenue", "sum"),
-                          **{c: (s, "sum") for c, s in zip(CHANNELS, SPEND_COLS)})
-  g["spend"] = g[CHANNELS].sum(1)
-  out = {}
-  for col in ["revenue", "spend"] + CHANNELS:
-    # Slope of log(total) on log(population): 1 means the total grows in proportion to population.
-    x, y = np.log(g["population"]), np.log(g[col].clip(lower=1e-9))
-    fit = sm.OLS(y, sm.add_constant(x)).fit()
-    out[col] = {"pearson": float(stats.pearsonr(g["population"], g[col])[0]),
-                "spearman": float(stats.spearmanr(g["population"], g[col])[0]),
-                "loglog_slope": float(fit.params.iloc[1]),
-                "loglog_slope_se": float(fit.bse.iloc[1])}
-  pc = g["revenue"] / g["population"]
-  out["revenue_per_capita_cv_across_geos"] = float(pc.std() / pc.mean())
-  out["spend_per_capita_cv_across_geos"] = float(
-      (g["spend"] / g["population"]).std() / (g["spend"] / g["population"]).mean())
-  ctrl = df.groupby(GEO)[CONTROLS + NON_MEDIA_TREATMENTS].mean()
-  out["control_geo_mean_spearman_with_population"] = {
-      c: float(stats.spearmanr(g["population"], ctrl[c])[0]) for c in ctrl.columns}
-  out["population_min"] = float(g["population"].min())
-  out["population_max"] = float(g["population"].max())
-
-  fig, axes = plt.subplots(1, 2, figsize=(9, 3.4))
-  for ax, col, title in [(axes[0], "revenue", "Revenue vs population"),
-                         (axes[1], "spend", "Paid spend vs population")]:
-    ax.scatter(g["population"] / 1e3, g[col] / 1e6, s=16, color=PALETTE[0])
-    ax.set_xlabel("Population (thousands)")
-    ax.set_ylabel(f"Total {col} over 156 weeks (millions)")
-    ax.set_title(f"{title}\nlog-log slope {out[col]['loglog_slope']:.2f}")
-  out["figure"] = savefig(fig, "population.png")
-  return out
-
-
 def spend_vs_geo_max(df):
   out = {}
   times = np.sort(df[TIME].unique())
@@ -468,13 +396,10 @@ def main():
   summary = {"data": sufficiency(df)}
   summary["data"]["figure_spend_share"] = spend_share_fig(summary["data"])
   summary["summary_stats"] = summary_stats(df)
-  summary["cpm"] = cpm_check(df)
   summary["trend"] = trend(nat)
   summary["seasonality"] = seasonality_test(df, nat)
   summary["noise_floor"] = noise_floor(df, nat)
   summary["lag_correlation"] = lag_correlations(df)
-  summary["collinearity"] = collinearity(df)
-  summary["population"] = population_relation(df)
   summary["spend_vs_geo_max"] = spend_vs_geo_max(df)
   summary["controls_confounding"] = controls_confounding(df)
   write_json(summary, OUT / "eda_summary.json")
