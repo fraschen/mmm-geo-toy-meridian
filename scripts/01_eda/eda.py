@@ -160,22 +160,32 @@ def detrend(y):
 
 
 def seasonality_test(df, nat):
+  """Is there a week-of-year pattern beyond what random noise would produce?"""
   rng = np.random.default_rng(SEED)
-  y = detrend(nat.to_numpy())
-  T = len(y)
-  obs = float(woy_r2(y))
-  phi = float(np.corrcoef(y[:-1], y[1:])[0, 1])
+  y = detrend(nat.to_numpy())              # national weekly revenue, linear trend removed
+  T = len(y)                               # number of weeks (156)
+  obs = float(woy_r2(y))                   # share of variation explained by week-of-year averages
+  phi = float(np.corrcoef(y[:-1], y[1:])[0, 1])  # how much each week resembles the previous one
+
+  # Benchmark 1: N_SIM series of independent random noise, each as long as the data.
   iid = woy_r2(rng.standard_normal((N_SIM, T)))
+
+  # Benchmark 2: noise where each week carries over a share phi of the previous week (AR(1)).
+  # e holds the fresh random shocks: one row per simulated series, one column per week.
   e = rng.standard_normal((N_SIM, T))
   ar = np.empty_like(e)
+  # Week 1 has no previous week, so it starts from its shock, scaled to the series' long-run
+  # spread (1 / sqrt(1 - phi^2)) so that it is no calmer than the weeks that follow.
   ar[:, 0] = e[:, 0] / np.sqrt(1 - phi ** 2)
   for t in range(1, T):
-    ar[:, t] = phi * ar[:, t - 1] + e[:, t]
+    ar[:, t] = phi * ar[:, t - 1] + e[:, t]   # carry-over from last week + new shock
   ar1 = woy_r2(ar)
 
-  # Per geo: detrended revenue, iid null (fraction of geos significant at 5%).
-  geo_y = df.pivot(index=GEO, columns=TIME, values="revenue").to_numpy()
-  geo_r2 = woy_r2(np.apply_along_axis(detrend, 1, geo_y))
+  # Per geo: the same test on each geo's revenue, compared with the independent-noise benchmark.
+  geo_y = df.pivot(index=GEO, columns=TIME, values="revenue").to_numpy()   # geos x weeks
+  geo_r2 = woy_r2(np.apply_along_axis(detrend, 1, geo_y))                  # one value per geo
+  # p-value per geo: share of noise series that score at least as high as that geo.
+  # [:, None] and [None, :] line the 40 geos up against the N_SIM noise scores.
   geo_p = (iid[None, :] >= geo_r2[:, None]).mean(1)
 
   res = {
