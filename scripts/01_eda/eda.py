@@ -94,7 +94,9 @@ def cpm_check(df):
   for c, imp, sp in zip(CHANNELS, IMPRESSION_COLS, SPEND_COLS):
     with_impressions = df[df[imp] > 0]
     cpm = 1000 * with_impressions[sp] / with_impressions[imp]
-    out[c] = {"min": float(cpm.min()), "median": float(cpm.median()), "max": float(cpm.max())}
+    out[c] = {"min": float(cpm.min()), "p05": float(cpm.quantile(.05)), "p25": float(cpm.quantile(.25)),
+              "median": float(cpm.median()), "p75": float(cpm.quantile(.75)),
+              "p95": float(cpm.quantile(.95)), "max": float(cpm.max())}
   return out
 
 

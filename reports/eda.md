@@ -41,15 +41,15 @@ Channel3 takes the largest share of the budget; Channel2 the smallest:
 ![](figures/eda/spend_share.png)
 
 ## Spend and impressions carry the same information
-In every channel, spend is exactly impressions times a constant CPM: the lowest and highest CPM across all geo-weeks are the same. So it makes no difference whether the model uses spend or impressions.
+In every channel, spend is exactly impressions times a constant CPM: every percentile of CPM across geo-weeks is the same. So it makes no difference whether the model uses spend or impressions.
 
-| channel | CPM min | CPM median | CPM max |
-|---|---|---|---|
-| Channel0 | 7.33 | 7.33 | 7.33 |
-| Channel1 | 9.64 | 9.64 | 9.64 |
-| Channel2 | 7.43 | 7.43 | 7.43 |
-| Channel3 | 7.79 | 7.79 | 7.79 |
-| Channel4 | 7.79 | 7.79 | 7.79 |
+| channel | min | 5th pct | 25th pct | median | 75th pct | 95th pct | max |
+|---|---|---|---|---|---|---|---|
+| Channel0 | 7.33 | 7.33 | 7.33 | 7.33 | 7.33 | 7.33 | 7.33 |
+| Channel1 | 9.64 | 9.64 | 9.64 | 9.64 | 9.64 | 9.64 | 9.64 |
+| Channel2 | 7.43 | 7.43 | 7.43 | 7.43 | 7.43 | 7.43 | 7.43 |
+| Channel3 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 |
+| Channel4 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 | 7.79 |
 
 
 ## Revenue grows slowly

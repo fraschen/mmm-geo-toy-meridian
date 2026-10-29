@@ -94,12 +94,13 @@ lines = [
     fig(d["figure_spend_share"]),
     "",
     "## Spend and impressions carry the same information",
-    "In every channel, spend is exactly impressions times a constant CPM: the lowest and highest CPM "
-    "across all geo-weeks are the same. So it makes no difference whether the model uses spend or impressions.",
+    "In every channel, spend is exactly impressions times a constant CPM: every percentile of CPM "
+    "across geo-weeks is the same. So it makes no difference whether the model uses spend or impressions.",
     "",
-    "| channel | CPM min | CPM median | CPM max |",
-    "|---|---|---|---|",
-    *[f"| {c} | {cpm[c]['min']:.2f} | {cpm[c]['median']:.2f} | {cpm[c]['max']:.2f} |" for c in CHANNELS],
+    "| channel | min | 5th pct | 25th pct | median | 75th pct | 95th pct | max |",
+    "|---|---|---|---|---|---|---|---|",
+    *[f"| {c} | " + " | ".join(f"{cpm[c][k]:.2f}" for k in ("min", "p05", "p25", "median", "p75", "p95", "max")) + " |"
+      for c in CHANNELS],
     "",
     "",
     "## Revenue grows slowly",
