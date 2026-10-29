@@ -94,7 +94,8 @@ Details in [reports/results.md](reports/results.md#part-2-measurement); the chan
 
 - **Whether any specific channel pays back.** The ranges are too wide.
 - **Reliable forecasts.** Not yet tested well enough.
-- **Results by geo.** The model shares information across geos, so it reports national results only.
+- **Results by geo.** We report national results only. Media effects are strongly pooled across geos and
+  each geo's own signal is weak, so geo-level ROIs would mostly repeat the national estimate.
 - **What happens at much higher spend than ever before.** Beyond past levels, results depend on
   assumptions about how returns flatten.
 - **A precise split between media and underlying demand.**
