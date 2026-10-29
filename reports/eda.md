@@ -5,8 +5,6 @@ This page summarises what we learned about the data before building the model, a
 ## The data
 We have 40 geos (geographic areas) observed every week for 156 weeks (2021-01-25 to 2024-01-15). Nothing is missing, nothing is duplicated, and spend, impressions and sales are never negative. The only negative numbers are in the two control indices, which are centred around zero by design.
 
-**There is enough data.** 6,240 geo-weeks for about 50 main parameters: roughly 125 data points each.
-
 Typical values per geo-week:
 
 | variable | mean | median | min | max | % zero weeks |
@@ -37,7 +35,13 @@ Revenue per conversion barely changes (it varies by only 0.5%), so results in re
 </details>
 
 ## Summary
-Nothing in the checks blocks the model. Two items are flagged for review, unusual CPMs and unusually large weeks, and both turn out to be harmless (see below).
+There is enough data: 6,240 geo-weeks for about 50 main parameters, roughly 125 data points each. Nothing in the checks blocks the model. Two items are flagged for review, unusual CPMs and unusually large weeks, and both turn out to be harmless (see below).
+
+<details><summary>Technical details</summary>
+
+- Data-to-parameter ratio 124.8: (geos - 1) + knots (2) + controls + treatments, a rough count of the main parameters.
+
+</details>
 
 ## Revenue
 Revenue varies enough to be modelled. An outlier check flags 36 geo-weeks of revenue as unusually far from the typical range: real values, not errors, so we keep them.
@@ -90,16 +94,8 @@ A typical geo's weekly revenue moves up and down by about 30% around its average
 
 </details>
 
-## Media variables
-The same outlier check flags 1,461 media and control values (3% of them). Spend is often zero and occasionally large, so many such points are expected. They are real values, not errors, and we keep them. Every variable varies enough to be estimated.
-
-Spread of national weekly media and controls (circles are unusual weeks):
-
-![](figures/eda/media_boxplot.png)
-
-![](figures/eda/controls_boxplot.png)
-
-### Spend and media units
+## Media
+### Spend and impressions
 **Spend share.** Channel3 takes the largest share of the budget (40%) and Channel2 the smallest (6%). Small channels are harder to estimate, but none is small enough to need merging.
 
 ![](figures/eda/spend_share.png)
@@ -108,50 +104,25 @@ Spread of national weekly media and controls (circles are unusual weeks):
 
 <details><summary>Technical details</summary>
 
-- Data-to-parameter ratio 124.8: (geos - 1) + knots (2) + controls + treatments, a rough count of the main parameters.
 - Spend share: Channel0 18.5%, Channel1 14.3%, Channel2 5.5%, Channel3 40.0%, Channel4 21.7%.
 - CPM range per channel (min to max): Channel0 7.332722-7.332724, Channel1 9.641230-9.641233, Channel2 7.430924-7.430925, Channel3 7.792840-7.792841, Channel4 7.791911-7.791912.
 
 </details>
 
-### How much room there is to spend more
-Most weeks run well below each geo's highest-ever spend, and some channels are often off (Channel2 is off in 64% of geo-weeks). **For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed shape of the response curve.
+### Some weeks are unusually large
+An outlier check flags 1,461 media and control values (3% of them). Spend is often zero and occasionally large, so many such points are expected. They are real values, not errors, and we keep them. Every channel varies enough to be estimated.
 
-<details><summary>Technical details</summary>
+Spread of national weekly media (circles are unusual weeks):
 
-- Share of geo-weeks with zero spend: Channel0 12.1%, Channel1 27.9%, Channel2 64.3%, Channel3 2.7%, Channel4 13.1%.
-- Median non-zero week as a share of the geo's maximum: Channel0 0.35, Channel1 0.29, Channel2 0.24, Channel3 0.41, Channel4 0.34.
-- Share of last-52-week geo-weeks above the geo's historical maximum if spend is raised 20%: Channel0 3.2%, Channel1 1.9%, Channel2 1.4%, Channel3 2.6%, Channel4 2.2%; raised 50%: Channel0 10.4%, Channel1 5.8%, Channel2 3.4%, Channel3 10.3%, Channel4 7.1%.
+![](figures/eda/media_boxplot.png)
 
-</details>
-
-![](figures/eda/spend_vs_geo_max.png)
-
-## Population scaling
-Each channel's spend tracks population almost perfectly (rank correlation 0.97 to 0.99): bigger geos spend more. The controls and Promo barely track population. **For the model:** revenue and media are expressed per person (the model's default); controls and Promo are not.
-
-<details><summary>Technical details</summary>
-
-- Spearman with population, controls and Promo: competitor_sales_control -0.05, sentiment_score_control +0.23, Promo +0.18.
-
-</details>
+### Bigger geos spend more
+Each channel's spend tracks population almost perfectly (rank correlation 0.97 to 0.99). **For the model:** revenue and media are expressed per person.
 
 ![](figures/eda/population_media.png)
 
-![](figures/eda/population_controls.png)
-
-## Relationship among the variables
-**Inputs are not too entangled.** Within geos, the strongest overlap between two channels is a correlation of 0.50 (Channel2 and Channel3), and no input is largely explained by the others (variance inflation factor at most 2.6; values above 5-10 would be a concern). The model can tell them apart. The bottom row of the chart shows how weakly spend and revenue move together (next section).
-
-**Inputs vary both over time and across geos.** The week alone explains at most 33% of any input's variation (Channel3), so no input is just a national time pattern that the baseline could absorb.
-
-<details><summary>Technical details</summary>
-
-- Correlations are across geo-weeks, with each geo's average removed.
-- VIF: Channel0 1.46, Channel1 1.23, Channel2 1.72, Channel3 2.46, Channel4 1.77, Organic_channel0_impression 1.63, competitor_sales_control 2.41, sentiment_score_control 2.60, Promo 1.49.
-- R2 explained by week: Channel0 0.19, Channel1 0.21, Channel2 0.18, Channel3 0.33, Channel4 0.27, Organic_channel0_impression 0.22, Promo 0.18, competitor_sales_control 0.32, sentiment_score_control 0.26; by geo at most 0.00.
-
-</details>
+### Channels are not too entangled
+Within geos, the strongest overlap between two channels is a correlation of 0.50 (Channel2 and Channel3), low enough for the model to tell them apart. The bottom row shows how weakly spend and revenue move together (next section).
 
 ![](figures/eda/media_correlation.png)
 
@@ -167,6 +138,38 @@ Within each geo, weeks with more spend do not clearly have more revenue: every c
 </details>
 
 ![](figures/eda/lag_correlation.png)
+
+### How much room there is to spend more
+Most weeks run well below each geo's highest-ever spend, and some channels are often off (Channel2 is off in 64% of geo-weeks). **For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed shape of the response curve.
+
+<details><summary>Technical details</summary>
+
+- Share of geo-weeks with zero spend: Channel0 12.1%, Channel1 27.9%, Channel2 64.3%, Channel3 2.7%, Channel4 13.1%.
+- Median non-zero week as a share of the geo's maximum: Channel0 0.35, Channel1 0.29, Channel2 0.24, Channel3 0.41, Channel4 0.34.
+- Share of last-52-week geo-weeks above the geo's historical maximum if spend is raised 20%: Channel0 3.2%, Channel1 1.9%, Channel2 1.4%, Channel3 2.6%, Channel4 2.2%; raised 50%: Channel0 10.4%, Channel1 5.8%, Channel2 3.4%, Channel3 10.3%, Channel4 7.1%.
+
+</details>
+
+![](figures/eda/spend_vs_geo_max.png)
+
+## Control variables
+Four non-media variables enter the model: competitor sales and sentiment (controls), Promo (a non-media lever) and organic media.
+
+### Spread
+They also have a few unusual weeks (counted with media above); all real values, kept.
+
+![](figures/eda/controls_boxplot.png)
+
+### Not scaled by population
+Unlike spend, the controls and Promo barely track population. **For the model:** they are not expressed per person.
+
+<details><summary>Technical details</summary>
+
+- Spearman with population: competitor_sales_control -0.05, sentiment_score_control +0.23, Promo +0.18.
+
+</details>
+
+![](figures/eda/population_controls.png)
 
 ### Which controls to include, and why
 A control belongs in the model if it moves with both our spend and our revenue: leaving it out would credit its effect to media. The four non-media variables make that case with different strength.
@@ -186,3 +189,13 @@ Keeping a variable that turns out not to matter costs little. But if advertising
 </details>
 
 ![](figures/eda/controls_correlation.png)
+
+## All inputs together
+No input is largely explained by the others (variance inflation factor at most 2.6; values above 5-10 would be a concern). Inputs also vary both over time and across geos: the week alone explains at most 33% of any input's variation (Channel3), so no input is just a national time pattern that the baseline could absorb.
+
+<details><summary>Technical details</summary>
+
+- VIF: Channel0 1.46, Channel1 1.23, Channel2 1.72, Channel3 2.46, Channel4 1.77, Organic_channel0_impression 1.63, competitor_sales_control 2.41, sentiment_score_control 2.60, Promo 1.49.
+- R2 explained by week: Channel0 0.19, Channel1 0.21, Channel2 0.18, Channel3 0.33, Channel4 0.27, Organic_channel0_impression 0.22, Promo 0.18, competitor_sales_control 0.32, sentiment_score_control 0.26; by geo at most 0.00.
+
+</details>
