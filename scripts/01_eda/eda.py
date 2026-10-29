@@ -1,8 +1,8 @@
 """Extended EDA (`make eda`): summary JSON and figures.
 
 Data checks and exploratory tests that inform the model specification, plus
-Meridian's built-in data checks. The numbers in reports/eda.md are read from
-outputs/01_eda/eda_summary.json, produced here.
+Meridian's built-in data checks. Writes outputs/01_eda/eda_summary.json and the
+figures used in reports/eda.md (hand-written from these numbers).
 
 Revenue is conversions x revenue_per_conversion (the modelled KPI is
 conversions, with revenue_per_conversion turning it into revenue).
@@ -335,6 +335,28 @@ def spend_vs_geo_max(df):
   return out
 
 
+def media_correlation(df):
+  """Within-geo correlation between each channel's spend and revenue, across geo-weeks."""
+  W = demean(df, SPEND_COLS + ["revenue"], GEO)          # within-geo values
+  tab = W.corr().set_axis(CHANNELS + ["revenue"], axis=0).set_axis(CHANNELS + ["revenue"], axis=1)
+  values = tab.loc[CHANNELS, CHANNELS].abs().to_numpy()
+  np.fill_diagonal(values, 0)                            # ignore each channel's correlation with itself
+  i, j = np.unravel_index(values.argmax(), values.shape)
+  # Lower triangle without the diagonal: rows from the 2nd variable, columns up to the 2nd-last.
+  shown = tab.where(np.tril(np.ones(tab.shape, bool), k=-1)).iloc[1:, :-1]
+  fig, ax = plt.subplots(figsize=(5, 4))
+  ax.imshow(shown.to_numpy(float), cmap=DIVERGING, vmin=-1, vmax=1)
+  ax.set_xticks(range(shown.shape[1]), shown.columns, rotation=45, ha="right")
+  ax.set_yticks(range(shown.shape[0]), shown.index)
+  ax.grid(False)
+  for r in range(shown.shape[0]):
+    for c in range(r + 1):
+      ax.text(c, r, f"{shown.iloc[r, c]:.2f}", ha="center", va="center", fontsize=8)
+  ax.set_title("Within-geo correlation of spend and revenue")
+  return {"within_geo_corr": tab.to_dict(orient="index"), "max_abs_corr_between_channels": float(values[i, j]),
+          "max_pair": [CHANNELS[i], CHANNELS[j]], "figure": savefig(fig, "media_correlation.png")}
+
+
 def controls_confounding(df):
   cols = CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA
   W = demean(df, cols + SPEND_COLS + ["revenue"], GEO)   # within-geo values
@@ -410,27 +432,6 @@ def cost_per_media_unit(engine):
           "cpm": per_channel}
 
 
-def strongest_pair(corr):
-  """Largest absolute correlation between two different variables, and their names."""
-  names = [str(v) for v in corr.var1.values]
-  values = np.abs(np.asarray(corr.values))
-  np.fill_diagonal(values, 0)          # ignore each variable's correlation with itself
-  i, j = np.unravel_index(values.argmax(), values.shape)
-  return float(values[i, j]), [names[i], names[j]]
-
-
-def correlation(engine):
-  outcome = engine.check_pairwise_corr()
-  a = outcome.get_overall_artifacts()[0]                     # all geo-weeks pooled
-  max_corr, pair = strongest_pair(a.corr_matrix)
-  # National totals (the chart in the report) move together more than single geos do.
-  nat_corr, nat_pair = strongest_pair(engine.check_national_pairwise_corr().get_national_artifacts()[0].corr_matrix)
-  return {"severity": severity(outcome), "max_abs_corr": max_corr, "max_pair": pair,
-          "national_max_abs_corr": nat_corr, "national_max_pair": nat_pair,
-          "flag_threshold": float(a.extreme_corr_threshold),
-          "n_pairs_flagged": int(len(a.extreme_corr_var_pairs))}
-
-
 def vif(engine):
   outcome = engine.check_vif()
   a = outcome.get_overall_artifacts()[0]
@@ -482,7 +483,7 @@ def meridian_checks():
   eda.generate_and_save_report(filename="eda.html", filepath=str(ROOT / "reports" / "meridian"))
   engine = eda.eda_engine
   return {"data_adequacy": data_adequacy(engine), "cost_per_media_unit": cost_per_media_unit(engine),
-          "correlation": correlation(engine), "vif": vif(engine), "variability": variability(engine),
+          "vif": vif(engine), "variability": variability(engine),
           "population": population(engine), "time_vs_geo": time_vs_geo(engine),
           "meridian_figures": meridian_figures(eda)}
 
@@ -496,7 +497,6 @@ def meridian_figures(eda):
       "kpi_boxplot": eda.plot_kpi_boxplot(geos=NATIONALIZE),
       "media_boxplot": eda.plot_treatments_without_non_media_boxplot(geos=NATIONALIZE),
       "controls_boxplot": eda.plot_controls_and_non_media_boxplot(geos=NATIONALIZE),
-      "pairwise_correlation": eda.plot_pairwise_correlation(geos=NATIONALIZE),
   }
   for name, chart in charts.items():
     chart.save(FIG / f"{name}.png", scale_factor=2)
@@ -513,6 +513,7 @@ def main():
   summary["noise_floor"] = noise_floor(df, nat)
   summary["lag_correlation"] = lag_correlations(df)
   summary["spend_vs_geo_max"] = spend_vs_geo_max(df)
+  summary["media_correlation"] = media_correlation(df)
   summary["controls_confounding"] = controls_confounding(df)
   summary.update(meridian_checks())
   write_json(summary, OUT / "eda_summary.json")

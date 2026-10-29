@@ -24,10 +24,9 @@ all: eda fit convergence validate reports-meridian budget
 data:
 	@test -f $(RAW) || { echo "Missing $(RAW)"; exit 1; }
 
-# EDA: data checks and exploratory tests -> outputs/01_eda/ and reports/eda.md.
+# EDA: data checks and exploratory tests -> outputs/01_eda/ and figures (reports/eda.md is hand-written).
 eda: data
 	$(PY) scripts/01_eda/eda.py
-	$(PY) scripts/01_eda/eda_findings.py
 
 # Fit the production model (skill script); skipped if already saved.
 fit: $(MODEL)

@@ -411,6 +411,64 @@
     },
     "figure": "reports/figures/eda/spend_vs_geo_max.png"
   },
+  "media_correlation": {
+    "within_geo_corr": {
+      "Channel0": {
+        "Channel0": 1.0,
+        "Channel1": 0.1934141521268134,
+        "Channel2": 0.24274539281189153,
+        "Channel3": 0.33158030408279526,
+        "Channel4": 0.17121213159375054,
+        "revenue": 0.03171334255864679
+      },
+      "Channel1": {
+        "Channel0": 0.1934141521268134,
+        "Channel1": 1.0,
+        "Channel2": 0.24417899006241883,
+        "Channel3": 0.30126213944107094,
+        "Channel4": 0.2244866017596266,
+        "revenue": -0.010547482020419134
+      },
+      "Channel2": {
+        "Channel0": 0.24274539281189153,
+        "Channel1": 0.24417899006241883,
+        "Channel2": 1.0,
+        "Channel3": 0.5035495464518134,
+        "Channel4": 0.435982831611006,
+        "revenue": -0.049601049846080124
+      },
+      "Channel3": {
+        "Channel0": 0.33158030408279526,
+        "Channel1": 0.30126213944107094,
+        "Channel2": 0.5035495464518134,
+        "Channel3": 1.0,
+        "Channel4": 0.4799587629867696,
+        "revenue": -0.05177300287579048
+      },
+      "Channel4": {
+        "Channel0": 0.17121213159375054,
+        "Channel1": 0.2244866017596266,
+        "Channel2": 0.435982831611006,
+        "Channel3": 0.4799587629867696,
+        "Channel4": 1.0,
+        "revenue": -0.07885915399824506
+      },
+      "revenue": {
+        "Channel0": 0.03171334255864679,
+        "Channel1": -0.010547482020419134,
+        "Channel2": -0.049601049846080124,
+        "Channel3": -0.05177300287579048,
+        "Channel4": -0.07885915399824506,
+        "revenue": 1.0
+      }
+    },
+    "max_abs_corr_between_channels": 0.5035495464518134,
+    "max_pair": [
+      "Channel2",
+      "Channel3"
+    ],
+    "figure": "reports/figures/eda/media_correlation.png"
+  },
   "controls_confounding": {
     "within_geo_corr": {
       "competitor_sales_control": {
@@ -486,21 +544,6 @@
       }
     }
   },
-  "correlation": {
-    "severity": "INFO",
-    "max_abs_corr": 0.5999787806167799,
-    "max_pair": [
-      "Channel4",
-      "competitor_sales_control"
-    ],
-    "national_max_abs_corr": 0.7352223030222095,
-    "national_max_pair": [
-      "Channel4",
-      "competitor_sales_control"
-    ],
-    "flag_threshold": 0.999,
-    "n_pairs_flagged": 0
-  },
   "vif": {
     "severity": "INFO",
     "vif": {
@@ -573,7 +616,6 @@
     "population_controls": "reports/figures/eda/population_controls.png",
     "kpi_boxplot": "reports/figures/eda/kpi_boxplot.png",
     "media_boxplot": "reports/figures/eda/media_boxplot.png",
-    "controls_boxplot": "reports/figures/eda/controls_boxplot.png",
-    "pairwise_correlation": "reports/figures/eda/pairwise_correlation.png"
+    "controls_boxplot": "reports/figures/eda/controls_boxplot.png"
   }
 }
