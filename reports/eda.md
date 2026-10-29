@@ -52,16 +52,16 @@ In every channel, spend is exactly impressions times a constant CPM: the lowest 
 | Channel4 | 7.79 | 7.79 | 7.79 |
 
 
-## Revenue grows slowly and steadily
-National revenue grows by about 1.5% a year, and a straight line describes that growth well: letting the trend bend at the start of each year does not improve the fit. **For the model:** a straight-line baseline is enough (`knots = 2`: one knot at each end of the series, no bends in between).
+## Revenue grows slowly
+Revenue per year (each year is a block of 52 weeks, starting in late January):
 
-<details><summary>Technical details</summary>
+| year | weeks | revenue | growth vs previous year |
+|---|---|---|---|
+| 1 | 2021-01-25 to 2022-01-17 | 433M | - |
+| 2 | 2022-01-24 to 2023-01-16 | 442M | 2.1% |
+| 3 | 2023-01-23 to 2024-01-15 | 444M | 0.4% |
 
-- Trend: 1.46% of mean revenue per year, p = 0.010 (regression with autocorrelation-robust standard errors).
-- Letting the trend bend at weeks 52 and 104 (4 knots instead of 2) does not fit better than a straight line: p = 0.10.
-- Last 52 weeks vs first 52 weeks: +2.6%.
-
-</details>
+Growth slowed: 2.1% then 0.4% a year. Part of that is noise. Weekly revenue varies by about 6.9% around its level, so a 52-week total varies by about 1.0% from noise alone, and the difference between two years' growth rates by about 1.4%. The slowdown is about that size: it may be real, but the data cannot confirm it. **For the model:** a straight-line baseline (`knots = 2`: one knot at each end of the series, no bends in between) is a reasonable simplification; letting it bend a little is one of the next steps.
 
 ![](figures/eda/national_trend.png)
 

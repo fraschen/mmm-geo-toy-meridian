@@ -32,8 +32,6 @@ OUT = OUTPUTS / "01_eda"
 N_SIM = 10_000
 MAX_LAG = 8
 SEASON = 52
-# Newey-West bandwidth rule floor(4 (T/100)^(2/9)).
-def nw_lags(n): return int(np.floor(4 * (n / 100) ** (2 / 9)))
 
 DIVERGING = LinearSegmentedColormap.from_list(
     "div", ["#eb6834", "#f3f2ee", "#2a78d6"])
@@ -104,38 +102,30 @@ def national_series(df):
   return df.groupby(TIME)["revenue"].sum()
 
 
-def trend_test(nat):
-  y = nat.to_numpy()
-  n = len(y)
-  t = np.arange(n) / 52.0
-  X = sm.add_constant(t)
-  fit = sm.OLS(y, X).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
-  res = {"slope_per_year_pct_of_mean": float(100 * fit.params[1] / y.mean()),
-         "t": float(fit.tvalues[1]), "p_value": float(fit.pvalues[1]),
-         "hac_maxlags": nw_lags(n)}
-  # Is a straight line enough? Add yearly hinge terms (a piecewise-linear trend
-  # with breaks at weeks 52 and 104) and test them jointly with HAC SEs.
-  tw = np.arange(n)
-  Xh = np.column_stack([X, np.maximum(0, tw - 52) / 52.0, np.maximum(0, tw - 104) / 52.0])
-  fit_h = sm.OLS(y, Xh).fit(cov_type="HAC", cov_kwds={"maxlags": nw_lags(n)})
-  wald = fit_h.wald_test(np.eye(4)[2:], scalar=True)
-  res["piecewise_yearly_vs_linear"] = {
-      "wald_stat": float(wald.statistic), "df": 2, "p_value": float(wald.pvalue),
-      "linear_rejected_5pct": bool(wald.pvalue < 0.05)}
-  res["first_52_vs_last_52_revenue_pct"] = float(100 * (y[-52:].sum() / y[:52].sum() - 1))
+def trend(nat):
+  """National revenue per 52-week year and its year-on-year growth.
+
+  The data start in late January, so each "year" is a block of 52 weeks, not a
+  calendar year.
+  """
+  weeks = nat.index
+  years = []
+  for k in range(len(nat) // SEASON):
+    block = nat.iloc[k * SEASON:(k + 1) * SEASON]
+    years.append({"year": k + 1, "first_week": str(weeks[k * SEASON].date()),
+                  "last_week": str(weeks[(k + 1) * SEASON - 1].date()),
+                  "revenue": float(block.sum())})
+  for prev, cur in zip(years, years[1:]):
+    cur["growth_vs_previous_year"] = cur["revenue"] / prev["revenue"] - 1
 
   fig, ax = plt.subplots(figsize=(8, 3.2))
-  ax.plot(nat.index, y / 1e6, color=PALETTE[0], lw=1.2, label="National weekly revenue")
-  ma = pd.Series(y).rolling(13, center=True).mean()
-  ax.plot(nat.index, ma / 1e6, color=PALETTE[1], lw=2, label="13-week centred mean")
-  fit = sm.OLS(y, X).fit()
-  ax.plot(nat.index, fit.fittedvalues / 1e6, color=INK_2, lw=1.2, ls="--",
-          label="Linear trend")
+  ax.plot(weeks, nat.to_numpy() / 1e6, color=PALETTE[0], lw=1.2, label="National weekly revenue")
+  ma = nat.rolling(13, center=True).mean()
+  ax.plot(weeks, ma.to_numpy() / 1e6, color=PALETTE[1], lw=2, label="13-week average")
   ax.set_ylabel("Revenue (millions)")
-  ax.set_title("National revenue: trend")
-  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
-  res["figure"] = savefig(fig, "national_trend.png")
-  return res
+  ax.set_title("National weekly revenue")
+  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2)
+  return {"years": years, "figure": savefig(fig, "national_trend.png")}
 
 
 def woy_r2(Y, period=SEASON):
@@ -434,7 +424,7 @@ def main():
   summary["data"]["figure_spend_share"] = spend_share_fig(summary["data"])
   summary["summary_stats"] = summary_stats(df)
   summary["cpm"] = cpm_check(df)
-  summary["trend"] = trend_test(nat)
+  summary["trend"] = trend(nat)
   summary["seasonality"] = seasonality_test(df, nat)
   summary["noise_floor"] = noise_floor(df, nat)
   summary["lag_correlation"] = lag_correlations(df)

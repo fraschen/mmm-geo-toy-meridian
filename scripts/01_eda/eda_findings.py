@@ -12,9 +12,11 @@ s = json.load(open(OUTPUTS / "01_eda" / "eda_summary.json"))
 d, cpm, tr, se, nf = s["data"], s["cpm"], s["trend"], s["seasonality"], s["noise_floor"]
 lag, col, pop = s["lag_correlation"], s["collinearity"], s["population"]
 gm, cc = s["spend_vs_geo_max"], s["controls_confounding"]
-t = tr
 pct = lambda x, n=1: f"{100 * x:.{n}f}%"
 fig = lambda p: f"![]({p.replace('reports/', '')})"
+growth_text = " then ".join(pct(y["growth_vs_previous_year"]) for y in tr["years"][1:])
+# Noise in a 52-week total: weekly variation shrinks with the square root of the number of weeks.
+year_noise = nf["national_weekly_cv"] / 52 ** 0.5
 max_lag_r = max(abs(v) for k in ("geo_demeaned", "geo_demeaned_partial_controls")
                 for c in CHANNELS for v in lag[k][c])
 comp = cc["within_geo_corr"]["competitor_sales_control"]
@@ -100,17 +102,21 @@ lines = [
     *[f"| {c} | {cpm[c]['min']:.2f} | {cpm[c]['median']:.2f} | {cpm[c]['max']:.2f} |" for c in CHANNELS],
     "",
     "",
-    "## Revenue grows slowly and steadily",
-    f"National revenue grows by about {t['slope_per_year_pct_of_mean']:.1f}% a year, and a straight line "
-    "describes that growth well: letting the trend bend at the start of each year does not improve the fit. "
-    "**For the model:** a straight-line baseline is enough (`knots = 2`: one knot at each end of the series, "
-    "no bends in between).",
-    *details(f"Trend: {t['slope_per_year_pct_of_mean']:.2f}% of mean revenue per year, p = {t['p_value']:.3f} "
-             "(regression with autocorrelation-robust standard errors).",
-             f"Letting the trend bend at weeks 52 and 104 (4 knots instead of 2) does not fit better than a "
-             f"straight line: p = "
-             f"{tr['piecewise_yearly_vs_linear']['p_value']:.2f}.",
-             f"Last 52 weeks vs first 52 weeks: {tr['first_52_vs_last_52_revenue_pct']:+.1f}%."),
+    "## Revenue grows slowly",
+    "Revenue per year (each year is a block of 52 weeks, starting in late January):",
+    "",
+    "| year | weeks | revenue | growth vs previous year |",
+    "|---|---|---|---|",
+    *[f"| {y['year']} | {y['first_week']} to {y['last_week']} | {y['revenue'] / 1e6:,.0f}M | "
+      f"{pct(y['growth_vs_previous_year']) if 'growth_vs_previous_year' in y else '-'} |" for y in tr["years"]],
+    "",
+    f"Growth slowed: {growth_text} a year. Part of that is noise. Weekly revenue varies by about "
+    f"{pct(nf['national_weekly_cv'])} around its level, so a 52-week total varies by about "
+    f"{pct(year_noise)} from noise alone, and the difference between two years' growth rates by about "
+    f"{pct(year_noise * 2 ** 0.5)}. The slowdown is about that size: it may be real, but the data cannot confirm it. "
+    "**For the model:** a straight-line baseline (`knots = 2`: one knot at each end of the series, no bends in "
+    "between) is a reasonable simplification; letting it bend a little is one of the next steps.",
+    "",
     fig(tr["figure"]),
     "",
     "## No yearly seasonality",

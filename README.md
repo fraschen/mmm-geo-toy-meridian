@@ -28,7 +28,7 @@ Anything shared from this model should come with these caveats.
 Defined in [`config/model.toml`](config/model.toml):
 
 - **Underlying demand** follows a straight-line trend (`knots = 2`: one knot at each end of the
-  series, so no bends), because the data show steady growth and no yearly seasonality.
+  series, so no bends), because the data show slow growth and no yearly seasonality.
 - **Media** has effects that carry over for up to 4 weeks and that flatten out as spend grows.
 - **Geos share information:** a channel is assumed to work similarly across geos, because
   each geo's own data are too noisy to estimate it alone.
@@ -131,7 +131,8 @@ organic channel. It is committed in `data/raw/` (from a fixed version of Meridia
 checked before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - **Data quality:** the data are complete and clean.
-- **Trend and seasonality:** revenue grows about 1.5% a year, with no meaningful yearly seasonality.
+- **Trend and seasonality:** revenue grew 2.1% then 0.4% a year (a slowdown within the range of noise),
+  with no meaningful yearly seasonality.
 - **Noise:** weekly revenue is noisy, about 30% up or down per geo and 6.9% nationally, which limits
   how precise any model can be.
 - **Media signal:** media's effect is hard to see in the raw data, so the model has to pool geos to

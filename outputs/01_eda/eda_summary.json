@@ -159,17 +159,28 @@
     }
   },
   "trend": {
-    "slope_per_year_pct_of_mean": 1.4614760681000492,
-    "t": 2.592208547986364,
-    "p_value": 0.00953619443126921,
-    "hac_maxlags": 4,
-    "piecewise_yearly_vs_linear": {
-      "wald_stat": 4.5493420599331,
-      "df": 2,
-      "p_value": 0.10283073110070957,
-      "linear_rejected_5pct": false
-    },
-    "first_52_vs_last_52_revenue_pct": 2.5762106689648734,
+    "years": [
+      {
+        "year": 1,
+        "first_week": "2021-01-25",
+        "last_week": "2022-01-17",
+        "revenue": 432766444.66978025
+      },
+      {
+        "year": 2,
+        "first_week": "2022-01-24",
+        "last_week": "2023-01-16",
+        "revenue": 442017573.0763232,
+        "growth_vs_previous_year": 0.021376722988775132
+      },
+      {
+        "year": 3,
+        "first_week": "2023-01-23",
+        "last_week": "2024-01-15",
+        "revenue": 443915419.98906314,
+        "growth_vs_previous_year": 0.004293600590427715
+      }
+    ],
     "figure": "reports/figures/eda/national_trend.png"
   },
   "seasonality": {
