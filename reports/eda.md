@@ -189,13 +189,3 @@ Keeping a variable that turns out not to matter costs little. But if advertising
 </details>
 
 ![](figures/eda/controls_correlation.png)
-
-## All inputs together
-No input is largely explained by the others (variance inflation factor at most 2.6; values above 5-10 would be a concern). Inputs also vary both over time and across geos: the week alone explains at most 33% of any input's variation (Channel3), so no input is just a national time pattern that the baseline could absorb.
-
-<details><summary>Technical details</summary>
-
-- VIF: Channel0 1.46, Channel1 1.23, Channel2 1.72, Channel3 2.46, Channel4 1.77, Organic_channel0_impression 1.63, competitor_sales_control 2.41, sentiment_score_control 2.60, Promo 1.49.
-- R2 explained by week: Channel0 0.19, Channel1 0.21, Channel2 0.18, Channel3 0.33, Channel4 0.27, Organic_channel0_impression 0.22, Promo 0.18, competitor_sales_control 0.32, sentiment_score_control 0.26; by geo at most 0.00.
-
-</details>

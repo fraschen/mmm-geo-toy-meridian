@@ -130,6 +130,18 @@
       "share_zero": null
     }
   },
+  "data_adequacy": {
+    "n_data_points": 6240,
+    "n_parameters": 50,
+    "ratio": 124.8,
+    "n_knots": 2
+  },
+  "revenue_outliers": {
+    "n_outliers_flagged": 36,
+    "kpi_varies": true,
+    "kpi_scaled_sd": 1.0000801378372084,
+    "figure": "reports/figures/eda/kpi_boxplot.png"
+  },
   "trend": {
     "years": [
       {
@@ -195,6 +207,110 @@
     "national_mape_vs_13wk_ma": 0.05146468432693258,
     "per_capita_sd_spearman_with_population": -0.3285178236397749,
     "per_capita_sd_min_over_max": 0.5954121783012518
+  },
+  "cost_per_media_unit": {
+    "severity": "REVIEW",
+    "n_outliers_flagged": 200,
+    "cpm": {
+      "Channel0": {
+        "min": 7.332722186565266,
+        "median": 7.332723135848411,
+        "max": 7.332724060927241
+      },
+      "Channel1": {
+        "min": 9.641230206544124,
+        "median": 9.641231543844807,
+        "max": 9.641232699702645
+      },
+      "Channel2": {
+        "min": 7.430923592506952,
+        "median": 7.430924412665986,
+        "max": 7.430925271561315
+      },
+      "Channel3": {
+        "min": 7.792839602751532,
+        "median": 7.792840481468118,
+        "max": 7.792841390712303
+      },
+      "Channel4": {
+        "min": 7.791910662610373,
+        "median": 7.791911599513699,
+        "max": 7.791912487463223
+      }
+    },
+    "figure_spend_share": "reports/figures/eda/spend_share.png"
+  },
+  "media_outliers": {
+    "n_outliers_flagged": 1461,
+    "figure": "reports/figures/eda/media_boxplot.png"
+  },
+  "media_population": {
+    "spearman": {
+      "Channel0": 0.9932457786116325,
+      "Channel1": 0.9874296435272046,
+      "Channel2": 0.9664165103189495,
+      "Channel3": 0.9936210131332085,
+      "Channel4": 0.9930581613508443
+    },
+    "figure": "reports/figures/eda/population_media.png"
+  },
+  "media_correlation": {
+    "within_geo_corr": {
+      "Channel0": {
+        "Channel0": 1.0,
+        "Channel1": 0.1934141521268134,
+        "Channel2": 0.24274539281189153,
+        "Channel3": 0.33158030408279526,
+        "Channel4": 0.17121213159375054,
+        "revenue": 0.03171334255864679
+      },
+      "Channel1": {
+        "Channel0": 0.1934141521268134,
+        "Channel1": 1.0,
+        "Channel2": 0.24417899006241883,
+        "Channel3": 0.30126213944107094,
+        "Channel4": 0.2244866017596266,
+        "revenue": -0.010547482020419134
+      },
+      "Channel2": {
+        "Channel0": 0.24274539281189153,
+        "Channel1": 0.24417899006241883,
+        "Channel2": 1.0,
+        "Channel3": 0.5035495464518134,
+        "Channel4": 0.435982831611006,
+        "revenue": -0.049601049846080124
+      },
+      "Channel3": {
+        "Channel0": 0.33158030408279526,
+        "Channel1": 0.30126213944107094,
+        "Channel2": 0.5035495464518134,
+        "Channel3": 1.0,
+        "Channel4": 0.4799587629867696,
+        "revenue": -0.05177300287579048
+      },
+      "Channel4": {
+        "Channel0": 0.17121213159375054,
+        "Channel1": 0.2244866017596266,
+        "Channel2": 0.435982831611006,
+        "Channel3": 0.4799587629867696,
+        "Channel4": 1.0,
+        "revenue": -0.07885915399824506
+      },
+      "revenue": {
+        "Channel0": 0.03171334255864679,
+        "Channel1": -0.010547482020419134,
+        "Channel2": -0.049601049846080124,
+        "Channel3": -0.05177300287579048,
+        "Channel4": -0.07885915399824506,
+        "revenue": 1.0
+      }
+    },
+    "max_abs_corr_between_channels": 0.5035495464518134,
+    "max_pair": [
+      "Channel2",
+      "Channel3"
+    ],
+    "figure": "reports/figures/eda/media_correlation.png"
   },
   "lag_correlation": {
     "geo_demeaned": {
@@ -411,63 +527,16 @@
     },
     "figure": "reports/figures/eda/spend_vs_geo_max.png"
   },
-  "media_correlation": {
-    "within_geo_corr": {
-      "Channel0": {
-        "Channel0": 1.0,
-        "Channel1": 0.1934141521268134,
-        "Channel2": 0.24274539281189153,
-        "Channel3": 0.33158030408279526,
-        "Channel4": 0.17121213159375054,
-        "revenue": 0.03171334255864679
-      },
-      "Channel1": {
-        "Channel0": 0.1934141521268134,
-        "Channel1": 1.0,
-        "Channel2": 0.24417899006241883,
-        "Channel3": 0.30126213944107094,
-        "Channel4": 0.2244866017596266,
-        "revenue": -0.010547482020419134
-      },
-      "Channel2": {
-        "Channel0": 0.24274539281189153,
-        "Channel1": 0.24417899006241883,
-        "Channel2": 1.0,
-        "Channel3": 0.5035495464518134,
-        "Channel4": 0.435982831611006,
-        "revenue": -0.049601049846080124
-      },
-      "Channel3": {
-        "Channel0": 0.33158030408279526,
-        "Channel1": 0.30126213944107094,
-        "Channel2": 0.5035495464518134,
-        "Channel3": 1.0,
-        "Channel4": 0.4799587629867696,
-        "revenue": -0.05177300287579048
-      },
-      "Channel4": {
-        "Channel0": 0.17121213159375054,
-        "Channel1": 0.2244866017596266,
-        "Channel2": 0.435982831611006,
-        "Channel3": 0.4799587629867696,
-        "Channel4": 1.0,
-        "revenue": -0.07885915399824506
-      },
-      "revenue": {
-        "Channel0": 0.03171334255864679,
-        "Channel1": -0.010547482020419134,
-        "Channel2": -0.049601049846080124,
-        "Channel3": -0.05177300287579048,
-        "Channel4": -0.07885915399824506,
-        "revenue": 1.0
-      }
+  "controls_spread": {
+    "figure": "reports/figures/eda/controls_boxplot.png"
+  },
+  "controls_population": {
+    "spearman": {
+      "competitor_sales_control": -0.04596622889305817,
+      "sentiment_score_control": 0.22926829268292684,
+      "Promo": 0.1803001876172608
     },
-    "max_abs_corr_between_channels": 0.5035495464518134,
-    "max_pair": [
-      "Channel2",
-      "Channel3"
-    ],
-    "figure": "reports/figures/eda/media_correlation.png"
+    "figure": "reports/figures/eda/population_controls.png"
   },
   "controls_confounding": {
     "within_geo_corr": {
@@ -506,116 +575,5 @@
     },
     "max_abs_corr_control_with_spend_within_geo": 0.550355679551241,
     "figure": "reports/figures/eda/controls_correlation.png"
-  },
-  "data_adequacy": {
-    "n_data_points": 6240,
-    "n_parameters": 50,
-    "ratio": 124.8,
-    "n_knots": 2
-  },
-  "cost_per_media_unit": {
-    "severity": "REVIEW",
-    "n_outliers_flagged": 200,
-    "cpm": {
-      "Channel0": {
-        "min": 7.332722186565266,
-        "median": 7.332723135848411,
-        "max": 7.332724060927241
-      },
-      "Channel1": {
-        "min": 9.641230206544124,
-        "median": 9.641231543844807,
-        "max": 9.641232699702645
-      },
-      "Channel2": {
-        "min": 7.430923592506952,
-        "median": 7.430924412665986,
-        "max": 7.430925271561315
-      },
-      "Channel3": {
-        "min": 7.792839602751532,
-        "median": 7.792840481468118,
-        "max": 7.792841390712303
-      },
-      "Channel4": {
-        "min": 7.791910662610373,
-        "median": 7.791911599513699,
-        "max": 7.791912487463223
-      }
-    }
-  },
-  "vif": {
-    "severity": "INFO",
-    "vif": {
-      "Channel0": 1.4589237887249074,
-      "Channel1": 1.2284024332389785,
-      "Channel2": 1.7190619428348413,
-      "Channel3": 2.4564859021056167,
-      "Channel4": 1.7732531203939979,
-      "Organic_channel0_impression": 1.6321973105031204,
-      "competitor_sales_control": 2.4147890341382725,
-      "sentiment_score_control": 2.5973784198016645,
-      "Promo": 1.4936497071852708
-    },
-    "max_vif": 2.5973784198016645,
-    "max_vif_variable": "sentiment_score_control"
-  },
-  "variability": {
-    "severity": "REVIEW",
-    "outliers_flagged": {
-      "kpi_scaled": 36,
-      "treatment_control_scaled": 1461
-    },
-    "kpi_varies": true,
-    "kpi_scaled_sd": 1.0000801378372084
-  },
-  "population": {
-    "raw_media_spearman": {
-      "Channel0": 0.9932457786116325,
-      "Channel1": 0.9874296435272046,
-      "Channel2": 0.9664165103189495,
-      "Channel3": 0.9936210131332085,
-      "Channel4": 0.9930581613508443
-    },
-    "controls_and_promo_spearman": {
-      "competitor_sales_control": -0.04596622889305817,
-      "sentiment_score_control": 0.22926829268292684,
-      "Promo": 0.1803001876172608
-    }
-  },
-  "time_vs_geo": {
-    "r2_time": {
-      "Channel0": 0.19122576755240706,
-      "Channel1": 0.21078717462323548,
-      "Channel2": 0.18252624086875413,
-      "Channel3": 0.3299500844423161,
-      "Channel4": 0.27192235903862705,
-      "Organic_channel0_impression": 0.2159612647944804,
-      "Promo": 0.17798643388917512,
-      "competitor_sales_control": 0.3151662474162311,
-      "sentiment_score_control": 0.2554647264581359
-    },
-    "r2_geo": {
-      "Channel0": -0.0003942013979678638,
-      "Channel1": -0.0018874609685035626,
-      "Channel2": -0.0019194617779934031,
-      "Channel3": -0.0013326195970226884,
-      "Channel4": -0.0020679434376924544,
-      "Organic_channel0_impression": -0.0010530021932808609,
-      "Promo": -0.0009698680650194191,
-      "competitor_sales_control": -0.0008167662730726999,
-      "sentiment_score_control": -0.0021029765823403768
-    },
-    "max_r2_time": 0.3299500844423161,
-    "max_r2_time_variable": "Channel3",
-    "max_r2_geo": -0.0003942013979678638
-  },
-  "meridian_figures": {
-    "spend_share": "reports/figures/eda/spend_share.png",
-    "population_media": "reports/figures/eda/population_media.png",
-    "population_controls": "reports/figures/eda/population_controls.png",
-    "kpi_boxplot": "reports/figures/eda/kpi_boxplot.png",
-    "media_boxplot": "reports/figures/eda/media_boxplot.png",
-    "controls_boxplot": "reports/figures/eda/controls_boxplot.png"
   }
 }

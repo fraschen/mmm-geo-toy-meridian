@@ -46,12 +46,66 @@ def savefig(fig, name):
   return f"reports/figures/eda/{name}"
 
 
+def save_chart(chart, name):
+  """Save one of Meridian's EDA charts (Altair) as a PNG."""
+  chart.save(FIG / name, scale_factor=2)
+  return f"reports/figures/eda/{name}"
+
+
 def demean(df, cols, by):
   """Subtract each group's own average, e.g. each geo's mean ("within-geo" values)."""
   return df[cols] - df.groupby(by)[cols].transform("mean")
 
 
-# --------------------------------------------------------------------------
+def severity(outcome):
+  """Worst severity among a check's findings: INFO (fine) or REVIEW (flagged)."""
+  levels = [f.severity for f in outcome.findings]
+  return max(levels, key=lambda s: s.value).name if levels else "INFO"
+
+
+def national_series(df):
+  return df.groupby(TIME)["revenue"].sum()
+
+
+def woy_r2(Y, period=SEASON):
+  """Share of variance explained by week-of-year means.
+
+  Y has shape (..., time): the last axis (-1) is time, so Y may be one series
+  (weeks,) or many (series, weeks).
+  """
+  T = Y.shape[-1]
+  g = np.arange(T) % period                  # week of the year of each week: 0..51, 0..51, ...
+  Yc = Y - Y.mean(-1, keepdims=True)         # Y centered around the mean of each series
+  # Average of each week of the year (e.g. all "week 10"s), for every series at once.
+  means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
+  fitted = means[..., g]                     # each week replaced by its week-of-year average
+  # Share of the variation explained by the week-of-year averages (an R2 between 0 and 1).
+  return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
+
+
+def detrend(y):
+  """Remove a straight-line trend: fit a line through the series and subtract it."""
+  t = np.arange(len(y))
+  b = np.polyfit(t, y, 1)                    # slope and intercept of the best straight line
+  return y - np.polyval(b, t)
+
+
+def meridian_eda_setup():
+  """Meridian's EDA on the production model setup (priors only, no fitting).
+
+  Also saves Meridian's own HTML report to reports/meridian/eda.html. Its charts sum
+  geo-level series to national.
+  """
+  cfg = load_model_config()["sampler"]
+  data = build_input_data()
+  mmm = Meridian(input_data=data, model_spec=make_spec(data))
+  mmm.sample_prior(n_draws=cfg["n_prior_draws"], seed=cfg["seed"])
+  eda = meridian_eda.MeridianEDA(mmm)
+  eda.generate_and_save_report(filename="eda.html", filepath=str(ROOT / "reports" / "meridian"))
+  return eda
+
+
+# --- The data ------------------------------------------------------------------
 def sufficiency(df):
   geos = df[GEO].nunique()
   times = np.sort(df[TIME].unique())
@@ -95,8 +149,45 @@ def sufficiency(df):
   }
 
 
-def national_series(df):
-  return df.groupby(TIME)["revenue"].sum()
+def summary_stats(df):
+  """Mean, median, min, max and share of zero weeks for each input, per geo-week.
+
+  Population is constant within a geo, so its statistics are across the geos.
+  """
+  columns = {"Revenue": "revenue"}
+  columns.update({f"{c} spend": sp for c, sp in zip(CHANNELS, SPEND_COLS)})
+  columns.update({c: c for c in CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA})
+  out = {}
+  for label, col in columns.items():
+    x = df[col]
+    out[label] = {"mean": float(x.mean()), "median": float(x.median()), "min": float(x.min()),
+                  "max": float(x.max()), "share_zero": float((x == 0).mean())}
+  pop = df.groupby(GEO)[POPULATION].first()
+  out["Population (per geo)"] = {"mean": float(pop.mean()), "median": float(pop.median()),
+                                 "min": float(pop.min()), "max": float(pop.max()), "share_zero": None}
+  return out
+
+
+def data_adequacy(eda):
+  a = eda.eda_engine.check_data_param_ratio().analysis_artifacts[0]
+  n_data = a.n_geos * a.n_times
+  # Meridian's rough guide: data points per parameter, counting one parameter per geo
+  # (minus the baseline geo), per knot, per control and per treatment.
+  n_params = (a.n_geos - 1) + a.n_knots + a.n_controls + a.n_treatments
+  return {"n_data_points": int(n_data), "n_parameters": int(n_params),
+          "ratio": n_data / n_params, "n_knots": int(a.n_knots)}
+
+
+# --- Revenue -------------------------------------------------------------------
+def revenue_outliers(eda):
+  """Unusual revenue weeks, and whether revenue varies at all."""
+  std = eda.eda_engine.check_std()
+  kpi = eda.eda_engine.check_overall_kpi_invariability()
+  return {"n_outliers_flagged": next(int(len(a.outlier_df)) for a in std.analysis_artifacts
+                                     if a.variable == "kpi_scaled"),
+          "kpi_varies": severity(kpi) == "INFO",
+          "kpi_scaled_sd": float(kpi.analysis_artifacts[0].kpi_stdev),
+          "figure": save_chart(eda.plot_kpi_boxplot(geos=NATIONALIZE), "kpi_boxplot.png")}
 
 
 def trend(nat):
@@ -132,29 +223,6 @@ def trend(nat):
   ax.set_title("National weekly revenue")
   ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
   return {"years": years, "figure": savefig(fig, "national_trend.png")}
-
-
-def woy_r2(Y, period=SEASON):
-  """Share of variance explained by week-of-year means.
-
-  Y has shape (..., time): the last axis (-1) is time, so Y may be one series
-  (weeks,) or many (series, weeks).
-  """
-  T = Y.shape[-1]
-  g = np.arange(T) % period                  # week of the year of each week: 0..51, 0..51, ...
-  Yc = Y - Y.mean(-1, keepdims=True)         # Y centered around the mean of each series
-  # Average of each week of the year (e.g. all "week 10"s), for every series at once.
-  means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
-  fitted = means[..., g]                     # each week replaced by its week-of-year average
-  # Share of the variation explained by the week-of-year averages (an R2 between 0 and 1).
-  return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
-
-
-def detrend(y):
-  """Remove a straight-line trend: fit a line through the series and subtract it."""
-  t = np.arange(len(y))
-  b = np.polyfit(t, y, 1)                    # slope and intercept of the best straight line
-  return y - np.polyval(b, t)
 
 
 def seasonality_test(df, nat):
@@ -253,6 +321,61 @@ def noise_floor(df, nat):
   }
 
 
+# --- Media ---------------------------------------------------------------------
+def cost_per_media_unit(eda):
+  """CPM per channel, and Meridian's spend-share chart."""
+  outcome = eda.eda_engine.check_cost_per_media_unit()
+  a = outcome.analysis_artifacts[0]
+  cpm = a.cost_per_media_unit_da * 1000  # cost per 1,000 impressions
+  per_channel = {}
+  for channel in cpm.channel.values:
+    values = cpm.sel(channel=channel).values
+    values = values[~np.isnan(values)]  # weeks with no impressions have no CPM
+    per_channel[str(channel)] = {"min": float(values.min()), "median": float(np.median(values)),
+                                 "max": float(values.max())}
+  return {"severity": severity(outcome), "n_outliers_flagged": int(len(a.outlier_df)),
+          "cpm": per_channel,
+          "figure_spend_share": save_chart(eda.plot_relative_spend_share_barchart(geos=NATIONALIZE), "spend_share.png")}
+
+
+def media_outliers(eda):
+  """Unusual weeks in media and controls (Meridian counts them together)."""
+  std = eda.eda_engine.check_std()
+  return {"n_outliers_flagged": next(int(len(a.outlier_df)) for a in std.analysis_artifacts
+                                     if a.variable == "treatment_control_scaled"),
+          "figure": save_chart(eda.plot_treatments_without_non_media_boxplot(geos=NATIONALIZE),
+                               "media_boxplot.png")}
+
+
+def media_population(eda):
+  """Rank correlation between population and each channel's raw spend, across geos."""
+  raw = eda.eda_engine.check_population_corr_raw_media().analysis_artifacts[0].correlation_ds
+  return {"spearman": {str(c): float(v) for c, v in zip(raw.media_channel.values, raw["media"].values)},
+          "figure": save_chart(eda.plot_population_raw_media_correlation(), "population_media.png")}
+
+
+def media_correlation(df):
+  """Within-geo correlation between each channel's spend and revenue, across geo-weeks."""
+  W = demean(df, SPEND_COLS + ["revenue"], GEO)          # within-geo values
+  tab = W.corr().set_axis(CHANNELS + ["revenue"], axis=0).set_axis(CHANNELS + ["revenue"], axis=1)
+  values = tab.loc[CHANNELS, CHANNELS].abs().to_numpy()
+  np.fill_diagonal(values, 0)                            # ignore each channel's correlation with itself
+  i, j = np.unravel_index(values.argmax(), values.shape)
+  # Lower triangle without the diagonal: rows from the 2nd variable, columns up to the 2nd-last.
+  shown = tab.where(np.tril(np.ones(tab.shape, bool), k=-1)).iloc[1:, :-1]
+  fig, ax = plt.subplots(figsize=(5, 4))
+  ax.imshow(shown.to_numpy(float), cmap=DIVERGING, vmin=-1, vmax=1)
+  ax.set_xticks(range(shown.shape[1]), shown.columns, rotation=45, ha="right")
+  ax.set_yticks(range(shown.shape[0]), shown.index)
+  ax.grid(False)
+  for r in range(shown.shape[0]):
+    for c in range(r + 1):
+      ax.text(c, r, f"{shown.iloc[r, c]:.2f}", ha="center", va="center", fontsize=8)
+  ax.set_title("Within-geo correlation of spend and revenue")
+  return {"within_geo_corr": tab.to_dict(orient="index"), "max_abs_corr_between_channels": float(values[i, j]),
+          "max_pair": [CHANNELS[i], CHANNELS[j]], "figure": savefig(fig, "media_correlation.png")}
+
+
 def lag_correlations(df):
   # Everything is "within geo": each geo's own average is removed first.
   controls = sm.add_constant(demean(df, CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA, GEO))
@@ -335,26 +458,21 @@ def spend_vs_geo_max(df):
   return out
 
 
-def media_correlation(df):
-  """Within-geo correlation between each channel's spend and revenue, across geo-weeks."""
-  W = demean(df, SPEND_COLS + ["revenue"], GEO)          # within-geo values
-  tab = W.corr().set_axis(CHANNELS + ["revenue"], axis=0).set_axis(CHANNELS + ["revenue"], axis=1)
-  values = tab.loc[CHANNELS, CHANNELS].abs().to_numpy()
-  np.fill_diagonal(values, 0)                            # ignore each channel's correlation with itself
-  i, j = np.unravel_index(values.argmax(), values.shape)
-  # Lower triangle without the diagonal: rows from the 2nd variable, columns up to the 2nd-last.
-  shown = tab.where(np.tril(np.ones(tab.shape, bool), k=-1)).iloc[1:, :-1]
-  fig, ax = plt.subplots(figsize=(5, 4))
-  ax.imshow(shown.to_numpy(float), cmap=DIVERGING, vmin=-1, vmax=1)
-  ax.set_xticks(range(shown.shape[1]), shown.columns, rotation=45, ha="right")
-  ax.set_yticks(range(shown.shape[0]), shown.index)
-  ax.grid(False)
-  for r in range(shown.shape[0]):
-    for c in range(r + 1):
-      ax.text(c, r, f"{shown.iloc[r, c]:.2f}", ha="center", va="center", fontsize=8)
-  ax.set_title("Within-geo correlation of spend and revenue")
-  return {"within_geo_corr": tab.to_dict(orient="index"), "max_abs_corr_between_channels": float(values[i, j]),
-          "max_pair": [CHANNELS[i], CHANNELS[j]], "figure": savefig(fig, "media_correlation.png")}
+# --- Control variables ---------------------------------------------------------
+def controls_spread(eda):
+  """Box plot of the controls and Promo (their unusual weeks are counted in media_outliers)."""
+  return {"figure": save_chart(eda.plot_controls_and_non_media_boxplot(geos=NATIONALIZE),
+                               "controls_boxplot.png")}
+
+
+def controls_population(eda):
+  """Rank correlation between population and the (unscaled) controls and Promo, across geos."""
+  ds = eda.eda_engine.check_population_corr_scaled_treatment_control().analysis_artifacts[0].correlation_ds
+  out = {str(c): float(v) for c, v in zip(ds.control_variable.values, ds["controls_scaled"].values)}
+  out.update({str(c): float(v) for c, v in zip(ds.non_media_channel.values,
+                                                ds["non_media_treatments_scaled"].values)})
+  return {"spearman": out,
+          "figure": save_chart(eda.plot_population_treatment_correlation(), "population_controls.png")}
 
 
 def controls_confounding(df):
@@ -383,139 +501,32 @@ def controls_confounding(df):
   }
 
 
-def summary_stats(df):
-  """Mean, median, min, max and share of zero weeks for each input, per geo-week.
-
-  Population is constant within a geo, so its statistics are across the geos.
-  """
-  columns = {"Revenue": "revenue"}
-  columns.update({f"{c} spend": sp for c, sp in zip(CHANNELS, SPEND_COLS)})
-  columns.update({c: c for c in CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA})
-  out = {}
-  for label, col in columns.items():
-    x = df[col]
-    out[label] = {"mean": float(x.mean()), "median": float(x.median()), "min": float(x.min()),
-                  "max": float(x.max()), "share_zero": float((x == 0).mean())}
-  pop = df.groupby(GEO)[POPULATION].first()
-  out["Population (per geo)"] = {"mean": float(pop.mean()), "median": float(pop.median()),
-                                 "min": float(pop.min()), "max": float(pop.max()), "share_zero": None}
-  return out
-
-
-def severity(outcome):
-  """Worst severity among a check's findings: INFO (fine) or REVIEW (flagged)."""
-  levels = [f.severity for f in outcome.findings]
-  return max(levels, key=lambda s: s.value).name if levels else "INFO"
-
-
-def data_adequacy(engine):
-  a = engine.check_data_param_ratio().analysis_artifacts[0]
-  n_data = a.n_geos * a.n_times
-  # Meridian's rough guide: data points per parameter, counting one parameter per geo
-  # (minus the baseline geo), per knot, per control and per treatment.
-  n_params = (a.n_geos - 1) + a.n_knots + a.n_controls + a.n_treatments
-  return {"n_data_points": int(n_data), "n_parameters": int(n_params),
-          "ratio": n_data / n_params, "n_knots": int(a.n_knots)}
-
-
-def cost_per_media_unit(engine):
-  outcome = engine.check_cost_per_media_unit()
-  a = outcome.analysis_artifacts[0]
-  cpm = a.cost_per_media_unit_da * 1000  # cost per 1,000 impressions
-  per_channel = {}
-  for channel in cpm.channel.values:
-    values = cpm.sel(channel=channel).values
-    values = values[~np.isnan(values)]  # weeks with no impressions have no CPM
-    per_channel[str(channel)] = {"min": float(values.min()), "median": float(np.median(values)),
-                                 "max": float(values.max())}
-  return {"severity": severity(outcome), "n_outliers_flagged": int(len(a.outlier_df)),
-          "cpm": per_channel}
-
-
-def vif(engine):
-  outcome = engine.check_vif()
-  a = outcome.get_overall_artifacts()[0]
-  values = {str(k): float(v) for k, v in zip(a.vif_da["var"].values, a.vif_da.values)}
-  worst = max(values, key=values.get)
-  return {"severity": severity(outcome), "vif": values, "max_vif": values[worst], "max_vif_variable": worst}
-
-
-def variability(engine):
-  outcome = engine.check_std()
-  outliers = {a.variable: int(len(a.outlier_df)) for a in outcome.analysis_artifacts}
-  kpi = engine.check_overall_kpi_invariability()
-  return {"severity": severity(outcome), "outliers_flagged": outliers,
-          "kpi_varies": severity(kpi) == "INFO",
-          "kpi_scaled_sd": float(kpi.analysis_artifacts[0].kpi_stdev)}
-
-
-def population(engine):
-  raw = engine.check_population_corr_raw_media().analysis_artifacts[0].correlation_ds
-  scaled = engine.check_population_corr_scaled_treatment_control().analysis_artifacts[0].correlation_ds
-  media = {str(c): float(v) for c, v in zip(raw.media_channel.values, raw["media"].values)}
-  other = {str(c): float(v) for c, v in zip(scaled.control_variable.values, scaled["controls_scaled"].values)}
-  other.update({str(c): float(v) for c, v in zip(scaled.non_media_channel.values,
-                                                  scaled["non_media_treatments_scaled"].values)})
-  return {"raw_media_spearman": media, "controls_and_promo_spearman": other}
-
-
-def time_vs_geo(engine):
-  r2 = engine.check_variable_geo_time_collinearity().analysis_artifacts[0].rsquared_ds
-  names = [str(v) for v in r2["var"].values]
-  # Share of each variable's variation explained by the week alone, and by the geo alone.
-  by_time = dict(zip(names, map(float, r2["rsquared_time"].values)))
-  by_geo = dict(zip(names, map(float, r2["rsquared_geo"].values)))
-  worst = max(by_time, key=by_time.get)
-  return {"r2_time": by_time, "r2_geo": by_geo, "max_r2_time": by_time[worst],
-          "max_r2_time_variable": worst, "max_r2_geo": max(by_geo.values())}
-
-
-def meridian_checks():
-  """Meridian's built-in data checks on the production model setup (priors only, no fitting).
-
-  Also saves Meridian's own HTML report to reports/meridian/eda.html.
-  """
-  cfg = load_model_config()["sampler"]
-  data = build_input_data()
-  mmm = Meridian(input_data=data, model_spec=make_spec(data))
-  mmm.sample_prior(n_draws=cfg["n_prior_draws"], seed=cfg["seed"])
-  eda = meridian_eda.MeridianEDA(mmm)
-  eda.generate_and_save_report(filename="eda.html", filepath=str(ROOT / "reports" / "meridian"))
-  engine = eda.eda_engine
-  return {"data_adequacy": data_adequacy(engine), "cost_per_media_unit": cost_per_media_unit(engine),
-          "vif": vif(engine), "variability": variability(engine),
-          "population": population(engine), "time_vs_geo": time_vs_geo(engine),
-          "meridian_figures": meridian_figures(eda)}
-
-
-def meridian_figures(eda):
-  """Saves Meridian's EDA charts (Altair) as PNGs; geo-level series are summed to national."""
-  charts = {
-      "spend_share": eda.plot_relative_spend_share_barchart(geos=NATIONALIZE),
-      "population_media": eda.plot_population_raw_media_correlation(),
-      "population_controls": eda.plot_population_treatment_correlation(),
-      "kpi_boxplot": eda.plot_kpi_boxplot(geos=NATIONALIZE),
-      "media_boxplot": eda.plot_treatments_without_non_media_boxplot(geos=NATIONALIZE),
-      "controls_boxplot": eda.plot_controls_and_non_media_boxplot(geos=NATIONALIZE),
-  }
-  for name, chart in charts.items():
-    chart.save(FIG / f"{name}.png", scale_factor=2)
-  return {name: f"reports/figures/eda/{name}.png" for name in charts}
-
-
 def main():
   df = load_raw()
   nat = national_series(df)
-  summary = {"data": sufficiency(df)}
-  summary["summary_stats"] = summary_stats(df)
-  summary["trend"] = trend(nat)
-  summary["seasonality"] = seasonality_test(df, nat)
-  summary["noise_floor"] = noise_floor(df, nat)
-  summary["lag_correlation"] = lag_correlations(df)
-  summary["spend_vs_geo_max"] = spend_vs_geo_max(df)
-  summary["media_correlation"] = media_correlation(df)
-  summary["controls_confounding"] = controls_confounding(df)
-  summary.update(meridian_checks())
+  eda = meridian_eda_setup()
+  summary = {
+      # The data
+      "data": sufficiency(df),
+      "summary_stats": summary_stats(df),
+      "data_adequacy": data_adequacy(eda),
+      # Revenue
+      "revenue_outliers": revenue_outliers(eda),
+      "trend": trend(nat),
+      "seasonality": seasonality_test(df, nat),
+      "noise_floor": noise_floor(df, nat),
+      # Media
+      "cost_per_media_unit": cost_per_media_unit(eda),
+      "media_outliers": media_outliers(eda),
+      "media_population": media_population(eda),
+      "media_correlation": media_correlation(df),
+      "lag_correlation": lag_correlations(df),
+      "spend_vs_geo_max": spend_vs_geo_max(df),
+      # Control variables
+      "controls_spread": controls_spread(eda),
+      "controls_population": controls_population(eda),
+      "controls_confounding": controls_confounding(df),
+  }
   write_json(summary, OUT / "eda_summary.json")
   print(f"Wrote {OUT / 'eda_summary.json'}")
 
