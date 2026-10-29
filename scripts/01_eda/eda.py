@@ -44,6 +44,7 @@ def savefig(fig, name):
 
 
 def demean(df, cols, by):
+  """Subtract each group's own average, e.g. each geo's mean ("within-geo" values)."""
   return df[cols] - df.groupby(by)[cols].transform("mean")
 
 
@@ -51,12 +52,13 @@ def demean(df, cols, by):
 def sufficiency(df):
   geos = df[GEO].nunique()
   times = np.sort(df[TIME].unique())
+  # Gaps between consecutive weeks, in days: a single value of 7 means no missing weeks.
   steps = np.unique(np.diff(times).astype("timedelta64[D]").astype(int))
-  per_geo = df.groupby(GEO).size()
+  per_geo = df.groupby(GEO).size()         # number of rows per geo
   num = df.select_dtypes("number")
   spend_total = df[SPEND_COLS].sum()
   share = spend_total / spend_total.sum()
-  last52 = df[df[TIME] > times[-53]]
+  last52 = df[df[TIME] > times[-53]]      # rows from the most recent 52 weeks
   nonzero_weeks = {c: int((df[s] > 0).sum()) for c, s in zip(CHANNELS, SPEND_COLS)}
   rpk = df[REVENUE_PER_KPI]
   return {
@@ -65,9 +67,11 @@ def sufficiency(df):
       "last_week": str(pd.Timestamp(times[-1]).date()),
       "time_step_days": steps.tolist(),
       "rows_per_geo_min": int(per_geo.min()), "rows_per_geo_max": int(per_geo.max()),
+      # Every geo has the same number of rows, and rows = geos x weeks.
       "balanced_panel": bool(per_geo.nunique() == 1 and len(df) == geos * len(times)),
       "duplicate_geo_weeks": int(df.duplicated([GEO, TIME]).sum()),
       "missing_values_total": int(df.isna().sum().sum()),
+      # Number of negative values, listed only for the columns that have any.
       "negative_values": {c: int((num[c] < 0).sum()) for c in num.columns
                           if (num[c] < 0).any()},
       "negative_values_note": "Controls are centred indices, so negatives are expected there.",
@@ -146,16 +150,19 @@ def woy_r2(Y, period=SEASON):
   (weeks,) or many (series, weeks).
   """
   T = Y.shape[-1]
-  g = np.arange(T) % period
-  Yc = Y - Y.mean(-1, keepdims=True) # Y centered around the mean of each series
+  g = np.arange(T) % period                  # week of the year of each week: 0..51, 0..51, ...
+  Yc = Y - Y.mean(-1, keepdims=True)         # Y centered around the mean of each series
+  # Average of each week of the year (e.g. all "week 10"s), for every series at once.
   means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
-  fitted = means[..., g]
+  fitted = means[..., g]                     # each week replaced by its week-of-year average
+  # Share of the variation explained by the week-of-year averages (an R2 between 0 and 1).
   return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
 
 
 def detrend(y):
+  """Remove a straight-line trend: fit a line through the series and subtract it."""
   t = np.arange(len(y))
-  b = np.polyfit(t, y, 1)
+  b = np.polyfit(t, y, 1)                    # slope and intercept of the best straight line
   return y - np.polyval(b, t)
 
 
@@ -306,10 +313,12 @@ def lag_correlations(df):
 
 def collinearity(df):
   cols = SPEND_COLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA + CONTROLS
-  W = demean(df, cols, GEO)
+  W = demean(df, cols, GEO)                  # within-geo: each geo's average removed
   corr = W[SPEND_COLS].corr()
   corr.index = corr.columns = CHANNELS
+  # VIF: how much each input's estimate would be inflated by its overlap with all the others.
   vif = {c: float(variance_inflation_factor(W[cols].to_numpy(), i)) for i, c in enumerate(cols)}
+  # Correlations between different channels only (the diagonal, a channel with itself, is dropped).
   off = corr.where(~np.eye(len(corr), dtype=bool)).abs().stack()
 
   fig, ax = plt.subplots(figsize=(4.8, 3.8))
@@ -327,11 +336,13 @@ def collinearity(df):
 
 
 def population_relation(df):
+  # One row per geo: its population and its total revenue and spend over all weeks.
   g = df.groupby(GEO).agg(population=(POPULATION, "first"), revenue=("revenue", "sum"),
                           **{c: (s, "sum") for c, s in zip(CHANNELS, SPEND_COLS)})
   g["spend"] = g[CHANNELS].sum(1)
   out = {}
   for col in ["revenue", "spend"] + CHANNELS:
+    # Slope of log(total) on log(population): 1 means the total grows in proportion to population.
     x, y = np.log(g["population"]), np.log(g[col].clip(lower=1e-9))
     fit = sm.OLS(y, sm.add_constant(x)).fit()
     out[col] = {"pearson": float(stats.pearsonr(g["population"], g[col])[0]),
@@ -365,10 +376,10 @@ def spend_vs_geo_max(df):
   last52 = df[TIME] > times[-53]
   fig, axes = plt.subplots(1, 5, figsize=(11, 2.8), sharey=True)
   for ax, c, sp in zip(axes, CHANNELS, SPEND_COLS):
-    mx = df.groupby(GEO)[sp].transform("max")
-    x = df[sp] / mx
-    nz = x[df[sp] > 0]
-    zero_by_geo = (df[sp] == 0).groupby(df[GEO]).mean()
+    mx = df.groupby(GEO)[sp].transform("max")  # each geo's highest weekly spend, on every row
+    x = df[sp] / mx                              # each week's spend as a share of that maximum
+    nz = x[df[sp] > 0]                           # weeks when the channel was on
+    zero_by_geo = (df[sp] == 0).groupby(df[GEO]).mean()  # share of off weeks, per geo
     out[c] = {
         "share_zero_geo_weeks": float((df[sp] == 0).mean()),
         "share_zero_by_geo_min": float(zero_by_geo.min()),
@@ -376,6 +387,8 @@ def spend_vs_geo_max(df):
         "nonzero_ratio_to_geo_max_quantiles": {
             str(p): float(nz.quantile(p)) for p in (.1, .25, .5, .75, .9)},
         "share_nonzero_above_80pct_of_geo_max": float((nz > .8).mean()),
+        # If last year's spend were raised by 20% (or 50%), how often would a geo-week go
+        # beyond anything that geo has ever spent?
         "last52_share_geo_weeks_beyond_geo_max_if_x1.2": float(
             (x[last52] * 1.2 > 1).mean()),
         "last52_share_geo_weeks_beyond_geo_max_if_x1.5": float(
@@ -392,7 +405,8 @@ def spend_vs_geo_max(df):
 
 def controls_confounding(df):
   cols = CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA
-  W = demean(df, cols + SPEND_COLS + ["revenue"], GEO)
+  W = demean(df, cols + SPEND_COLS + ["revenue"], GEO)   # within-geo values
+  # One row per control, with its correlation with revenue and with each channel's spend.
   tab = pd.DataFrame(index=cols, columns=["revenue"] + CHANNELS, dtype=float)
   for c in cols:
     tab.loc[c, "revenue"] = W[c].corr(W["revenue"])
