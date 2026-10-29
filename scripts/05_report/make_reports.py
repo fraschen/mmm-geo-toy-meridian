@@ -359,19 +359,19 @@ def fig_cal(d):
     return None
   fig, ax = plt.subplots(figsize=(8, 3.2))
   for j, (k, col, lab) in enumerate((("before", MUTED, "Before (no lift test)"),
-                                     ("after", PALETTE[0], "After (HYPOTHETICAL lift test)"))):
+                                     ("after", PALETTE[0], "After (lift test)"))):
     xx = np.arange(5) + (j - .5) * .3
     ax.errorbar(xx, r[f"{k}_mean"], yerr=[r[f"{k}_mean"] - r[f"{k}_ci_lo"], r[f"{k}_ci_hi"] - r[f"{k}_mean"]],
                 fmt="o", ms=5, color=col, lw=1.5, label=lab)
   t = d["cal"]["test"]
   i = CHANNELS.index(t["channel"])
   ax.errorbar([i + .3], [t["point_estimate_roi"]], yerr=[[1.88 * t["standard_error"]], [1.88 * t["standard_error"]]],
-              fmt="s", ms=5, color=PALETTE[1], lw=1.5, label="HYPOTHETICAL test (+/-1.88 SE)")
+              fmt="s", ms=5, color=PALETTE[1], lw=1.5, label="Lift test (+/-1.88 SE)")
   ax.axhline(1, color=MUTED, ls="--", lw=1)
   ax.set_xticks(range(5), CHANNELS)
   ax.set_ylabel("ROI (mean, 94% CI)")
   ax.legend(loc="upper left", fontsize=7)
-  ax.set_title("Calibration with a HYPOTHETICAL lift test: ROI before vs after")
+  ax.set_title("Calibration with a lift test: ROI before vs after")
   return save(fig, FM, "calibration.png")
 
 
@@ -683,8 +683,8 @@ def measurement(d, figs):
       "",
       f"![]({figs['budget']})",
       "",
-      "## Calibration with a HYPOTHETICAL lift test",
-      f"**HYPOTHETICAL** test (`data/lift_tests/lift_tests.csv`, schema in `data/lift_tests/README.md`): "
+      "## Calibration with a lift test",
+      f"Lift test (`data/lift_tests/lift_tests.csv`, schema in `data/lift_tests/README.md`): "
       f"{t['channel']}, {t['start_date']} to {t['end_date']}, {len(t['test_geos'].split(';'))} test geos, "
       f"ROI {t['point_estimate_roi']} (SE {t['standard_error']}). It was fed to Meridian's `CalibrationBuilder` "
       f"(baseline prior LogNormal(0.2, 0.9), geometric decay, max lag 4). The resulting {t['channel']} ROI prior has "
@@ -700,7 +700,7 @@ def measurement(d, figs):
       "",
       f"- Model vs test: for the test geos and weeks, the uncalibrated model implied {t['channel']} ROI "
       f"{implied['mean']:.2f} (94% CI {implied['ci_lo']:.2f}-{implied['ci_hi']:.2f}); "
-      f"the HYPOTHETICAL test said {t['point_estimate_roi']}."
+      f"the lift test said {t['point_estimate_roi']}."
       + (f" After calibration the model implies {cal['implied_test_roi_after']['mean']:.2f}." if "implied_test_roi_after" in cal else ""),
       f"- Test-geo choice: across {gc['n_alternative_sets']} alternative stratified sets of the same size, the "
       f"model-implied ROI ranges {gc['implied_roi_mean_range'][0]:.2f}-{gc['implied_roi_mean_range'][1]:.2f} "
@@ -715,7 +715,7 @@ def measurement(d, figs):
       "- Read Part 1 first: out-of-sample validation is thin.",
       "- Baseline and media trade off almost one-for-one; totals are firmer than channel splits.",
       "- National results only; no geo-level ROI.",
-      "- The lift test is HYPOTHETICAL; calibrated numbers illustrate the method, not real evidence.",
+      "- The lift test was made up to show the method; calibrated numbers are not real evidence.",
       "",
   ]
   leads = {
@@ -741,7 +741,7 @@ def measurement(d, figs):
       "Budget scenarios": ("Budget scenarios",
           "How to split the same total budget to get more revenue, allowing each channel to move up to "
           "20% (main) or 50% (stress)."),
-      "Calibration with a HYPOTHETICAL lift test": ("Using a lift test (HYPOTHETICAL)",
+      "Calibration with a lift test": ("Using a lift test",
           "How a real experiment would sharpen the model. The test here is invented, to show the method."),
       "Caveats": ("Caveats", "Read these before sharing any number from this page."),
   }

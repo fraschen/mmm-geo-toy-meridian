@@ -194,11 +194,11 @@ Fixed total budget equal to the last 52 weeks' spend (71.4M), optimized over 202
 
 ![](figures/measurement/budget.png)
 
-## Using a lift test (HYPOTHETICAL)
+## Using a lift test
 
 How a real experiment would sharpen the model. The test here is invented, to show the method.
 
-**HYPOTHETICAL** test (`data/lift_tests/lift_tests.csv`, schema in `data/lift_tests/README.md`): Channel3, 2023-07-03 to 2023-08-27, 10 test geos, ROI 1.4 (SE 0.25). It was fed to Meridian's `CalibrationBuilder` (baseline prior LogNormal(0.2, 0.9), geometric decay, max lag 4). The resulting Channel3 ROI prior has mean 1.23 and sd 0.47: the spend adjustment widens the test's uncertainty because the test covered a fraction of the channel's national spend. The calibrated refit converged (max R-hat 1.0092, min bulk ESS 607, 0 divergences).
+Lift test (`data/lift_tests/lift_tests.csv`, schema in `data/lift_tests/README.md`): Channel3, 2023-07-03 to 2023-08-27, 10 test geos, ROI 1.4 (SE 0.25). It was fed to Meridian's `CalibrationBuilder` (baseline prior LogNormal(0.2, 0.9), geometric decay, max lag 4). The resulting Channel3 ROI prior has mean 1.23 and sd 0.47: the spend adjustment widens the test's uncertainty because the test covered a fraction of the channel's national spend. The calibrated refit converged (max R-hat 1.0092, min bulk ESS 607, 0 divergences).
 
 | channel | ROI before (94% CI) | P(ROI>1) before | ROI after (94% CI) | P(ROI>1) after |
 |---|---|---|---|---|
@@ -208,7 +208,7 @@ How a real experiment would sharpen the model. The test here is invented, to sho
 | Channel3 | 1.40 (0.60-2.34) | 0.81 | 1.30 (0.73-2.01) | 0.81 |
 | Channel4 | 1.28 (0.27-3.24) | 0.57 | 1.31 (0.28-3.17) | 0.59 |
 
-- Model vs test: for the test geos and weeks, the uncalibrated model implied Channel3 ROI 1.43 (94% CI 0.62-2.40); the HYPOTHETICAL test said 1.4. After calibration the model implies 1.33.
+- Model vs test: for the test geos and weeks, the uncalibrated model implied Channel3 ROI 1.43 (94% CI 0.62-2.40); the lift test said 1.4. After calibration the model implies 1.33.
 - Test-geo choice: across 20 alternative stratified sets of the same size, the model-implied ROI ranges 1.35-1.50 (chosen set at the 35% percentile) and the calibrated prior mean 1.20-1.21. The choice of test geos does not drive the result.
 - The test value equals the uncalibrated national ROI estimate to two decimals by coincidence (it was fixed before that estimate was computed), so calibration narrows the interval more than it moves the mean.
 
@@ -221,7 +221,7 @@ Read these before sharing any number from this page.
 - Read Part 1 first: out-of-sample validation is thin.
 - Baseline and media trade off almost one-for-one; totals are firmer than channel splits.
 - National results only; no geo-level ROI.
-- The lift test is HYPOTHETICAL; calibrated numbers illustrate the method, not real evidence.
+- The lift test was made up to show the method; calibrated numbers are not real evidence.
 
 
 # Part 3: Acceptance gates
