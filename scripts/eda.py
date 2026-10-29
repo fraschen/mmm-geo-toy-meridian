@@ -184,7 +184,7 @@ def woy_r2(Y, period=SEASON):
   """
   T = Y.shape[-1]
   g = np.arange(T) % period
-  Yc = Y - Y.mean(-1, keepdims=True)
+  Yc = Y - Y.mean(-1, keepdims=True) # Y centered around the mean of each series
   means = np.stack([Yc[..., g == k].mean(-1) for k in range(period)], -1)
   fitted = means[..., g]
   return (fitted ** 2).sum(-1) / (Yc ** 2).sum(-1)
