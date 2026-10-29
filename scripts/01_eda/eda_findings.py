@@ -18,6 +18,9 @@ fig = lambda p: f"![]({p.replace('reports/', '')})"
 max_lag_r = max(abs(v) for k in ("geo_demeaned", "geo_demeaned_partial_controls")
                 for c in CHANNELS for v in lag[k][c])
 comp = cc["within_geo_corr"]["competitor_sales_control"]
+raw0 = [lag["geo_demeaned"][c][0] for c in CHANNELS]  # same-week, controls not removed
+part0 = [lag["geo_demeaned_partial_controls"][c][0] for c in CHANNELS]  # after removing them
+n_neg = sum(v < 0 for v in raw0)
 
 
 def rev(var):
@@ -181,11 +184,18 @@ lines = [
     "A control belongs in the model if it moves with both our spend and our revenue: leaving it out "
     "would credit its effect to media. The four non-media variables make that case with different strength.",
     "",
-    f"- **Competitor sales: clearly needed.** They move with revenue ({rev('competitor_sales_control')}) and with "
-    f"our spend ({spend_range('competitor_sales_control')}). Leaving them out would make media look less effective "
-    "than it is; once they are accounted for, the odd negative link between same-week spend and revenue disappears.",
-    f"- **Promo: needed, as a marketing lever.** Promotions lift revenue ({rev('Promo')}) and run alongside paid "
-    f"media ({spend_range('Promo')}). Without them, their lift would be credited to the channels.",
+    f"- **Competitor sales: clearly needed.** Without the controls, same-week spend and revenue are "
+    f"negatively linked for {n_neg} of {len(CHANNELS)} channels (down to {min(raw0):+.2f}); once the controls are "
+    f"accounted for, those negative links disappear (all between {min(part0):+.2f} and {max(part0):+.2f}). That is the "
+    "signature of a confounder: competitor sales move with our spend "
+    f"({spend_range('competitor_sales_control')}) and against our revenue ({rev('competitor_sales_control')}), the "
+    "strongest links of any input. (This before-and-after check removes all four variables together; competitor "
+    "sales is the one with that pattern.)",
+    f"- **Promo: kept, mainly because it runs alongside paid media.** It moves with Channel0 spend "
+    f"(correlation {cc['within_geo_corr']['Promo']['Channel0']:+.2f}), so leaving it out would credit part of its "
+    "lift to Channel0, and it is a lever the client controls. Its own link with revenue "
+    f"({rev('Promo')}) is small, but clearly beyond chance (+/-{lag['null_95pct_band']:.3f}) and stronger than any "
+    f"media channel's (at most {max_lag_r:.2f}).",
     f"- **Sentiment: kept as a precaution.** It moves with spend ({spend_range('sentiment_score_control')}) but "
     f"barely with revenue ({rev('sentiment_score_control')}), so the evidence that it matters is weak.",
     f"- **Organic media: kept as a precaution.** Same pattern: it moves with spend "

@@ -125,8 +125,8 @@ Most weeks run well below each geo's highest-ever spend, and some channels are o
 ## Which controls to include, and why
 A control belongs in the model if it moves with both our spend and our revenue: leaving it out would credit its effect to media. The four non-media variables make that case with different strength.
 
-- **Competitor sales: clearly needed.** They move with revenue (correlation -0.20) and with our spend (correlation +0.07 to +0.55 across channels). Leaving them out would make media look less effective than it is; once they are accounted for, the odd negative link between same-week spend and revenue disappears.
-- **Promo: needed, as a marketing lever.** Promotions lift revenue (correlation +0.13) and run alongside paid media (correlation +0.10 to +0.33 across channels). Without them, their lift would be credited to the channels.
+- **Competitor sales: clearly needed.** Without the controls, same-week spend and revenue are negatively linked for 4 of 5 channels (down to -0.08); once the controls are accounted for, those negative links disappear (all between +0.00 and +0.02). That is the signature of a confounder: competitor sales move with our spend (correlation +0.07 to +0.55 across channels) and against our revenue (correlation -0.20), the strongest links of any input. (This before-and-after check removes all four variables together; competitor sales is the one with that pattern.)
+- **Promo: kept, mainly because it runs alongside paid media.** It moves with Channel0 spend (correlation +0.33), so leaving it out would credit part of its lift to Channel0, and it is a lever the client controls. Its own link with revenue (correlation +0.13) is small, but clearly beyond chance (+/-0.025) and stronger than any media channel's (at most 0.08).
 - **Sentiment: kept as a precaution.** It moves with spend (correlation +0.26 to +0.51 across channels) but barely with revenue (correlation -0.03), so the evidence that it matters is weak.
 - **Organic media: kept as a precaution.** Same pattern: it moves with spend (correlation +0.28 to +0.45 across channels) but barely with revenue (correlation +0.03).
 
