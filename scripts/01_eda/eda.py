@@ -118,14 +118,37 @@ def trend(nat):
   for prev, cur in zip(years, years[1:]):
     cur["growth_vs_previous_year"] = cur["revenue"] / prev["revenue"] - 1
 
+  # Weekly revenue with its 13-week average and a straight-line fit (the model's baseline shape).
+  y = nat.to_numpy()
+  t = np.arange(len(y))
+  line = np.polyval(np.polyfit(t, y, 1), t)
   fig, ax = plt.subplots(figsize=(8, 3.2))
-  ax.plot(weeks, nat.to_numpy() / 1e6, color=PALETTE[0], lw=1.2, label="National weekly revenue")
+  ax.plot(weeks, y / 1e6, color=PALETTE[0], lw=1.2, label="National weekly revenue")
   ma = nat.rolling(13, center=True).mean()
   ax.plot(weeks, ma.to_numpy() / 1e6, color=PALETTE[1], lw=2, label="13-week average")
+  ax.plot(weeks, line / 1e6, color=INK_2, lw=1.2, ls="--", label="Straight line")
   ax.set_ylabel("Revenue (millions)")
   ax.set_title("National weekly revenue")
-  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2)
-  return {"years": years, "figure": savefig(fig, "national_trend.png")}
+  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
+  weekly_fig = savefig(fig, "national_trend.png")
+
+  # Revenue per year, with year-on-year growth above each bar.
+  fig, ax = plt.subplots(figsize=(6, 3.2))
+  x = np.arange(len(years))
+  revenue = [yr["revenue"] / 1e6 for yr in years]
+  ax.bar(x, revenue, color=PALETTE[0], width=.6)
+  for i, yr in enumerate(years):
+    label = f"{revenue[i]:,.0f}M"
+    if "growth_vs_previous_year" in yr:
+      label += f"\n{100 * yr['growth_vs_previous_year']:+.1f}% vs year {yr['year'] - 1}"
+    ax.annotate(label, (i, revenue[i]), xytext=(0, 4), textcoords="offset points",
+                ha="center", va="bottom", fontsize=8, color=INK_2)
+  ax.set_xticks(x, [f"Year {yr['year']}\n{yr['first_week'][:7]} to {yr['last_week'][:7]}" for yr in years])
+  ax.set_ylabel("Revenue (millions)")
+  ax.set_ylim(0, max(revenue) * 1.2)
+  ax.set_title("Revenue per year (52-week blocks)")
+  yearly_fig = savefig(fig, "revenue_per_year.png")
+  return {"years": years, "figure": weekly_fig, "figure_yearly": yearly_fig}
 
 
 def woy_r2(Y, period=SEASON):

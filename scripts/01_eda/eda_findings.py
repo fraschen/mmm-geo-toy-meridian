@@ -105,10 +105,7 @@ lines = [
     "## Revenue grows slowly",
     "Revenue per year (each year is a block of 52 weeks, starting in late January):",
     "",
-    "| year | weeks | revenue | growth vs previous year |",
-    "|---|---|---|---|",
-    *[f"| {y['year']} | {y['first_week']} to {y['last_week']} | {y['revenue'] / 1e6:,.0f}M | "
-      f"{pct(y['growth_vs_previous_year']) if 'growth_vs_previous_year' in y else '-'} |" for y in tr["years"]],
+    fig(tr["figure_yearly"]),
     "",
     f"Growth slowed: {growth_text} a year. Part of that is noise. Weekly revenue varies by about "
     f"{pct(nf['national_weekly_cv'])} around its level, so a 52-week total varies by about "
@@ -116,7 +113,9 @@ lines = [
     f"{pct(year_noise * 2 ** 0.5)}. The slowdown is about that size: it may be real, but the data cannot confirm it. "
     "**For the model:** a straight-line baseline (`knots = 2`: one knot at each end of the series, no bends in "
     "between) is a reasonable simplification; letting it bend a little is one of the next steps.",
-    "",
+    *details(*[f"Year {y['year']} ({y['first_week']} to {y['last_week']}): revenue {y['revenue'] / 1e6:,.1f}M"
+               + (f", {pct(y['growth_vs_previous_year'])} vs the previous year" if "growth_vs_previous_year" in y else "")
+               + "." for y in tr["years"]]),
     fig(tr["figure"]),
     "",
     "## No yearly seasonality",

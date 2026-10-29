@@ -181,7 +181,8 @@
         "growth_vs_previous_year": 0.004293600590427715
       }
     ],
-    "figure": "reports/figures/eda/national_trend.png"
+    "figure": "reports/figures/eda/national_trend.png",
+    "figure_yearly": "reports/figures/eda/revenue_per_year.png"
   },
   "seasonality": {
     "method": "Detrended national revenue; R2 of week-of-year means (52 groups x 3 years) vs 10000 simulated noise series of the same length: iid Gaussian and AR(1) with the observed lag-1 autocorrelation.",

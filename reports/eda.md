@@ -55,13 +55,17 @@ In every channel, spend is exactly impressions times a constant CPM: the lowest 
 ## Revenue grows slowly
 Revenue per year (each year is a block of 52 weeks, starting in late January):
 
-| year | weeks | revenue | growth vs previous year |
-|---|---|---|---|
-| 1 | 2021-01-25 to 2022-01-17 | 433M | - |
-| 2 | 2022-01-24 to 2023-01-16 | 442M | 2.1% |
-| 3 | 2023-01-23 to 2024-01-15 | 444M | 0.4% |
+![](figures/eda/revenue_per_year.png)
 
 Growth slowed: 2.1% then 0.4% a year. Part of that is noise. Weekly revenue varies by about 6.9% around its level, so a 52-week total varies by about 1.0% from noise alone, and the difference between two years' growth rates by about 1.4%. The slowdown is about that size: it may be real, but the data cannot confirm it. **For the model:** a straight-line baseline (`knots = 2`: one knot at each end of the series, no bends in between) is a reasonable simplification; letting it bend a little is one of the next steps.
+
+<details><summary>Technical details</summary>
+
+- Year 1 (2021-01-25 to 2022-01-17): revenue 432.8M.
+- Year 2 (2022-01-24 to 2023-01-16): revenue 442.0M, 2.1% vs the previous year.
+- Year 3 (2023-01-23 to 2024-01-15): revenue 443.9M, 0.4% vs the previous year.
+
+</details>
 
 ![](figures/eda/national_trend.png)
 
