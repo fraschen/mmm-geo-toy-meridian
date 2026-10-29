@@ -3,8 +3,7 @@
 Builds the single production model defined in config/model.toml. Steps follow the
 skill: load data and map columns (DataFrameInputDataBuilder), configure ModelSpec,
 sample the prior, run Meridian EDA, fit with sample_posterior and save with
-meridian_serde.save_meridian. How this specification was chosen is documented in
-docs/model_selection/.
+meridian_serde.save_meridian.
 
 Usage (run from the project root):
   .venv/bin/python model_build/build_model.py --eda-only        # Meridian EDA report only

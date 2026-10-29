@@ -45,19 +45,16 @@ Defined in [`config/model.toml`](config/model.toml):
 - **Competitor sales and consumer sentiment** are included, because they move with both our spend
   and our revenue. Leaving them out would distort media's effect.
 
-**How we chose it.** We tried several versions that differed on what the data alone could not
-settle. The versions with a more flexible baseline did not run reliably. Two versions with a
-straight-line baseline did, and the simpler of the two was as good as the other, so we kept it.
-We loosened the reliability criteria after the first attempts failed to meet them; the original, stricter criteria are recorded in config/gates.toml. Full record: [docs/model_selection](docs/model_selection/README.md).
+**Why this model.** Its choices follow from what the EDA could and could not settle, and from what
+ran reliably on this data in earlier attempts: a more flexible baseline (Meridian's automatic knot
+selection) and looser pooling across geos did not sample reliably, so we kept the baseline a straight
+line and pooled media effects strongly. We loosened the reliability criteria after the first attempts failed to meet them; the original, stricter criteria are recorded in config/gates.toml.
 
 <details><summary>Technical details</summary>
 
 - Spec: `knots = 2`, `max_lag = 4`, `media_effects_dist = log_normal`, `adstock_decay_spec = geometric`, `hill_before_adstock = False`, `media_prior_type = roi`, `unique_sigma_for_each_geo = False`.
 - Priors (others Meridian defaults): `roi_m ~ LogNormal(loc=0.2, scale=0.9)`, `eta_m ~ HalfNormal(scale=0.1)`.
 - Sampler: 4 chains, 500 adaptation + 500 burn-in + 1000 kept draws per chain, seed 20260128.
-- Round 1 (C2, C3, C1): AKS (66 knots) or linear baseline x default or strong media pooling; none converged (failures in the baseline parameters `knot_values`, `mu_t`, `tau_g`).
-- Round 2 (R1, R2): linear baseline, strong pooling (`eta_m ~ HalfNormal(0.1)`), max lag 4 vs 8; both converged.
-- PSIS-LOO: R2 vs R1 ELPD difference +3.6 (paired SE 2.5); switching needs more than 5.0, so R1 is kept.
 - The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
 
 </details>
@@ -66,7 +63,8 @@ We loosened the reliability criteria after the first attempts failed to meet the
 ## The checks we trust
 
 All rules are in [`config/gates.toml`](config/gates.toml) and explained in
-[reports/gates.md](reports/gates.md); details in [reports/diagnostics.md](reports/diagnostics.md).
+[reports/results.md](reports/results.md#part-3-acceptance-gates); details in
+[reports/results.md](reports/results.md#part-1-diagnostics).
 
 - **Did the computation run reliably?** Yes. Meridian estimates the model by running 4
   independent simulations, which agree with each other. If they did not, we would report nothing.
@@ -93,7 +91,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
 
 ## What the model can tell a client
 
-Details in [reports/measurement.md](reports/measurement.md). ROI is revenue returned per unit
+Details in [reports/results.md](reports/results.md#part-2-measurement). ROI is revenue returned per unit
 of spend: above 1, a channel pays for itself.
 
 - **Media as a whole** drove about 255.9M of 1,318.7M revenue
@@ -117,7 +115,7 @@ of spend: above 1, a channel pays for itself.
   a year, with a 84% chance of being an improvement. Shifting up to 50% would
   add about 2.5M, with a 77% chance. The direction is fairly clear; the size
   is uncertain, and could even be a small loss
-  ([scenarios](reports/measurement.md#budget-scenarios); Meridian's reports: [main](reports/meridian/optimization_main.html),
+  ([scenarios](reports/results.md#budget-scenarios); Meridian's reports: [main](reports/meridian/optimization_main.html),
   [stress](reports/meridian/optimization_stress.html)).
 
 <details><summary>Technical details</summary>
@@ -171,7 +169,7 @@ saved models are reused when the configuration has not changed.
 
 Meridian's simulated [geo dataset](https://github.com/google/meridian/blob/main/meridian/data/simulated_data/csv/geo_all_channels.csv):
 40 geos, 156 weeks (2021-01-25 to 2024-01-15), five paid channels,
-two controls, a promotion and one organic channel. It is downloaded from a fixed version and checked
+two controls, a promotion and one organic channel. It is committed in `data/raw/` (from a fixed version of Meridian's repository) and checked
 before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - **Data quality:** the data are complete and clean.
@@ -224,11 +222,10 @@ before use. What we learned from it: [reports/eda.md](reports/eda.md).
 ```
 config/model.toml         the model we run
 config/gates.toml         the acceptance checks
-data/                     data download (raw file not committed) and the lift-test format
+data/                     the raw data file and the lift-test format
 model_build/              Meridian scripts: build the model, health report, budget scenarios
 scripts/                  data checks, forecast tests, gates, results, reports
 outputs/                  the numbers behind every report
-reports/                  eda.md, diagnostics.md, measurement.md, gates.md, figures, Meridian reports
-docs/model_selection/     how the model was chosen
+reports/                  eda.md, results.md, figures, Meridian reports
 Makefile, Dockerfile, requirements.lock
 ```

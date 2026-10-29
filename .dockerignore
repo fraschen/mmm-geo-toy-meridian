@@ -1,6 +1,5 @@
 .venv
 .git
 **/__pycache__
-data/raw
 model_build/**/*.binpb
 model_build/**/*.log

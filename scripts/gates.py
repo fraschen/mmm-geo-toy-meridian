@@ -214,7 +214,7 @@ def main():
     c["details"] = {k: v for k, v in c["details"].items() if k != "correlation_matrix"}
 
   blocking_fail = [g["gate"] for g in gates if g["blocking"] and g["status"] == "FAIL"]
-  result = {"model": name, "selected_as": model_cfg["selected_as"], "thresholds": T,
+  result = {"model": name, "thresholds": T,
             "threshold_basis": basis, "gates": gates, "insample": insample,
             "meridian_health": {"overall_status": health["overall_status"],
                                 "health_score": health["health_score"],

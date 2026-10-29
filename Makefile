@@ -2,7 +2,7 @@ PY := .venv/bin/python
 # Keep macOS awake during long runs (no-op elsewhere).
 AWAKE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dimsu")
 
-# One production model (config/model.toml). How it was chosen: docs/model_selection/.
+# One production model (config/model.toml).
 RAW := data/raw/geo_all_channels.csv
 MODEL := model_build/model/meridian_model.binpb
 FOLDS := 104 117 130 143
@@ -14,15 +14,14 @@ LIFT := data/lift_tests/lift_tests.csv
         reports-meridian budget gates results reports calibration docker clean-outputs
 
 # Production pipeline. Stops if the model fails its convergence gate. The acceptance
-# gates may fail (blocking failures are reported in reports/gates.md); reports still build.
+# gates may fail (blocking failures are reported in reports/results.md); reports still build.
 all: eda fit convergence validate reports-meridian budget
 	-$(MAKE) gates
 	$(MAKE) reports
 
-data: $(RAW)
-
-$(RAW):
-	$(PY) scripts/download_data.py
+# The raw data file is committed in data/raw/; its checksum is verified when it is loaded.
+data:
+	@test -f $(RAW) || { echo "Missing $(RAW)"; exit 1; }
 
 # EDA: Meridian's EDA report for the production spec (prior draws only) + extended EDA.
 eda: eda-meridian eda-extended
@@ -65,7 +64,7 @@ budget: $(MODEL)
 	$(AWAKE) $(PY) model_build/run_budget_optimization.py
 
 # Acceptance gates (exits non-zero on any blocking failure). Rules and thresholds:
-# config/gates.toml; documentation: reports/gates.md.
+# config/gates.toml; documentation: Part 3 of reports/results.md.
 gates:
 	$(PY) scripts/gates.py
 
@@ -76,7 +75,6 @@ results:
 
 reports: results
 	$(PY) scripts/make_reports.py
-	$(PY) scripts/make_gates_report.py
 	$(PY) scripts/make_readme.py
 
 # Optional, not part of production: refit with a HYPOTHETICAL lift test.

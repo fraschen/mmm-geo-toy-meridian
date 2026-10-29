@@ -1,14 +1,11 @@
 # The production model: the single Meridian specification this project fits, validates,
-# reports and containerizes. How it was chosen is documented in docs/model_selection/
-# (candidate rounds, convergence diagnostics, PSIS-LOO comparison); those candidates
-# are not part of the pipeline.
+# reports and containerizes.
 
 [model]
 name = "mmm"
 description = """Geo-level Meridian MMM: straight-line baseline (knots = 2, one knot at each end), media effects strongly \
 pooled across geos (eta_m ~ HalfNormal(0.1)), geometric adstock with max lag 4, ROI priors \
-LogNormal(0.2, 0.9) on all paid channels. Selected as R1 (`linear_strong_pool_lag4`)."""
-selected_as = "R1 (linear_strong_pool_lag4)"
+LogNormal(0.2, 0.9) on all paid channels."""
 
 [model.spec]                 # meridian.model.spec.ModelSpec arguments
 knots = 2                    # one knot at each end (weeks 0 and 155): a straight line, no bends

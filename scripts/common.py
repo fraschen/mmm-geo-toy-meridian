@@ -20,9 +20,9 @@ RAW_CSV = ROOT / "data" / "raw" / "geo_all_channels.csv"
 OUTPUTS = ROOT / "outputs"
 FIGURES = ROOT / "reports" / "figures"
 MODEL_BUILD = ROOT / "model_build"
-HISTORY = ROOT / "docs" / "model_selection"  # how the production model was chosen (record)
 
-# Raw data source, pinned to the last upstream commit touching the file.
+# Where data/raw/geo_all_channels.csv comes from (the last upstream commit touching the file).
+# The file is committed; this is provenance only, and nothing is downloaded.
 DATA_COMMIT = "4229a279581b11ee09ad6f616324f90778480a25"
 DATA_URL = (
     "https://raw.githubusercontent.com/google/meridian/"
@@ -93,7 +93,7 @@ def sha256(path: Path) -> str:
 def load_raw() -> pd.DataFrame:
   """Reads the raw CSV after verifying its checksum. Never modifies it."""
   if sha256(RAW_CSV) != DATA_SHA256:
-    raise RuntimeError(f"Checksum mismatch for {RAW_CSV}; run `make data`.")
+    raise RuntimeError(f"Checksum mismatch for {RAW_CSV}: the raw file has been changed.")
   df = pd.read_csv(RAW_CSV).drop(columns=["Unnamed: 0"], errors="ignore")
   df[TIME] = pd.to_datetime(df[TIME])
   df["revenue"] = df[KPI] * df[REVENUE_PER_KPI]

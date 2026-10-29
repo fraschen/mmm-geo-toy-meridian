@@ -1,5 +1,5 @@
 """Generates README.md. Every number is read from outputs/ (EDA numbers from make eda)
-or from the model-selection record in docs/model_selection/."""
+or from the config files."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import json
 
 import pandas as pd
 
-from common import CHANNELS, HISTORY, OUTPUTS, ROOT, load_gates_config, load_model_config
+from common import CHANNELS, OUTPUTS, ROOT, load_gates_config, load_model_config
 
 J = lambda p: json.load(open(OUTPUTS / p))
 pct = lambda x, d=1: f"{100 * x:.{d}f}%"
@@ -21,7 +21,6 @@ def details(*items):
 
 def main():
   eda, gates, cv = J("eda/eda_summary.json"), J("gates/gates.json"), J("validation/cv_metrics.json")
-  sel = json.load(open(HISTORY / "selection.json"))
   main_s, stress, cal, contrib = (J("budget/scenario_main.json"), J("budget/scenario_stress.json"),
                                   J("calibration/calibration.json"), J("analysis/contributions.json"))
   ident, conv = J("analysis/identification.json"), J("model/convergence.json")
@@ -31,7 +30,6 @@ def main():
   d, nf, tr = eda["data"], eda["noise_floor"], eda["trend"]
   conv_folds = [k for k, v in cv["folds"].items() if v["converged"]]
   f0 = cv["folds"][conv_folds[0]] if conv_folds else None
-  lab = sel["labels"]
   versions = {p: md.version(p) for p in ("google-meridian", "jax", "jaxlib", "tfp-nightly")}
   best = res.sort_values("roi_mean", ascending=False)
   ins, cov = g["insample_r2"]["value"], g["insample_coverage"]["value"]
@@ -41,9 +39,7 @@ def main():
       f"{r.mroi_mean:.2f} | {r.p_roi_gt_1:.2f} |" for r in res.itertuples())
   gate_rows = "\n".join(f"| {x['gate']} | {x['status']} | {'yes' if x['blocking'] else 'no'} |"
                         for x in gates["gates"])
-  step = sel["comparison_steps"][0] if sel["comparison_steps"] else None
   pos = lambda s: ", ".join(f"{c} {100 * v['change_pct']:+.0f}%" for c, v in s["channels"].items())
-  r1 = [n for n in sel["rounds"]["round_1"]]
   contraction = g["channel_roi_checks"]["value"]
 
   text = f"""# Marketing mix model with Google Meridian
@@ -87,22 +83,20 @@ Defined in [`config/model.toml`](config/model.toml):
 - **Competitor sales and consumer sentiment** are included, because they move with both our spend
   and our revenue. Leaving them out would distort media's effect.
 
-**How we chose it.** We tried several versions that differed on what the data alone could not
-settle. The versions with a more flexible baseline did not run reliably. Two versions with a
-straight-line baseline did, and the simpler of the two was as good as the other, so we kept it.
-{gcfg['meta']['note_plain']} Full record: [docs/model_selection](docs/model_selection/README.md).
+**Why this model.** Its choices follow from what the EDA could and could not settle, and from what
+ran reliably on this data in earlier attempts: a more flexible baseline (Meridian's automatic knot
+selection) and looser pooling across geos did not sample reliably, so we kept the baseline a straight
+line and pooled media effects strongly. {gcfg['meta']['note_plain']}
 {details("Spec: " + ", ".join(f"`{k} = {v}`" for k, v in cfg['model']['spec'].items()) + ".",
           "Priors (others Meridian defaults): " + ", ".join(f"`{k} ~ {v['dist']}(" + ", ".join(f"{a}={x}" for a, x in v.items() if a != 'dist') + ")`" for k, v in cfg['model']['priors'].items()) + ".",
           f"Sampler: {cfg['sampler']['n_chains']} chains, {cfg['sampler']['n_adapt']} adaptation + {cfg['sampler']['n_burnin']} burn-in + {cfg['sampler']['n_keep']} kept draws per chain, seed {cfg['sampler']['seed']}.",
-          "Round 1 (" + ", ".join(lab[n] for n in r1) + "): AKS (66 knots) or linear baseline x default or strong media pooling; none converged (failures in the baseline parameters `knot_values`, `mu_t`, `tau_g`).",
-          "Round 2 (R1, R2): linear baseline, strong pooling (`eta_m ~ HalfNormal(0.1)`), max lag 4 vs 8; both converged.",
-          (f"PSIS-LOO: R2 vs R1 ELPD difference {step['elpd_diff']:+.1f} (paired SE {step['se']:.1f}); switching needs more than {step['threshold']:.1f}, so R1 is kept." if step else sel['selection_basis']),
           gcfg['meta']['note'])}
 
 ## The checks we trust
 
 All rules are in [`config/gates.toml`](config/gates.toml) and explained in
-[reports/gates.md](reports/gates.md); details in [reports/diagnostics.md](reports/diagnostics.md).
+[reports/results.md](reports/results.md#part-3-acceptance-gates); details in
+[reports/results.md](reports/results.md#part-1-diagnostics).
 
 - **Did the computation run reliably?** {'Yes' if conv['converged'] else 'No'}. Meridian estimates the model by running {cfg['sampler']['n_chains']}
   independent simulations, which {'agree' if conv['converged'] else 'do not agree'} with each other. If they did not, we would report nothing.
@@ -123,7 +117,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
 
 ## What the model can tell a client
 
-Details in [reports/measurement.md](reports/measurement.md). ROI is revenue returned per unit
+Details in [reports/results.md](reports/results.md#part-2-measurement). ROI is revenue returned per unit
 of spend: above 1, a channel pays for itself.
 
 - **Media as a whole** drove about {M(contrib['paid_total']['mean'])} of {M(contrib['observed_total'])} revenue
@@ -143,7 +137,7 @@ of spend: above 1, a channel pays for itself.
   a year, with a {pct(main_s['gain']['p_gain_gt_0'], 0)} chance of being an improvement. Shifting up to 50% would
   add about {M(stress['gain']['mean'])}, with a {pct(stress['gain']['p_gain_gt_0'], 0)} chance. The direction is fairly clear; the size
   is uncertain, and could even be a small loss
-  ([scenarios](reports/measurement.md#budget-scenarios); Meridian's reports: [main](reports/meridian/optimization_main.html),
+  ([scenarios](reports/results.md#budget-scenarios); Meridian's reports: [main](reports/meridian/optimization_main.html),
   [stress](reports/meridian/optimization_stress.html)).
 {details(f"Paid media contribution: {M(contrib['paid_total']['mean'])} (94% CI {M(contrib['paid_total']['ci_lo'])}-{M(contrib['paid_total']['ci_hi'])}), {pct(contrib['paid_total']['mean'] / contrib['observed_total'])} of revenue.",
           f"Main scenario (+/-20%): {pos(main_s)}; gain {M(main_s['gain']['mean'])} (94% CI {M(main_s['gain']['ci_lo'])} to {M(main_s['gain']['ci_hi'])}), P(gain > 0) = {main_s['gain']['p_gain_gt_0']:.2f}.",
@@ -185,7 +179,7 @@ saved models are reused when the configuration has not changed.
 
 Meridian's simulated [geo dataset](https://github.com/google/meridian/blob/main/meridian/data/simulated_data/csv/geo_all_channels.csv):
 {d['n_geos']} geos, {d['n_weeks']} weeks ({d['first_week']} to {d['last_week']}), five paid channels,
-two controls, a promotion and one organic channel. It is downloaded from a fixed version and checked
+two controls, a promotion and one organic channel. It is committed in `data/raw/` (from a fixed version of Meridian's repository) and checked
 before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 - **Data quality:** the data are complete and clean.
@@ -220,12 +214,11 @@ before use. What we learned from it: [reports/eda.md](reports/eda.md).
 ```
 config/model.toml         the model we run
 config/gates.toml         the acceptance checks
-data/                     data download (raw file not committed) and the lift-test format
+data/                     the raw data file and the lift-test format
 model_build/              Meridian scripts: build the model, health report, budget scenarios
 scripts/                  data checks, forecast tests, gates, results, reports
 outputs/                  the numbers behind every report
-reports/                  eda.md, diagnostics.md, measurement.md, gates.md, figures, Meridian reports
-docs/model_selection/     how the model was chosen
+reports/                  eda.md, results.md, figures, Meridian reports
 Makefile, Dockerfile, requirements.lock
 ```
 """

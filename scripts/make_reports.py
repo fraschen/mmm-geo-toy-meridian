@@ -1,4 +1,4 @@
-"""Phase 6: reports/diagnostics.md and reports/measurement.md with figures.
+"""Builds reports/results.md (diagnostics, measurement and gates) with its figures.
 
 Every number in the report text is read from outputs/ (generated upstream).
 Figures use matplotlib with the project palette (Meridian's visualizers render
@@ -13,8 +13,9 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import (AXIS, CHANNEL_COLOR, CHANNELS, FIGURES, HISTORY, INK_2, MUTED, OUTPUTS,
-                    PALETTE, ROOT, load_model_config, style_matplotlib)
+import gates_section
+from common import (AXIS, CHANNEL_COLOR, CHANNELS, FIGURES, INK_2, MUTED, OUTPUTS,
+                    PALETTE, ROOT, load_gates_config, load_model_config, style_matplotlib)
 
 style_matplotlib()
 import matplotlib.pyplot as plt  # noqa: E402
@@ -47,7 +48,7 @@ def load_all():
       "contrib": "analysis/contributions.json", "ident": "analysis/identification.json",
       "levels": "analysis/calibration_levels.json", "cal": "calibration/calibration.json",
       "main": "budget/scenario_main.json", "stress": "budget/scenario_stress.json"}.items()}
-  d["sel"] = json.load(open(HISTORY / "selection.json"))
+  d["gcfg"] = load_gates_config()
   d["conv"] = J("model/convergence.json")
   d["cfg"] = load_model_config()
   d["nat"] = pd.read_csv(OUTPUTS / "analysis" / "national_weekly.csv", parse_dates=["time"])
@@ -372,7 +373,7 @@ def with_leads(text, leads):
   for line in text.split("\n"):
     if line.startswith("## ") and line[3:] in leads:
       title, lead = leads[line[3:]]
-      out += [f"## {title}", "", lead]
+      out += [f"## {title}", "", lead, ""]
     else:
       out.append(line)
   return "\n".join(out)
@@ -415,7 +416,6 @@ def diagnostics(d, figs):
   g = {x["gate"]: x for x in d["gates"]["gates"]}
   eda, nf = d["eda"], d["eda"]["noise_floor"]
   conv, th = d["conv"], d["conv"]["thresholds"]
-  sel = d["sel"]
   cvrows = []
   for k, f in d["cv"]["folds"].items():
     if f["converged"]:
@@ -436,7 +436,7 @@ def diagnostics(d, figs):
   contraction = g["channel_roi_checks"]["value"]
   idt = d["ident"]
   lines = [
-      "# Diagnostics: model health",
+      "# Part 1: Diagnostics",
       "",
       f"Production model (`config/model.toml`): {d['cfg']['model']['description']}",
       "",
@@ -444,20 +444,17 @@ def diagnostics(d, figs):
       "[Model Results Summary](meridian/results_summary.html).",
       "",
       "## Why this model",
-      "The pipeline fits one model. It was chosen once, from candidates that differed on what the EDA "
-      "cannot settle: baseline flexibility (knots), geo pooling of media effects (`eta_m`) and max lag. "
-      "The record (specs, diagnostics, comparison) is in "
-      "[docs/model_selection](../docs/model_selection/README.md); the candidates are not refitted.",
-      "- Each fit had to pass a convergence gate before PSIS-LOO comparison. The fits ran in two rounds:",
-  ] + [f"  - {r.replace('_', ' ').capitalize()}: {sel['round_notes'][r]} "
-       + "; ".join(f"{sel['labels'][n]} {'passed' if sel['converged'][n] else 'failed'}" for n in names) + "."
-       for r, names in sel["rounds"].items()] + [f"- {sel['labels'][st['challenger']]} vs {sel['labels'][st['current']]}: ELPD difference "
-       f"{st['elpd_diff']:+.1f} (paired SE {st['se']:.1f}); switching needs more than {st['threshold']:.1f}, so "
-       f"{sel['labels'][st['challenger'] if st['switch'] else st['current']]} is kept."
-       for st in sel["comparison_steps"]] + [
-      f"- Selected: {sel['labels'][sel['selected']]}, PSIS-LOO ELPD {sel['loo'][sel['selected']]['elpd_loo']:.1f} "
-      f"(SE {sel['loo'][sel['selected']]['se']:.1f}), {sel['loo'][sel['selected']]['pareto_k_gt_0.7']} Pareto k values above 0.7.",
-      "- The candidate set and the convergence criteria were revised after earlier rounds failed to converge.",
+      "The model's choices follow from what the EDA could and could not settle, and from what sampled "
+      "reliably on this data in earlier attempts:",
+      "",
+      "- **Straight-line baseline** (`knots = 2`): the trend is linear and there is no yearly seasonality.",
+      "- **Media effects strongly pooled across geos:** each geo's own media signal is too weak to "
+      "estimate a separate effect.",
+      "- **Max lag 4:** the data do not say how long media effects last, and shorter lags sample "
+      "more reliably.",
+      "- In our first attempts, a more flexible baseline (Meridian's automatic knot selection) and "
+      "looser pooling did not sample reliably on this data.",
+      f"- {d['gcfg']['meta']['note_plain']}",
       "",
       "## Data and prior checks",
       f"- Data integrity: {g['data_integrity']['status']} (checksum, balanced 40 x 156 panel, no "
@@ -524,16 +521,6 @@ def diagnostics(d, figs):
       "",
       table(pd.DataFrame(hrows, columns=["check", "status", "comparison with our gates"])),
       "",
-      "## Gate summary (`make gates`)",
-      "",
-      "Rules, thresholds and rationale: [gates.md](gates.md) (generated from `config/gates.toml`).",
-      "",
-      table(pd.DataFrame([[x["gate"], x["status"], "yes" if x["blocking"] else "no"] for x in d["gates"]["gates"]],
-                         columns=["gate", "status", "blocking"])),
-      "",
-      f"Blocking failures: {', '.join(d['gates']['blocking_failures']) or 'none'}.",
-      "",
-
       "## Known limitations",
       "- Out-of-sample evidence is thin: only one CV fold fit converged, and its national interval "
       "coverage misses the gate.",
@@ -547,7 +534,7 @@ def diagnostics(d, figs):
   n_conv = sum(f["converged"] for f in d["cv"]["folds"].values())
   leads = {
       "Why this model": ("Why this model",
-          "We chose one model and run only that one. Here is how we got to it."),
+          "We run one model. Here is why it looks the way it does."),
       "Data and prior checks": ("Are the inputs and starting assumptions sound?",
           "The data are checked for completeness, and the model's starting assumptions are checked "
           "for whether they can produce numbers like the real ones. Result: "
@@ -569,12 +556,9 @@ def diagnostics(d, figs):
           "the model struggles to split revenue between media and underlying demand."),
       "Meridian health checks": ("Meridian's own health checks",
           "Meridian's built-in checks all pass, but they are more lenient than ours and only look at the past."),
-      "Gate summary (`make gates`)": ("Summary of the acceptance checks",
-          "Every check the model must pass, with its result. A failed blocking check means the model is not "
-          "client-ready."),
       "Known limitations": ("Known limitations", "What a reader should keep in mind."),
   }
-  (ROOT / "reports" / "diagnostics.md").write_text(with_leads("\n".join(lines), leads))
+  return with_leads("\n".join(lines), leads)
 
 
 def measurement(d, figs):
@@ -611,11 +595,11 @@ def measurement(d, figs):
   t = cal["test"]
   gc = cal["geo_choice_check"]
   lines = [
-      "# Measurement: results",
+      "# Part 2: Measurement",
       "",
-      "National channel results for the selected model over all 156 weeks "
+      "National channel results for the model over all 156 weeks "
       f"({r.period[0]}). Revenue = conversions x revenue per conversion. Health and caveats: "
-      "[diagnostics.md](diagnostics.md). Meridian's native reports: "
+      "Part 1. Meridian's native reports: "
       "[Model Results Summary](meridian/results_summary.html), budget optimization "
       "[main](meridian/optimization_main.html) and [stress](meridian/optimization_stress.html). "
       "Machine-readable: `outputs/results/channel_results.csv` (+ `_metadata.json`).",
@@ -713,8 +697,8 @@ def measurement(d, figs):
       "",
   ] + ([f"![]({figs['cal']})", ""] if figs.get("cal") else []) + [
       "## Caveats",
-      "- Read [diagnostics.md](diagnostics.md) first: out-of-sample validation is thin, and the candidate "
-      "set and convergence criteria were revised after earlier rounds failed to converge.",
+      "- Read Part 1 first: out-of-sample validation is thin, and the candidate set and "
+      "convergence criteria were revised after earlier attempts failed to converge.",
       "- Baseline and media trade off almost one-for-one; totals are firmer than channel splits.",
       "- National results only; no geo-level ROI.",
       "- The lift test is HYPOTHETICAL; calibrated numbers illustrate the method, not real evidence.",
@@ -748,7 +732,7 @@ def measurement(d, figs):
           "How a real experiment would sharpen the model. The test here is invented, to show the method."),
       "Caveats": ("Caveats", "Read these before sharing any number from this page."),
   }
-  (ROOT / "reports" / "measurement.md").write_text(with_leads("\n".join(lines), leads))
+  return with_leads("\n".join(lines), leads)
 
 
 def main():
@@ -760,9 +744,23 @@ def main():
           "waterfall": fig_waterfall(d), "share": fig_share(d), "weekly": fig_weekly(d),
           "saturation": fig_saturation(d), "response": fig_response(d), "budget": fig_budget(d),
           "cal": fig_cal(d)}
-  diagnostics(d, figs)
-  measurement(d, figs)
-  print("Wrote reports/diagnostics.md and reports/measurement.md")
+  intro = [
+      "# Results",
+      "",
+      "This report has three parts: **diagnostics** (can we trust the model?), **measurement** "
+      "(what does it say?) and the **acceptance gates** (the rules the model must pass). "
+      "What we learned about the data before modelling is in [eda.md](eda.md); the model itself is "
+      "defined in [`config/model.toml`](../config/model.toml).",
+      "",
+  ]
+  parts = [
+      "\n".join(intro),
+      diagnostics(d, figs),
+      measurement(d, figs),
+      "\n".join(gates_section.section()),
+  ]
+  (ROOT / "reports" / "results.md").write_text("\n\n".join(parts))
+  print("Wrote reports/results.md")
 
 
 if __name__ == "__main__":

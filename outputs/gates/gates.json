@@ -1,6 +1,5 @@
 {
   "model": "mmm",
-  "selected_as": "R1 (linear_strong_pool_lag4)",
   "thresholds": {
     "prior_predictive_national_coverage_min": 0.8,
     "insample_geo_week_r2_min": 0.5,
