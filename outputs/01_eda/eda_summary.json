@@ -49,8 +49,7 @@
       "cv": 0.0049588969574893725,
       "min": 0.019650234,
       "max": 0.02036254
-    },
-    "figure_spend_share": "reports/figures/eda/spend_share.png"
+    }
   },
   "summary_stats": {
     "Revenue": {
@@ -494,6 +493,11 @@
       "Channel4",
       "competitor_sales_control"
     ],
+    "national_max_abs_corr": 0.7352223030222095,
+    "national_max_pair": [
+      "Channel4",
+      "competitor_sales_control"
+    ],
     "flag_threshold": 0.999,
     "n_pairs_flagged": 0
   },
@@ -562,5 +566,17 @@
     "max_r2_time": 0.3299500844423161,
     "max_r2_time_variable": "Channel3",
     "max_r2_geo": -0.0003942013979678638
+  },
+  "prior_negative_baseline_prob": 0.2240000069141388,
+  "meridian_figures": {
+    "spend_share": "reports/figures/eda/meridian_spend_share.png",
+    "kpi_with_knots": "reports/figures/eda/meridian_kpi_with_knots.png",
+    "population_media": "reports/figures/eda/meridian_population_media.png",
+    "population_controls": "reports/figures/eda/meridian_population_controls.png",
+    "kpi_boxplot": "reports/figures/eda/meridian_kpi_boxplot.png",
+    "media_boxplot": "reports/figures/eda/meridian_media_boxplot.png",
+    "controls_boxplot": "reports/figures/eda/meridian_controls_boxplot.png",
+    "correlation": "reports/figures/eda/meridian_correlation.png",
+    "prior_mean": "reports/figures/eda/meridian_prior_mean.png"
   }
 }

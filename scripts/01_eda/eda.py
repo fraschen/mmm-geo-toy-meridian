@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from meridian.model.eda import meridian_eda
+from meridian.model.eda.constants import NATIONALIZE
 from meridian.model.model import Meridian
 from scipy import stats
 
@@ -379,20 +380,6 @@ def summary_stats(df):
   return out
 
 
-def spend_share_fig(suff):
-  share = suff["spend_share"]
-  fig, ax = plt.subplots(figsize=(6, 2.4))
-  for i, c in enumerate(CHANNELS):
-    ax.barh(i, share[c], color=CHANNEL_COLOR[c], height=.6)
-    ax.text(share[c] + .005, i, f"{share[c]:.1%}", va="center", color=INK_2)
-  ax.set_yticks(range(5), CHANNELS)
-  ax.invert_yaxis()
-  ax.set_xlabel("Share of total paid spend (156 weeks)")
-  ax.set_xlim(0, max(share.values()) * 1.2)
-  ax.set_title("Spend share by channel")
-  return savefig(fig, "spend_share.png")
-
-
 def severity(outcome):
   """Worst severity among a check's findings: INFO (fine) or REVIEW (flagged)."""
   levels = [f.severity for f in outcome.findings]
@@ -423,16 +410,24 @@ def cost_per_media_unit(engine):
           "cpm": per_channel}
 
 
-def correlation(engine):
-  outcome = engine.check_pairwise_corr()
-  a = outcome.get_overall_artifacts()[0]
-  corr = a.corr_matrix
+def strongest_pair(corr):
+  """Largest absolute correlation between two different variables, and their names."""
   names = [str(v) for v in corr.var1.values]
   values = np.abs(np.asarray(corr.values))
   np.fill_diagonal(values, 0)          # ignore each variable's correlation with itself
   i, j = np.unravel_index(values.argmax(), values.shape)
-  return {"severity": severity(outcome), "max_abs_corr": float(values[i, j]),
-          "max_pair": [names[i], names[j]], "flag_threshold": float(a.extreme_corr_threshold),
+  return float(values[i, j]), [names[i], names[j]]
+
+
+def correlation(engine):
+  outcome = engine.check_pairwise_corr()
+  a = outcome.get_overall_artifacts()[0]                     # all geo-weeks pooled
+  max_corr, pair = strongest_pair(a.corr_matrix)
+  # National totals (the chart in the report) move together more than single geos do.
+  nat_corr, nat_pair = strongest_pair(engine.check_national_pairwise_corr().get_national_artifacts()[0].corr_matrix)
+  return {"severity": severity(outcome), "max_abs_corr": max_corr, "max_pair": pair,
+          "national_max_abs_corr": nat_corr, "national_max_pair": nat_pair,
+          "flag_threshold": float(a.extreme_corr_threshold),
           "n_pairs_flagged": int(len(a.extreme_corr_var_pairs))}
 
 
@@ -474,6 +469,11 @@ def time_vs_geo(engine):
           "max_r2_time_variable": worst, "max_r2_geo": max(by_geo.values())}
 
 
+def prior_negative_baseline(engine):
+  """Probability, under the priors alone, that the baseline (revenue without media) goes negative."""
+  return float(engine.check_prior_probability().get_overall_artifacts()[0].prior_negative_baseline_prob)
+
+
 def meridian_checks():
   """Meridian's built-in data checks on the production model setup (priors only, no fitting).
 
@@ -488,14 +488,33 @@ def meridian_checks():
   engine = eda.eda_engine
   return {"data_adequacy": data_adequacy(engine), "cost_per_media_unit": cost_per_media_unit(engine),
           "correlation": correlation(engine), "vif": vif(engine), "variability": variability(engine),
-          "population": population(engine), "time_vs_geo": time_vs_geo(engine)}
+          "population": population(engine), "time_vs_geo": time_vs_geo(engine),
+          "prior_negative_baseline_prob": prior_negative_baseline(engine),
+          "meridian_figures": meridian_figures(eda)}
+
+
+def meridian_figures(eda):
+  """Saves Meridian's EDA charts (Altair) as PNGs; geo-level series are summed to national."""
+  charts = {
+      "spend_share": eda.plot_relative_spend_share_barchart(geos=NATIONALIZE),
+      "kpi_with_knots": eda.plot_national_kpi_with_knots_time_series(),
+      "population_media": eda.plot_population_raw_media_correlation(),
+      "population_controls": eda.plot_population_treatment_correlation(),
+      "kpi_boxplot": eda.plot_kpi_boxplot(geos=NATIONALIZE),
+      "media_boxplot": eda.plot_treatments_without_non_media_boxplot(geos=NATIONALIZE),
+      "controls_boxplot": eda.plot_controls_and_non_media_boxplot(geos=NATIONALIZE),
+      "correlation": eda.plot_pairwise_correlation(geos=NATIONALIZE),
+      "prior_mean": eda.plot_prior_mean(),
+  }
+  for name, chart in charts.items():
+    chart.save(FIG / f"meridian_{name}.png", scale_factor=2)
+  return {name: f"reports/figures/eda/meridian_{name}.png" for name in charts}
 
 
 def main():
   df = load_raw()
   nat = national_series(df)
   summary = {"data": sufficiency(df)}
-  summary["data"]["figure_spend_share"] = spend_share_fig(summary["data"])
   summary["summary_stats"] = summary_stats(df)
   summary["trend"] = trend(nat)
   summary["seasonality"] = seasonality_test(df, nat)
