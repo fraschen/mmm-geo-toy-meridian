@@ -115,10 +115,14 @@ def trend(nat):
   revenue = nat.groupby(year).sum()           # one total per year
   growth = revenue.pct_change()               # vs the previous year (NaN for year 1)
   first, last = pd.Series(weeks).groupby(year).first(), pd.Series(weeks).groupby(year).last()
-  years = [{"year": int(k) + 1, "first_week": str(first[k].date()), "last_week": str(last[k].date()),
-            "revenue": float(revenue[k]),
-            "growth_vs_previous_year": None if np.isnan(growth[k]) else float(growth[k])}
-           for k in revenue.index]
+  table = pd.DataFrame({
+      "first_week": first.dt.strftime("%Y-%m-%d"),
+      "last_week": last.dt.strftime("%Y-%m-%d"),
+      "revenue": revenue,
+      "growth_vs_previous_year": growth,
+  })
+  table.index = table.index + 1                                 # years 1, 2, 3
+  years = table.reset_index(names="year").to_dict(orient="records")
 
   # Weekly revenue with its 13-week average and a straight-line fit (the model's baseline shape).
   y = nat.to_numpy()
