@@ -41,16 +41,16 @@ Channel3 takes the largest share of the budget; Channel2 the smallest:
 ![](figures/eda/spend_share.png)
 
 ## Spend and impressions carry the same information
-In every channel, spend is exactly impressions times a constant CPM, so it makes no difference whether the model uses spend or impressions.
+In every channel, spend is exactly impressions times a constant CPM: the lowest and highest CPM across all geo-weeks are the same. So it makes no difference whether the model uses spend or impressions.
 
-<details><summary>Technical details</summary>
+| channel | CPM min | CPM median | CPM max |
+|---|---|---|---|
+| Channel0 | 7.33 | 7.33 | 7.33 |
+| Channel1 | 9.64 | 9.64 | 9.64 |
+| Channel2 | 7.43 | 7.43 | 7.43 |
+| Channel3 | 7.79 | 7.79 | 7.79 |
+| Channel4 | 7.79 | 7.79 | 7.79 |
 
-- Largest deviation from each channel's median CPM: 0.14 parts per million.
-- CPM: Channel0 7.33, Channel1 9.64, Channel2 7.43, Channel3 7.79, Channel4 7.79.
-
-</details>
-
-![](figures/eda/cpm_relative.png)
 
 ## Revenue grows slowly and steadily
 National revenue grows by about 1.5% a year, and a straight line describes that growth well: letting the trend bend at the start of each year does not improve the fit. **For the model:** a straight-line baseline is enough (`knots = 2`: one knot at each end of the series, no bends in between).

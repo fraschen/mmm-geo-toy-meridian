@@ -91,50 +91,12 @@ def sufficiency(df):
 
 
 def cpm_check(df):
-  out, rows = {}, []
+  """Distribution of CPM (spend per 1,000 impressions) per channel, over geo-weeks with impressions."""
+  out = {}
   for c, imp, sp in zip(CHANNELS, IMPRESSION_COLS, SPEND_COLS):
-    d = df[[GEO, TIME, imp, sp]]
-    pos = d[d[imp] > 0]
-    cpm = 1000 * pos[sp] / pos[imp]
-    med = cpm.median()
-    fit = sm.OLS(d[sp], d[[imp]]).fit()
-    geo_med = (1000 * pos[sp] / pos[imp]).groupby(pos[GEO]).median()
-    nat = d.groupby(TIME)[[imp, sp]].sum()
-    nat_cpm = 1000 * nat[sp] / nat[imp].replace(0, np.nan)
-    out[c] = {
-        "cpm_median": float(med), "cpm_cv": float(cpm.std() / cpm.mean()),
-        "cpm_p01": float(cpm.quantile(.01)), "cpm_p99": float(cpm.quantile(.99)),
-        "cpm_min": float(cpm.min()), "cpm_max": float(cpm.max()),
-        "share_within_1pct_of_median": float((abs(cpm / med - 1) < .01).mean()),
-        "max_abs_relative_deviation_from_median": float((cpm / med - 1).abs().max()),
-        "spend_on_impressions_r2_no_intercept": float(fit.rsquared),
-        "geo_median_cpm_cv": float(geo_med.std() / geo_med.mean()),
-        "national_weekly_cpm_cv": float(nat_cpm.std() / nat_cpm.mean()),
-        "rows_spend_without_impressions": int(((d[sp] > 0) & (d[imp] == 0)).sum()),
-        "rows_impressions_without_spend": int(((d[sp] == 0) & (d[imp] > 0)).sum()),
-    }
-    rows.append(pd.DataFrame({"channel": c, "ppm": 1e6 * (cpm / med - 1)}))
-  # Constant CPM if every geo-week is within float32 rounding of the median.
-  out["constant_cpm_verdict"] = {
-      c: bool(out[c]["max_abs_relative_deviation_from_median"] < 1e-6) for c in CHANNELS}
-  out["note"] = ("Deviations are at float32 rounding level, so spend = impressions x a "
-                 "constant CPM.")
-
-  allr = pd.concat(rows)
-  fig, ax = plt.subplots(figsize=(7, 3.2))
-  for i, c in enumerate(CHANNELS):
-    v = allr.loc[allr.channel == c, "ppm"].to_numpy()
-    rng = np.random.default_rng(i)
-    ax.scatter(i + rng.uniform(-.28, .28, len(v)), v, s=4, alpha=.25,
-               color=CHANNEL_COLOR[c], linewidths=0)
-  ax.axhline(0, color=MUTED, lw=1, ls="--")
-  ax.set_xticks(range(len(CHANNELS)),
-                [f"{c}\nCPM {out[c]['cpm_median']:.2f}" for c in CHANNELS])
-  ax.set_ylabel("Deviation from median CPM\n(parts per million)")
-  worst = max(out[c]["max_abs_relative_deviation_from_median"] for c in CHANNELS)
-  ax.set_title(f"CPM is constant per channel: max deviation {worst * 1e6:.2f} ppm "
-               "(float rounding)")
-  out["figure"] = savefig(fig, "cpm_relative.png")
+    with_impressions = df[df[imp] > 0]
+    cpm = 1000 * with_impressions[sp] / with_impressions[imp]
+    out[c] = {"min": float(cpm.min()), "median": float(cpm.median()), "max": float(cpm.max())}
   return out
 
 

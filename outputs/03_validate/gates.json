@@ -2,6 +2,7 @@
   "model": "mmm",
   "thresholds": {
     "prior_predictive_national_coverage_min": 0.8,
+    "negative_baseline_prob_max": 0.2,
     "insample_geo_week_r2_min": 0.5,
     "insample_national_r2_min": 0.25,
     "insample_coverage_range": [
@@ -25,6 +26,7 @@
     "data_integrity": "Hard data checks; any failure means the inputs are not the documented dataset.",
     "prior_predictive_coverage": "Rules out priors that cannot generate the observed data. A weak check: the prior predictive interval is wide by design, so a PASS says little about prior quality.",
     "convergence": "ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent draws (20 of 4000) are tolerated.",
+    "negative_baseline": "A negative baseline means media and the other drivers are credited with more than all of the revenue, which is impossible. Meridian flags a model for review above 0.2 and fails it above 0.8; we fail at its review level.",
     "insample_r2": "Geo-week: revenue scales with population, so geo levels dominate the variance; a model must explain at least half of it. National: weekly revenue has CV 6.9% and is close to white noise (lag-1 -0.02), so there is little variance to explain and a modest R2 is the realistic bar.",
     "insample_coverage": "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too narrow; above: too wide.",
     "within_geo_r2": "Geo-week revenue has a within-geo CV of 30% and is close to white noise, so most within-geo variance is unexplainable; this flags a model with almost no within-geo signal.",
@@ -72,6 +74,14 @@
       },
       "blocking": true,
       "note": "R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws (config/gates.toml). The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences."
+    },
+    {
+      "gate": "negative_baseline",
+      "status": "PASS",
+      "value": 0.0,
+      "threshold": 0.2,
+      "blocking": true,
+      "note": "Baseline summed over all geos and weeks."
     },
     {
       "gate": "insample_r2",

@@ -95,6 +95,13 @@ def main():
                     {"rhat_max": th["rhat_max"], "ess_min": th["ess_min"],
                      "divergences_max": th["divergences_max"]}, True, th["note"]))
 
+  # 3b. Negative baseline (probability computed by Meridian's health check).
+  baseline = next(c for c in health["checks"] if c["check"] == "Baseline")
+  p_neg = baseline["details"]["negative_baseline_prob"]
+  p_max = T["negative_baseline_prob_max"]
+  gates.append(gate("negative_baseline", "PASS" if p_neg <= p_max else "FAIL", p_neg, p_max, True,
+                    "Baseline summed over all geos and weeks."))
+
   # 4. In-sample fit.
   mean, pred = revenue_draws(mmm)
   m = mean.mean((0, 1))

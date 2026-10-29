@@ -65,6 +65,20 @@ their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.
 draws (20 of 4000) are tolerated."""
 enforced_in = "scripts/02_fit/check_convergence.py (make convergence)"
 
+# ---------------------------------------------------------------- baseline sign
+[gates.negative_baseline]
+plain = "Is the baseline (revenue without media, promotion or organic activity) positive, as it must be?"
+blocking = true
+applies_to = "selected model, posterior draws"
+checks = """Probability that the baseline, summed over all geos and weeks, is negative (computed by \
+Meridian's health check). FAIL above the maximum."""
+thresholds = { negative_baseline_prob_max = 0.2 }
+source = "project (Meridian's review level)"
+basis = """A negative baseline means media and the other drivers are credited with more than all of the \
+revenue, which is impossible. Meridian flags a model for review above 0.2 and fails it above 0.8; we \
+fail at its review level."""
+enforced_in = "scripts/03_validate/gates.py (value from scripts/03_validate/results_report.py)"
+
 # ------------------------------------------------------------------ in-sample fit
 [gates.insample_r2]
 plain = "Does the model explain a reasonable share of what happened in the past?"

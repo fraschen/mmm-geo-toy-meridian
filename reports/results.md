@@ -240,6 +240,7 @@ Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_s
 | [data_integrity](#data_integrity) | Is the data file the one we expect, complete and free of impossible values? | yes | data_integrity PASS |
 | [prior_predictive_coverage](#prior_predictive_coverage) | Before seeing the data, can the model's starting assumptions produce numbers like the real ones? | yes | prior_predictive_coverage PASS |
 | [convergence](#convergence) | Did the computation run reliably? The model is estimated by several independent simulations; they must agree. | yes | convergence PASS |
+| [negative_baseline](#negative_baseline) | Is the baseline (revenue without media, promotion or organic activity) positive, as it must be? | yes | negative_baseline PASS |
 | [insample_r2](#insample_r2) | Does the model explain a reasonable share of what happened in the past? | yes | insample_r2 PASS |
 | [insample_coverage](#insample_coverage) | Do the model's 94% ranges contain about 94% of past weeks, neither too narrow nor too wide? | yes | insample_coverage PASS |
 | [within_geo_r2](#within_geo_r2) | Does the model pick up week-to-week movements within each geo, not just the differences between geos? | no (warn only) | within_geo_r2 PASS |
@@ -318,6 +319,29 @@ Latest result:
 | convergence | PASS | max_rhat 1.009, min_ess_bulk 441.2, min_ess_tail 690, divergences 1 |
 
 Note: R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws (config/gates.toml). The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
+
+### negative_baseline
+
+**Is the baseline (revenue without media, promotion or organic activity) positive, as it must be?**
+
+- **Blocking:** yes
+- **Applies to:** selected model, posterior draws
+- **Rule:** Probability that the baseline, summed over all geos and weeks, is negative (computed by Meridian's health check). FAIL above the maximum.
+- **Source of threshold:** project (Meridian's review level)
+- **Basis:** A negative baseline means media and the other drivers are credited with more than all of the revenue, which is impossible. Meridian flags a model for review above 0.2 and fails it above 0.8; we fail at its review level.
+- **Enforced in:** `scripts/03_validate/gates.py (value from scripts/03_validate/results_report.py)`
+
+| threshold | value |
+|---|---|
+| `negative_baseline_prob_max` | 0.2 |
+
+Latest result:
+
+| check | status | value |
+|---|---|---|
+| negative_baseline | PASS | 0 |
+
+Note: Baseline summed over all geos and weeks.
 
 ### insample_r2
 

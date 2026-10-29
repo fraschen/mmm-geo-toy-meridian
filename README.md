@@ -56,13 +56,16 @@ The rules are in [`config/gates.toml`](config/gates.toml) and explained in
 - **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by
   4.0%, better than a simple 13-week average (5.1%). Its 94% ranges contain 95% of geo-level weeks,
   close to the 94% they should.
+- **Is the baseline positive?** Yes. The chance that the baseline (revenue without media, promotion
+  or organic activity) is negative is 0.00; a negative baseline would mean media is credited with
+  more than all of the revenue.
 - **Did the data teach the model anything?** Yes. Every channel's estimate moved away from the
   starting assumption.
 - **What we don't rely on:** Meridian's built-in health score (93/100). It only looks at how well the
   model fits the past, so it cannot see the forecasting problem.
 
-Status at the last run: the data, prior, convergence and in-sample checks pass; the four forecast
-checks and the ROI-stability check fail; each channel carries a warning that its payback is undetermined.
+Status at the last run: the data, prior, convergence, baseline and in-sample checks pass; the four
+forecast checks and the ROI-stability check fail; each channel carries a warning that its payback is undetermined.
 
 ## What the model can tell a client
 

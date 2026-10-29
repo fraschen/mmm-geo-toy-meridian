@@ -133,89 +133,30 @@
   },
   "cpm": {
     "Channel0": {
-      "cpm_median": 7.332723135848411,
-      "cpm_cv": 3.319006311087166e-08,
-      "cpm_p01": 7.332722547311789,
-      "cpm_p99": 7.332723728706244,
-      "cpm_min": 7.332722186565266,
-      "cpm_max": 7.332724060927241,
-      "share_within_1pct_of_median": 1.0,
-      "max_abs_relative_deviation_from_median": 1.2945847371881314e-07,
-      "spend_on_impressions_r2_no_intercept": 0.9999999999999988,
-      "geo_median_cpm_cv": 3.960385985588683e-09,
-      "national_weekly_cpm_cv": 7.773837117954513e-09,
-      "rows_spend_without_impressions": 0,
-      "rows_impressions_without_spend": 0
+      "min": 7.332722186565266,
+      "median": 7.332723135848411,
+      "max": 7.332724060927241
     },
     "Channel1": {
-      "cpm_median": 9.641231543844807,
-      "cpm_cv": 3.3473511232589357e-08,
-      "cpm_p01": 9.641230782914084,
-      "cpm_p99": 9.641232313133354,
-      "cpm_min": 9.641230206544124,
-      "cpm_max": 9.641232699702647,
-      "share_within_1pct_of_median": 1.0,
-      "max_abs_relative_deviation_from_median": 1.3870641701885233e-07,
-      "spend_on_impressions_r2_no_intercept": 0.999999999999999,
-      "geo_median_cpm_cv": 4.528413657179309e-09,
-      "national_weekly_cpm_cv": 7.779434268576306e-09,
-      "rows_spend_without_impressions": 0,
-      "rows_impressions_without_spend": 0
+      "min": 9.641230206544124,
+      "median": 9.641231543844807,
+      "max": 9.641232699702647
     },
     "Channel2": {
-      "cpm_median": 7.430924412665986,
-      "cpm_cv": 3.4761052299247336e-08,
-      "cpm_p01": 7.43092382097134,
-      "cpm_p99": 7.430925039480297,
-      "cpm_min": 7.430923592506953,
-      "cpm_max": 7.430925271561315,
-      "share_within_1pct_of_median": 1.0,
-      "max_abs_relative_deviation_from_median": 1.1558391421750969e-07,
-      "spend_on_impressions_r2_no_intercept": 0.999999999999999,
-      "geo_median_cpm_cv": 5.508684054184166e-09,
-      "national_weekly_cpm_cv": 1.6621248515179934e-08,
-      "rows_spend_without_impressions": 0,
-      "rows_impressions_without_spend": 0
+      "min": 7.430923592506953,
+      "median": 7.430924412665986,
+      "max": 7.430925271561315
     },
     "Channel3": {
-      "cpm_median": 7.792840481468117,
-      "cpm_cv": 3.3132667948342574e-08,
-      "cpm_p01": 7.792839859703299,
-      "cpm_p99": 7.792841115899879,
-      "cpm_min": 7.792839602751531,
-      "cpm_max": 7.7928413907123035,
-      "share_within_1pct_of_median": 1.0,
-      "max_abs_relative_deviation_from_median": 1.1667686372618391e-07,
-      "spend_on_impressions_r2_no_intercept": 0.9999999999999987,
-      "geo_median_cpm_cv": 3.986683891936022e-09,
-      "national_weekly_cpm_cv": 6.95049277422022e-09,
-      "rows_spend_without_impressions": 0,
-      "rows_impressions_without_spend": 0
+      "min": 7.792839602751531,
+      "median": 7.792840481468117,
+      "max": 7.7928413907123035
     },
     "Channel4": {
-      "cpm_median": 7.791911599513699,
-      "cpm_cv": 3.3098515794507447e-08,
-      "cpm_p01": 7.791910960865548,
-      "cpm_p99": 7.791912216941434,
-      "cpm_min": 7.791910662610373,
-      "cpm_max": 7.791912487463223,
-      "share_within_1pct_of_median": 1.0,
-      "max_abs_relative_deviation_from_median": 1.2024049733661002e-07,
-      "spend_on_impressions_r2_no_intercept": 0.9999999999999988,
-      "geo_median_cpm_cv": 4.034472258357475e-09,
-      "national_weekly_cpm_cv": 7.590034358505861e-09,
-      "rows_spend_without_impressions": 0,
-      "rows_impressions_without_spend": 0
-    },
-    "constant_cpm_verdict": {
-      "Channel0": true,
-      "Channel1": true,
-      "Channel2": true,
-      "Channel3": true,
-      "Channel4": true
-    },
-    "note": "Deviations are at float32 rounding level, so spend = impressions x a constant CPM.",
-    "figure": "reports/figures/eda/cpm_relative.png"
+      "min": 7.791910662610373,
+      "median": 7.791911599513699,
+      "max": 7.791912487463223
+    }
   },
   "trend": {
     "slope_per_year_pct_of_mean": 1.4614760681000492,
