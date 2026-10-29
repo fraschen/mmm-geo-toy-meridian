@@ -91,8 +91,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
 
 ## What the model can tell a client
 
-Details in [reports/results.md](reports/results.md#part-2-measurement). ROI is revenue returned per unit
-of spend: above 1, a channel pays for itself.
+Details in [reports/results.md](reports/results.md#part-2-measurement).
 
 - **Media as a whole** drove about 255.9M of 1,318.7M revenue
   (19%), somewhere between 177.4M

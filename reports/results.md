@@ -115,7 +115,7 @@ National channel results for the model over all 156 weeks (2021-01-25 to 2024-01
 
 ## Channel results
 
-For each channel: what it contributed, its ROI (revenue returned per unit of spend) and marginal ROI (return on the next unit of spend), with 94% ranges. P(ROI > 1) is the probability that the channel pays for itself.
+For each channel: its contribution, ROI and marginal ROI (the return on the next unit of spend), with 94% ranges, and the probability that its ROI is above 1.
 
 
 | channel | spend | spend share | contribution (94% CI) | share of revenue | ROI (94% CI) | mROI (94% CI) | P(ROI>1) | gate |

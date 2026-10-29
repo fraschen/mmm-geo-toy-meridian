@@ -704,9 +704,8 @@ def measurement(d, figs):
   ]
   leads = {
       "Channel results": ("Channel results",
-          "For each channel: what it contributed, its ROI (revenue returned per unit of spend) and marginal "
-          "ROI (return on the next unit of spend), with 94% ranges. P(ROI > 1) is the probability that the "
-          "channel pays for itself."),
+          "For each channel: its contribution, ROI and marginal ROI (the return on the next unit of "
+          "spend), with 94% ranges, and the probability that its ROI is above 1."),
       "Model fit and baseline": ("Model fit and baseline",
           "The model's weekly revenue against the actual, and the baseline: what revenue would have been "
           "with no media, promotion or organic activity."),
