@@ -109,7 +109,7 @@ lines = [
     "| year | weeks | revenue | growth vs previous year |",
     "|---|---|---|---|",
     *[f"| {y['year']} | {y['first_week']} to {y['last_week']} | {y['revenue'] / 1e6:,.0f}M | "
-      f"{pct(y['growth_vs_previous_year']) if 'growth_vs_previous_year' in y else '-'} |" for y in tr["years"]],
+      f"{'-' if y['growth_vs_previous_year'] is None else pct(y['growth_vs_previous_year'])} |" for y in tr["years"]],
     "",
     f"Growth slowed: {growth_text} a year. Part of that is noise. Weekly revenue varies by about "
     f"{pct(nf['national_weekly_cv'])} around its level, so a 52-week total varies by about "

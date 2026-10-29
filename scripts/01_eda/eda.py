@@ -111,14 +111,14 @@ def trend(nat):
   calendar year.
   """
   weeks = nat.index
-  years = []
-  for k in range(len(nat) // SEASON):
-    block = nat.iloc[k * SEASON:(k + 1) * SEASON]
-    years.append({"year": k + 1, "first_week": str(weeks[k * SEASON].date()),
-                  "last_week": str(weeks[(k + 1) * SEASON - 1].date()),
-                  "revenue": float(block.sum())})
-  for prev, cur in zip(years, years[1:]):
-    cur["growth_vs_previous_year"] = cur["revenue"] / prev["revenue"] - 1
+  year = np.arange(len(nat)) // SEASON        # 0 for weeks 1-52, 1 for 53-104, 2 for 105-156
+  revenue = nat.groupby(year).sum()           # one total per year
+  growth = revenue.pct_change()               # vs the previous year (NaN for year 1)
+  first, last = pd.Series(weeks).groupby(year).first(), pd.Series(weeks).groupby(year).last()
+  years = [{"year": int(k) + 1, "first_week": str(first[k].date()), "last_week": str(last[k].date()),
+            "revenue": float(revenue[k]),
+            "growth_vs_previous_year": None if np.isnan(growth[k]) else float(growth[k])}
+           for k in revenue.index]
 
   # Weekly revenue with its 13-week average and a straight-line fit (the model's baseline shape).
   y = nat.to_numpy()
