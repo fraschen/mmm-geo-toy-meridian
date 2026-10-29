@@ -138,11 +138,30 @@ checked before use. What we learned from it: [reports/eda.md](reports/eda.md).
 
 ## Next steps
 
-- **Run a real lift test for Channel3,** the biggest budget line with an unclear payback. The
-  pipeline is ready to use it.
-- **Make the forecast tests run reliably,** so the model's predictions can be checked.
-- **Add a measure of underlying demand,** such as category search volume, to help separate media
-  from everything else.
+Each of these is a model change aimed at one of the problems above. Judge every one with the same
+acceptance checks and thresholds, fixed before fitting, and change one thing at a time, so we know
+what helped.
+
+- **Tighten the baseline's starting assumptions.** *Problem: the refits on shorter histories did not
+  run reliably.* The baseline level and the differences between geos are given very wide starting
+  ranges, compared with how little revenue actually varies. That lets them trade off against each
+  other and makes the sampler struggle. Narrower ranges should help the refits converge, which would
+  also make the forecast check possible.
+- **Let the baseline bend a little.** *Problem: forecasts ran high and the national ranges were too
+  narrow.* A straight line cannot follow shocks that hit every geo in the same week, and in the one
+  refit that ran, the forecast drifted about 3% high. Try a few knots (for example one per year) with
+  tight starting ranges, and check whether forecasts and ranges improve without making the split
+  between media and baseline any worse.
+- **Pool the controls across geos.** *Problem: the baseline and the control effects were the hardest
+  parts to sample.* Give competitor sales and sentiment one effect for all geos. This simplifies the
+  model and may help it converge, at the cost of ignoring any real differences between geos in how
+  the controls matter.
+- **Test how much the answers depend on the starting belief about ROI.** *Problem: the ranges are
+  wide, so the starting assumption matters.* Refit with a tighter and a wider starting belief. If the
+  channel ranking and the direction of the budget move hold, we can trust them more; if they change,
+  they are driven by the assumption and not by the data.
+- **Add a measure of underlying demand,** such as category search volume. *Problem: media and
+  underlying demand are hard to tell apart.* This needs new data, not just a model change.
 
 ## Repository layout
 
