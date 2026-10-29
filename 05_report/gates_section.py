@@ -1,7 +1,7 @@
 """Builds the "Acceptance gates" part of reports/results.md.
 
 Rules and thresholds come from config/gates.toml; the latest results come from
-outputs/gates/gates.json. This only documents the gates, it does not run them.
+outputs/03_validate/gates.json. This only documents the gates, it does not run them.
 """
 
 import json
@@ -32,7 +32,7 @@ def fmt(value):
 
 def basis_values(cfg):
   """Numbers from the EDA that the 'basis' texts in gates.toml refer to."""
-  noise = load_json("eda/eda_summary.json")["noise_floor"]
+  noise = load_json("01_eda/eda_summary.json")["noise_floor"]
   mape_max = cfg["gates"]["cv"]["thresholds"]["cv_national_mape_max"]
   return {
       "nat_floor": noise["national_mape_vs_13wk_ma"],
@@ -100,7 +100,7 @@ def gate_details(name, gate, found, basis):
 def section():
   """Returns the lines of the 'Acceptance gates' part."""
   cfg = load_gates_config()
-  gates = load_json("gates/gates.json")
+  gates = load_json("03_validate/gates.json")
   basis = basis_values(cfg)
 
   summary = [

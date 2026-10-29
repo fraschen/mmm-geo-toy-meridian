@@ -11,7 +11,7 @@ historical spend in every period; incremental revenue summed over the 52-week
 window; paid channels only), for the optimal and the historical allocation.
 
 Usage (from the project root):
-  .venv/bin/python model_build/run_budget_optimization.py
+  .venv/bin/python 04_scenarios/run_budget_optimization.py
 """
 
 import json
@@ -24,9 +24,9 @@ from meridian.analysis import tensors
 from meridian.analysis.analyzer import Analyzer
 from meridian.schema.serde import meridian_serde
 
-MODEL_PATH = "model_build/model/meridian_model.binpb"  # production model (config/model.toml)
+MODEL_PATH = "models/model/meridian_model.binpb"  # production model (config/model.toml)
 REPORT_DIR = "reports/meridian"
-OUT_DIR = "outputs/budget"
+OUT_DIR = "outputs/04_scenarios"
 START_DATE, END_DATE = "2023-01-23", "2024-01-15"
 SCENARIOS = {"main": 0.2, "stress": 0.5}
 CI = (0.03, 0.97)

@@ -1,7 +1,7 @@
 """Model health check and Model Results Summary (meridian-result-visualization skill).
 
 Usage (from the project root):
-  .venv/bin/python model_build/results_report.py
+  .venv/bin/python 03_validate/results_report.py
 """
 
 import json
@@ -11,7 +11,7 @@ from meridian.analysis import summarizer
 from meridian.analysis.review import reviewer
 from meridian.schema.serde import meridian_serde
 
-MODEL_PATH = "model_build/model/meridian_model.binpb"  # production model (config/model.toml)
+MODEL_PATH = "models/model/meridian_model.binpb"  # production model (config/model.toml)
 OUTPUT_DIR = "reports/meridian"
 START_DATE, END_DATE = "2021-01-25", "2024-01-15"
 
@@ -48,8 +48,8 @@ def main():
              "status": r.case.status.name, "details": _plain(dict(r.details)),
              "recommendation": getattr(r, "recommendation", "")}
             for r in review_summary.results]
-  os.makedirs("outputs/meridian", exist_ok=True)
-  with open("outputs/meridian/health_check.json", "w") as f:
+  os.makedirs("outputs/03_validate", exist_ok=True)
+  with open("outputs/03_validate/health_check.json", "w") as f:
     json.dump({"overall_status": review_summary.overall_status.name,
                "health_score": float(review_summary.health_score),
                "summary_message": review_summary.summary_message,

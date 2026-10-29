@@ -1,6 +1,6 @@
 """Phase 6 inputs: posterior quantities for the reports (selected model only).
 
-Writes outputs/analysis/:
+Writes outputs/05_report/:
   national_weekly.csv     observed, expected (mean + 94% predictive interval), baseline
   weekly_contribution.csv posterior-mean weekly incremental revenue by paid channel
   contributions.json      total baseline / channel / non-paid contributions
@@ -19,11 +19,11 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import CHANNELS, GEO, OUTPUTS, TIME, load_model, load_raw, write_json
-from gates import revenue_draws
+from common import (CHANNELS, GEO, OUTPUTS, TIME, load_model, load_raw, revenue_draws,
+                    write_json)
 
 CI = (0.03, 0.97)
-OUT = OUTPUTS / "analysis"
+OUT = OUTPUTS / "05_report"
 
 
 def main():
@@ -106,7 +106,7 @@ def main():
                         "national": float(np.mean((obs.sum(0) >= nlo) & (obs.sum(0) <= nhi)))}
   write_json(levels, OUT / "calibration_levels.json")
 
-  conv = json.load(open(OUTPUTS / "model" / "convergence.json"))
+  conv = json.load(open(OUTPUTS / "02_fit" / "convergence.json"))
   pd.DataFrame([{"variable": v, **p} for v, p in conv["per_variable"].items()]
                ).to_csv(OUT / "rhat_by_variable.csv", index=False)
   print(f"Wrote {OUT}")

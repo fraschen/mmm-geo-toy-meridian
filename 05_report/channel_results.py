@@ -17,7 +17,7 @@ import pandas as pd
 from common import CHANNELS, OUTPUTS, load_model, load_model_config, load_raw, write_json
 
 CI = (0.03, 0.97)
-OUT = OUTPUTS / "results"
+OUT = OUTPUTS / "05_report"
 
 
 def stats(x):
@@ -29,7 +29,7 @@ def main():
   from meridian.analysis.analyzer import Analyzer
   OUT.mkdir(parents=True, exist_ok=True)
   model_cfg = load_model_config()["model"]
-  gates = json.load(open(OUTPUTS / "gates" / "gates.json"))
+  gates = json.load(open(OUTPUTS / "03_validate" / "gates.json"))
   name = model_cfg["name"]
   mmm = load_model()
   an = Analyzer(model_context=mmm.model_context, inference_data=mmm.inference_data)
@@ -41,7 +41,7 @@ def main():
   raw = load_raw()
   spend = raw[[f"{c}_spend" for c in CHANNELS]].sum().to_numpy()
   total_rev = float(raw["revenue"].sum())
-  roi_cv = pd.read_csv(OUTPUTS / "validation" / "cv_roi.csv")
+  roi_cv = pd.read_csv(OUTPUTS / "03_validate" / "cv_roi.csv")
   n_conv_folds = roi_cv["fold"].nunique() if len(roi_cv) else 0
   ch_gate = next(g for g in gates["gates"] if g["gate"] == "channel_roi_checks")["value"]
   period = f"{raw['time'].min().date()} to {raw['time'].max().date()}"

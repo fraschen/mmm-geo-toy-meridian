@@ -29,9 +29,9 @@ seed = 20260128
 n_prior_draws = 500
 
 [paths]
-model = "model_build/model"              # full-data fit: meridian_model.binpb
-cv = "model_build/cv"                    # validation refits: train<N>/meridian_model.binpb
-calibrated = "model_build/model_calibrated"   # optional, HYPOTHETICAL lift test
+model = "models/model"              # full-data fit: meridian_model.binpb
+cv = "models/cv"                    # validation refits: train<N>/meridian_model.binpb
+calibrated = "models/model_calibrated"   # optional, HYPOTHETICAL lift test
 
 [validation]                 # rolling-origin CV; the last fold is the 13-week holdout
 train_weeks = [104, 117, 130, 143]

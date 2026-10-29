@@ -49,7 +49,7 @@ def main():
       "end_date": END,
       "test_geos": ";".join(test_geos),
       "control_geos": ";".join(control_geos),
-      "source": "HYPOTHETICAL: invented for demonstration by scripts/make_hypothetical_lift_test.py",
+      "source": "HYPOTHETICAL: invented for demonstration by 04_scenarios/make_hypothetical_lift_test.py",
   }
   pd.DataFrame([row]).to_csv(OUT / "lift_tests.csv", index=False)
   print(f"Wrote {OUT / 'lift_tests.csv'} (HYPOTHETICAL; test geos {test_geos}, spend {spend:,.0f})")

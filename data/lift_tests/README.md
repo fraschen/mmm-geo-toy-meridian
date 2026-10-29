@@ -1,12 +1,11 @@
 # Lift test results (calibration input)
 
 > **The only row currently in `lift_tests.csv` is HYPOTHETICAL.** It was invented by
-> `scripts/make_hypothetical_lift_test.py` to demonstrate calibration. It is not
+> `04_scenarios/make_hypothetical_lift_test.py` to demonstrate calibration. It is not
 > an experiment result.
 
 `lift_tests.csv` holds one row per experiment. Replace or add rows with real results.
-The calibration step (`model_build/build_model.py --spec
-linear_strong_pool_lag4_calibrated`) passes every row to Meridian's
+The calibration step (`02_fit/build_model.py --calibrated`) passes every row to Meridian's
 `CalibrationBuilder.with_incrementality_experiment_result`.
 
 | column | type | meaning |

@@ -111,7 +111,7 @@ What a reader should keep in mind.
 
 # Part 2: Measurement
 
-National channel results for the model over all 156 weeks (2021-01-25 to 2024-01-15). Revenue = conversions x revenue per conversion. Health and caveats: Part 1. Meridian's native reports: [Model Results Summary](meridian/results_summary.html), budget optimization [main](meridian/optimization_main.html) and [stress](meridian/optimization_stress.html). Machine-readable: `outputs/results/channel_results.csv` (+ `_metadata.json`).
+National channel results for the model over all 156 weeks (2021-01-25 to 2024-01-15). Revenue = conversions x revenue per conversion. Health and caveats: Part 1. Meridian's native reports: [Model Results Summary](meridian/results_summary.html), budget optimization [main](meridian/optimization_main.html) and [stress](meridian/optimization_stress.html). Machine-readable: `outputs/05_report/channel_results.csv` (+ `_metadata.json`).
 
 ## Channel results
 
@@ -259,7 +259,7 @@ Blocking failures: cv_fold_104, cv_fold_117, cv_fold_130, cv_holdout, roi_fold_s
 - **Rule:** Raw CSV matches its pinned SHA-256; balanced 40 x 156 geo-week panel; no missing values; no duplicate geo-weeks; spend, impressions, KPI, population and revenue per KPI are non-negative. FAIL if any check is false.
 - **Source of threshold:** study brief
 - **Basis:** Hard data checks; any failure means the inputs are not the documented dataset.
-- **Enforced in:** `scripts/gates.py (data_integrity), values from scripts/eda.py`
+- **Enforced in:** `03_validate/gates.py (data_integrity), values from 01_eda/eda.py`
 
 | threshold | value |
 |---|---|
@@ -280,7 +280,7 @@ Latest result:
 - **Rule:** Share of national weekly revenue observations inside the prior predictive 94% interval. FAIL below the minimum.
 - **Source of threshold:** project
 - **Basis:** Rules out priors that cannot generate the observed data. A weak check: the prior predictive interval is wide by design, so a PASS says little about prior quality.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|
@@ -303,7 +303,7 @@ Note: prior predictive 94% interval width / observed mean: 7.06
 - **Rule:** For every element of every posterior variable (elements constant across all draws, such as the baseline geo's intercept, are skipped): max R-hat, min bulk ESS, min tail ESS; and the share of divergent NUTS transitions. FAIL if any threshold is breached. A failing fit records only its convergence diagnostics; its ROI, fit and contributions are never reported.
 - **Source of threshold:** project (revised; see meta.note)
 - **Basis:** ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent draws (20 of 4000) are tolerated.
-- **Enforced in:** `scripts/check_convergence.py (make convergence)`
+- **Enforced in:** `02_fit/check_convergence.py (make convergence)`
 
 | threshold | value |
 |---|---|
@@ -328,7 +328,7 @@ Note: R-hat <= 1.05, bulk/tail ESS >= 400, <= 0.5% divergent draws (config/gates
 - **Rule:** R2 of the posterior-mean prediction at geo-week and national weekly level. FAIL if either is below its minimum.
 - **Source of threshold:** project
 - **Basis:** Geo-week: revenue scales with population, so geo levels dominate the variance; a model must explain at least half of it. National: weekly revenue has CV 6.9% and is close to white noise (lag-1 -0.02), so there is little variance to explain and a modest R2 is the realistic bar.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|
@@ -350,7 +350,7 @@ Latest result:
 - **Rule:** Share of observations inside the 94% posterior predictive interval, at geo-week and national level. FAIL outside the range.
 - **Source of threshold:** project
 - **Basis:** Nominal 94%; 85-99% allows for sampling noise. Below: intervals too narrow; above: too wide.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|
@@ -371,7 +371,7 @@ Latest result:
 - **Rule:** R2 after removing each geo's mean (week-to-week signal within geos). WARN below the minimum.
 - **Source of threshold:** study brief (as a warning)
 - **Basis:** Geo-week revenue has a within-geo CV of 30% and is close to white noise, so most within-geo variance is unexplainable; this flags a model with almost no within-geo signal.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|
@@ -392,7 +392,7 @@ Latest result:
 - **Rule:** Lag-1 autocorrelation of residuals: national weekly series and median across geos. WARN if either absolute value exceeds the maximum.
 - **Source of threshold:** study brief (as a warning)
 - **Basis:** Revenue itself has lag-1 autocorrelation near 0 (EDA), so residual autocorrelation signals missing time structure.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|
@@ -413,7 +413,7 @@ Latest result:
 - **Rule:** Each fold is refitted on its training weeks only (all scaling inside the fold). FAIL if the fold fit does not pass the convergence gate (no forecast evidence), or if any of: forecast/in-sample MAPE ratio above the maximum (geo-week or national); national weekly MAPE above the maximum; 94% interval coverage below the minimum (geo-week or national).
 - **Source of threshold:** study brief
 - **Basis:** National MAPE: a 13-week moving average has MAPE 5.1% nationally, so 10% is about 1.9x the noise floor; kept at the study-brief value. The error ratio and coverage are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: its noise floor is 23%.
-- **Enforced in:** `scripts/validate_cv.py (metrics), scripts/gates.py (gate)`
+- **Enforced in:** `03_validate/validate_cv.py (metrics), 03_validate/gates.py (gate)`
 
 | threshold | value |
 |---|---|
@@ -441,7 +441,7 @@ Note: Fold fit did not converge; no forecast evidence (diagnostics only).
 - **Rule:** Per channel, max/min of the posterior-mean ROI across converged folds. WARN above the warn ratio, FAIL above the fail ratio. FAIL (not assessable) with fewer than 2 converged folds.
 - **Source of threshold:** study brief
 - **Basis:** ROI that changes several-fold when a quarter of data is added is not a stable estimate.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|
@@ -465,7 +465,7 @@ Note: Not assessable: fewer than two converged fold fits.
 - **Rule:** Two warnings per channel. Prior-driven: ROI contraction (1 - posterior sd / prior sd) below the minimum. Payback undetermined: P(ROI > 1) strictly between the two bounds.
 - **Source of threshold:** study brief (bounds 0.1 / 0.9); project (contraction 0.30)
 - **Basis:** Contraction below 0.30 means the posterior keeps more than 70% of the prior spread, so the data say little. A payback call needs at least 90% posterior probability either way.
-- **Enforced in:** `scripts/gates.py`
+- **Enforced in:** `03_validate/gates.py`
 
 | threshold | value |
 |---|---|

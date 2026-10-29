@@ -1,7 +1,7 @@
 """Extended EDA (`make eda`): summary JSON and figures.
 
 Data checks and exploratory tests that inform the model specification. The
-numbers in reports/eda.md are read from outputs/eda/eda_summary.json, produced
+numbers in reports/eda.md are read from outputs/01_eda/eda_summary.json, produced
 here.
 
 Revenue is conversions x revenue_per_conversion (the modelled KPI is
@@ -28,7 +28,7 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
 FIG = FIGURES / "eda"
 FIG.mkdir(parents=True, exist_ok=True)
-OUT = OUTPUTS / "eda"
+OUT = OUTPUTS / "01_eda"
 N_SIM = 10_000
 MAX_LAG = 8
 SEASON = 52

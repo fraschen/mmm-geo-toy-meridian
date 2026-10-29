@@ -68,7 +68,7 @@ checks and the ROI-stability check fail; each channel carries a warning that its
 ## What the model can tell a client
 
 Details in [reports/results.md](reports/results.md#part-2-measurement); the channel table is also in
-`outputs/results/channel_results.csv`.
+`outputs/05_report/channel_results.csv`.
 
 - **Media as a whole** drove about 256M of 1,319M revenue (19%), somewhere between 177M and 364M.
 - **Which channels look stronger:** Channel3 and Channel4 have the highest returns, and Channel0 the
@@ -150,10 +150,15 @@ checked before use. What we learned from it: [reports/eda.md](reports/eda.md).
 config/model.toml         the model we run
 config/gates.toml         the acceptance checks
 data/                     the raw data file and the lift-test format
-model_build/              Meridian scripts: build the model, health report, budget scenarios
-scripts/                  data checks, forecast tests, gates, results, reports
+common.py, model_spec.py  shared code: paths and data loading; the model definition
+01_eda/                   data checks and exploratory tests
+02_fit/                   fit the model, check that it converged
+03_validate/              forecast tests on shorter histories, Meridian health check, acceptance gates
+04_scenarios/             budget scenarios, the hypothetical lift test and calibration
+05_report/                channel results and the results report
 docker/                   container checks: the EDA reproduces, sampling runs
-outputs/                  the numbers behind every report
+models/                   fitted models (not committed) and their settings
+outputs/                  the numbers behind every report, in the folder of the phase that wrote them
 reports/                  eda.md, results.md, figures, Meridian reports
 Makefile, Dockerfile, requirements.lock
 ```

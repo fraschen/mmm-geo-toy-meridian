@@ -15,16 +15,13 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1] / "model_build"))
-
 from common import (CHANNELS, GEO, OUTPUTS, ROOT, SEED, TIME, build_input_data,  # noqa: E402
-                    load_model, load_raw, write_json)
+                    convergence, load_model, load_raw, write_json)
 from make_hypothetical_lift_test import N_TEST_GEOS, stratified_geos  # noqa: E402
-from check_convergence import convergence  # noqa: E402
 
 CI = (0.03, 0.97)
 N_ALT = 20
-OUT = OUTPUTS / "calibration"
+OUT = OUTPUTS / "04_scenarios"
 
 
 def summarize(draws):
@@ -42,9 +39,9 @@ def roi(mmm, **kw):
 def calibrated_prior_for(test_spend, test):
   """Calibrated Channel3 prior (mean, sd) for a given experiment spend."""
   import jax
-  import build_model as bm
+  from meridian import backend
   from meridian.model.calibration import prior_builder
-  tfd = bm.backend.tfd
+  tfd = backend.tfd
   default = tfd.LogNormal(np.float64(0.2), np.float64(0.9), name="roi_m")
   b = prior_builder.CalibrationBuilder(build_input_data(), custom_prior=default,
                                        baseline_prior=default, max_lag=4)

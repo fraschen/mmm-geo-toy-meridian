@@ -5,4 +5,4 @@ __pycache__/
 artifacts/
 *.binpb
 *.log
-model_build/cv/*.log
+models/cv/*.log

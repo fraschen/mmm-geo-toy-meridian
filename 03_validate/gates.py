@@ -1,6 +1,6 @@
 """Phase 5: automated gates for the selected spec (`make gates`).
 
-Exits non-zero if any blocking gate fails. Writes outputs/gates/gates.json. Rules, thresholds and their basis are in
+Exits non-zero if any blocking gate fails. Writes outputs/03_validate/gates.json. Rules, thresholds and their basis are in
 config/gates.toml; accuracy thresholds are set against the EDA noise floor
 (eda_summary.json).
 """
@@ -14,36 +14,17 @@ import numpy as np
 import pandas as pd
 
 from common import (CHANNELS, GEO, OUTPUTS, TIME, load_raw, sha256, RAW_CSV,
-                    DATA_SHA256, load_gates_config, load_model, load_model_config,
+                    DATA_SHA256, load_gates_config, load_model, load_model_config, revenue_draws,
                     write_json)
 
 CI = (0.03, 0.97)
-OUT = OUTPUTS / "gates"
+OUT = OUTPUTS / "03_validate"
 
 # Rules, thresholds and their basis: config/gates.toml.
 CONFIG = load_gates_config()
 THRESHOLDS = {k: v for g in CONFIG["gates"].values() for k, v in g["thresholds"].items()
               if g is not CONFIG["gates"]["convergence"]}
 BASIS = {name: g["basis"] for name, g in CONFIG["gates"].items()}
-
-
-def revenue_draws(mmm, use_posterior=True):
-  """Expected and predictive revenue draws, (chain, draw, geo, time)."""
-  from meridian import backend
-  from meridian.analysis.analyzer import Analyzer
-  an = Analyzer(model_context=mmm.model_context, inference_data=mmm.inference_data)
-  mean_scaled = np.asarray(an.expected_outcome(
-      use_posterior=use_posterior, use_kpi=True, aggregate_geos=False,
-      aggregate_times=False, inverse_transform_outcome=False))
-  group = mmm.inference_data.posterior if use_posterior else mmm.inference_data.prior
-  sigma = np.asarray(group["sigma"])
-  sigma = sigma[..., None, None] if sigma.ndim == 2 else sigma[..., None]
-  rng = np.random.default_rng(1 if use_posterior else 2)
-  pred_scaled = mean_scaled + sigma * rng.standard_normal(mean_scaled.shape)
-  tr = mmm.model_context.kpi_transformer
-  inv = lambda x: np.asarray(tr.inverse(backend.to_tensor(x, dtype=backend.float_dtype)))
-  rpk = np.asarray(mmm.input_data.revenue_per_kpi)
-  return inv(mean_scaled) * rpk, inv(pred_scaled) * rpk
 
 
 def r2(obs, pred):
@@ -67,12 +48,12 @@ def gate(name, status, value, threshold, blocking, note=""):
 
 def main():
   OUT.mkdir(parents=True, exist_ok=True)
-  eda = json.load(open(OUTPUTS / "eda" / "eda_summary.json"))
+  eda = json.load(open(OUTPUTS / "01_eda" / "eda_summary.json"))
   model_cfg = load_model_config()["model"]
-  cv = json.load(open(OUTPUTS / "validation" / "cv_metrics.json"))
-  health = json.load(open(OUTPUTS / "meridian" / "health_check.json"))
+  cv = json.load(open(OUTPUTS / "03_validate" / "cv_metrics.json"))
+  health = json.load(open(OUTPUTS / "03_validate" / "health_check.json"))
   name = model_cfg["name"]
-  conv = json.load(open(OUTPUTS / "model" / "convergence.json"))
+  conv = json.load(open(OUTPUTS / "02_fit" / "convergence.json"))
   nf = eda["noise_floor"]
   basis = {k: v.format(nat_floor=nf["national_mape_vs_13wk_ma"],
                        ratio=THRESHOLDS["cv_national_mape_max"] / nf["national_mape_vs_13wk_ma"],
@@ -106,7 +87,7 @@ def main():
                     f"prior predictive 94% interval width / observed mean: "
                     f"{float(np.mean(phi - plo) / obs.sum(0).mean()):.2f}"))
 
-  # 3. Convergence (config/gates.toml; outputs/model/convergence.json).
+  # 3. Convergence (config/gates.toml; outputs/02_fit/convergence.json).
   th = conv["thresholds"]
   gates.append(gate("convergence", "PASS" if conv["converged"] else "FAIL",
                     {"max_rhat": conv["max_rhat"], "min_ess_bulk": conv["min_ess_bulk"],
@@ -168,7 +149,7 @@ def main():
                        "coverage_min": T["cv_coverage_min"]}, True))
 
   # 7. ROI stability across folds (converged folds only).
-  roi_cv = pd.read_csv(OUTPUTS / "validation" / "cv_roi.csv")
+  roi_cv = pd.read_csv(OUTPUTS / "03_validate" / "cv_roi.csv")
   n_conv = roi_cv["fold"].nunique() if len(roi_cv) else 0
   if n_conv < 2:
     gates.append(gate("roi_fold_stability", "FAIL", {"converged_folds": int(n_conv)},

@@ -1,8 +1,8 @@
 # Automated acceptance gates: the single source of the rules and their thresholds.
 #
-# Read by scripts/check_convergence.py (convergence gate) and scripts/gates.py
+# Read by 02_fit/check_convergence.py (convergence gate) and 03_validate/gates.py
 # (all other gates). Part 3 of reports/results.md is generated from this file
-# plus the latest results in outputs/gates/gates.json.
+# plus the latest results in outputs/03_validate/gates.json.
 #
 # Fields per gate:
 #   plain       the question the gate answers, in plain words.
@@ -13,7 +13,7 @@
 #   thresholds  numeric values used by the code (keys are read by the scripts).
 #   source      "study brief" if the value comes from the original brief, "project" if set here.
 #   basis       why the threshold has this value. {placeholders} are filled from
-#               outputs/eda/eda_summary.json when gates.py runs.
+#               outputs/01_eda/eda_summary.json when gates.py runs.
 #   enforced_in script and function that apply the rule.
 
 [meta]
@@ -34,7 +34,7 @@ non-negative. FAIL if any check is false."""
 thresholds = {}
 source = "study brief"
 basis = "Hard data checks; any failure means the inputs are not the documented dataset."
-enforced_in = "scripts/gates.py (data_integrity), values from scripts/eda.py"
+enforced_in = "03_validate/gates.py (data_integrity), values from 01_eda/eda.py"
 
 # --------------------------------------------------------------------------- prior
 [gates.prior_predictive_coverage]
@@ -47,7 +47,7 @@ thresholds = { prior_predictive_national_coverage_min = 0.80 }
 source = "project"
 basis = """Rules out priors that cannot generate the observed data. A weak check: the prior \
 predictive interval is wide by design, so a PASS says little about prior quality."""
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 # --------------------------------------------------------------------- convergence
 [gates.convergence]
@@ -63,7 +63,7 @@ source = "project (revised; see meta.note)"
 basis = """ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than \
 their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent \
 draws (20 of 4000) are tolerated."""
-enforced_in = "scripts/check_convergence.py (make convergence)"
+enforced_in = "02_fit/check_convergence.py (make convergence)"
 
 # ------------------------------------------------------------------ in-sample fit
 [gates.insample_r2]
@@ -77,7 +77,7 @@ basis = """Geo-week: revenue scales with population, so geo levels dominate the 
 model must explain at least half of it. National: weekly revenue has CV {nat_cv:.1%} and is \
 close to white noise (lag-1 {nat_ac:.2f}), so there is little variance to explain and a modest \
 R2 is the realistic bar."""
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 [gates.insample_coverage]
 plain = "Do the model's 94% ranges contain about 94% of past weeks, neither too narrow nor too wide?"
@@ -87,7 +87,7 @@ checks = "Share of observations inside the 94% posterior predictive interval, at
 thresholds = { insample_coverage_range = [0.85, 0.99] }
 source = "project"
 basis = "Nominal 94%; 85-99% allows for sampling noise. Below: intervals too narrow; above: too wide."
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 [gates.within_geo_r2]
 plain = "Does the model pick up week-to-week movements within each geo, not just the differences between geos?"
@@ -98,7 +98,7 @@ thresholds = { warn_within_geo_r2_min = 0.10 }
 source = "study brief (as a warning)"
 basis = """Geo-week revenue has a within-geo CV of {geo_cv:.0%} and is close to white noise, so \
 most within-geo variance is unexplainable; this flags a model with almost no within-geo signal."""
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 [gates.residual_autocorrelation]
 plain = "Are the model's misses random, or does it repeatedly miss in the same direction week after week?"
@@ -108,7 +108,7 @@ checks = "Lag-1 autocorrelation of residuals: national weekly series and median 
 thresholds = { warn_residual_lag1_abs_max = 0.20 }
 source = "study brief (as a warning)"
 basis = "Revenue itself has lag-1 autocorrelation near 0 (EDA), so residual autocorrelation signals missing time structure."
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 # ------------------------------------------------------------- out-of-sample (CV)
 [gates.cv]
@@ -127,7 +127,7 @@ basis = """National MAPE: a 13-week moving average has MAPE {nat_floor:.1%} nati
 about {ratio:.1f}x the noise floor; kept at the study-brief value. The error ratio and coverage \
 are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: \
 its noise floor is {geo_floor:.0%}."""
-enforced_in = "scripts/validate_cv.py (metrics), scripts/gates.py (gate)"
+enforced_in = "03_validate/validate_cv.py (metrics), 03_validate/gates.py (gate)"
 
 [gates.roi_fold_stability]
 plain = "Do the channel ROIs stay roughly the same when the model is refitted on less data?"
@@ -138,7 +138,7 @@ warn ratio, FAIL above the fail ratio. FAIL (not assessable) with fewer than 2 c
 thresholds = { roi_fold_ratio_warn = 2.0, roi_fold_ratio_fail = 5.0 }
 source = "study brief"
 basis = "ROI that changes several-fold when a quarter of data is added is not a stable estimate."
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 # -------------------------------------------------------------------- per channel
 [gates.channel_roi_checks]
@@ -151,7 +151,7 @@ thresholds = { roi_contraction_min = 0.30, p_roi_gt_1_determined = [0.10, 0.90] 
 source = "study brief (bounds 0.1 / 0.9); project (contraction 0.30)"
 basis = """Contraction below 0.30 means the posterior keeps more than 70% of the prior spread, so \
 the data say little. A payback call needs at least 90% posterior probability either way."""
-enforced_in = "scripts/gates.py"
+enforced_in = "03_validate/gates.py"
 
 # ---------------------------------------------------- Meridian's own health checks
 [meridian_health]
@@ -162,4 +162,4 @@ prior-posterior shift, ROI plausibility). Reported next to our gates, not gating
 looser_than_ours = """Convergence: R-hat < 1.2 only (no ESS or divergence check). Goodness of fit: \
 R2/MAPE for guidance, no pass bar. Bayesian PPP: total outcome only, while our gate checks \
 weekly interval coverage."""
-enforced_in = "model_build/results_report.py (outputs/meridian/health_check.json)"
+enforced_in = "03_validate/results_report.py (outputs/03_validate/health_check.json)"

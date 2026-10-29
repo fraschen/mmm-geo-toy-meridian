@@ -43,25 +43,25 @@ def dates(ax):
 # ----------------------------------------------------------------------------
 def load_all():
   d = {k: J(p) for k, p in {
-      "eda": "eda/eda_summary.json",
-      "gates": "gates/gates.json", "cv": "validation/cv_metrics.json",
-      "contrib": "analysis/contributions.json", "ident": "analysis/identification.json",
-      "levels": "analysis/calibration_levels.json", "cal": "calibration/calibration.json",
-      "main": "budget/scenario_main.json", "stress": "budget/scenario_stress.json"}.items()}
+      "eda": "01_eda/eda_summary.json",
+      "gates": "03_validate/gates.json", "cv": "03_validate/cv_metrics.json",
+      "contrib": "05_report/contributions.json", "ident": "05_report/identification.json",
+      "levels": "05_report/calibration_levels.json", "cal": "04_scenarios/calibration.json",
+      "main": "04_scenarios/scenario_main.json", "stress": "04_scenarios/scenario_stress.json"}.items()}
   d["gcfg"] = load_gates_config()
-  d["conv"] = J("model/convergence.json")
+  d["conv"] = J("02_fit/convergence.json")
   d["cfg"] = load_model_config()
-  d["nat"] = pd.read_csv(OUTPUTS / "analysis" / "national_weekly.csv", parse_dates=["time"])
-  d["wc"] = pd.read_csv(OUTPUTS / "analysis" / "weekly_contribution.csv", parse_dates=["time"])
-  d["rpp"] = pd.read_csv(OUTPUTS / "analysis" / "roi_prior_posterior.csv")
-  d["hill"] = pd.read_csv(OUTPUTS / "analysis" / "hill_curves.csv")
-  d["resp"] = pd.read_csv(OUTPUTS / "analysis" / "response_curves.csv")
-  d["rhat"] = pd.read_csv(OUTPUTS / "analysis" / "rhat_by_variable.csv")
-  d["res"] = pd.read_csv(OUTPUTS / "results" / "channel_results.csv")
-  d["cvf"] = pd.read_csv(OUTPUTS / "validation" / "cv_national_forecasts.csv", parse_dates=["time"])
-  d["cvroi"] = pd.read_csv(OUTPUTS / "validation" / "cv_roi.csv")
-  d["rba"] = pd.read_csv(OUTPUTS / "calibration" / "roi_before_after.csv")
-  d["geo"] = pd.read_csv(OUTPUTS / "calibration" / "geo_choice_check.csv")
+  d["nat"] = pd.read_csv(OUTPUTS / "05_report" / "national_weekly.csv", parse_dates=["time"])
+  d["wc"] = pd.read_csv(OUTPUTS / "05_report" / "weekly_contribution.csv", parse_dates=["time"])
+  d["rpp"] = pd.read_csv(OUTPUTS / "05_report" / "roi_prior_posterior.csv")
+  d["hill"] = pd.read_csv(OUTPUTS / "05_report" / "hill_curves.csv")
+  d["resp"] = pd.read_csv(OUTPUTS / "05_report" / "response_curves.csv")
+  d["rhat"] = pd.read_csv(OUTPUTS / "05_report" / "rhat_by_variable.csv")
+  d["res"] = pd.read_csv(OUTPUTS / "05_report" / "channel_results.csv")
+  d["cvf"] = pd.read_csv(OUTPUTS / "03_validate" / "cv_national_forecasts.csv", parse_dates=["time"])
+  d["cvroi"] = pd.read_csv(OUTPUTS / "03_validate" / "cv_roi.csv")
+  d["rba"] = pd.read_csv(OUTPUTS / "04_scenarios" / "roi_before_after.csv")
+  d["geo"] = pd.read_csv(OUTPUTS / "04_scenarios" / "geo_choice_check.csv")
   return d
 
 
@@ -601,7 +601,7 @@ def measurement(d, figs):
       "Part 1. Meridian's native reports: "
       "[Model Results Summary](meridian/results_summary.html), budget optimization "
       "[main](meridian/optimization_main.html) and [stress](meridian/optimization_stress.html). "
-      "Machine-readable: `outputs/results/channel_results.csv` (+ `_metadata.json`).",
+      "Machine-readable: `outputs/05_report/channel_results.csv` (+ `_metadata.json`).",
       "",
       "## Channel results",
       "",

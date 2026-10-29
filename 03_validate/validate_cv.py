@@ -2,7 +2,7 @@
 
 Folds train on weeks 1-104, 1-117, 1-130, 1-143 and forecast the next 13 weeks;
 the 1-143 fold is the final 13-week holdout. Each fold model is fitted on the
-truncated data (model_build/build_model.py --train-weeks), so every data-derived
+truncated data (02_fit/build_model.py --train-weeks), so every data-derived
 scaling (KPI mean/sd, media medians, control centring) comes from training weeks.
 
 Forecasts use Meridian's own mean function (Analyzer.get_kpi_means) on inputs
@@ -21,16 +21,15 @@ import dataclasses
 import numpy as np
 import pandas as pd
 
-from common import (GEO, OUTPUTS, RAW_CSV, SEED, TIME, load_model, load_model_config,
+from common import (GEO, OUTPUTS, RAW_CSV, SEED, TIME, convergence, load_model, load_model_config,
                     build_input_data, load_raw, write_json)
-from check_convergence import convergence
 
 _VAL = load_model_config()["validation"]
 SPEC = load_model_config()["model"]["name"]
 FOLDS = _VAL["train_weeks"]
 HORIZON = _VAL["horizon"]
 CI = (0.03, 0.97)  # 94% interval
-OUT = OUTPUTS / "validation"
+OUT = OUTPUTS / "03_validate"
 
 
 def fold_label(t0):

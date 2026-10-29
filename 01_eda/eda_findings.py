@@ -1,4 +1,4 @@
-"""Writes reports/eda.md: EDA findings generated from outputs/eda/eda_summary.json.
+"""Writes reports/eda.md: EDA findings generated from outputs/01_eda/eda_summary.json.
 
 Each section leads with a plain-language takeaway and what it means for the model;
 the test statistics sit in a collapsed "Technical details" block.
@@ -8,7 +8,7 @@ import json
 
 from common import CHANNELS, OUTPUTS, ROOT
 
-s = json.load(open(OUTPUTS / "eda" / "eda_summary.json"))
+s = json.load(open(OUTPUTS / "01_eda" / "eda_summary.json"))
 d, cpm, tr, se, nf = s["data"], s["cpm"], s["trend"], s["seasonality"], s["noise_floor"]
 lag, col, pop = s["lag_correlation"], s["collinearity"], s["population"]
 gm, cc = s["spend_vs_geo_max"], s["controls_confounding"]
