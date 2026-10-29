@@ -469,11 +469,6 @@ def time_vs_geo(engine):
           "max_r2_time_variable": worst, "max_r2_geo": max(by_geo.values())}
 
 
-def prior_negative_baseline(engine):
-  """Probability, under the priors alone, that the baseline (revenue without media) goes negative."""
-  return float(engine.check_prior_probability().get_overall_artifacts()[0].prior_negative_baseline_prob)
-
-
 def meridian_checks():
   """Meridian's built-in data checks on the production model setup (priors only, no fitting).
 
@@ -489,7 +484,6 @@ def meridian_checks():
   return {"data_adequacy": data_adequacy(engine), "cost_per_media_unit": cost_per_media_unit(engine),
           "correlation": correlation(engine), "vif": vif(engine), "variability": variability(engine),
           "population": population(engine), "time_vs_geo": time_vs_geo(engine),
-          "prior_negative_baseline_prob": prior_negative_baseline(engine),
           "meridian_figures": meridian_figures(eda)}
 
 
@@ -497,14 +491,12 @@ def meridian_figures(eda):
   """Saves Meridian's EDA charts (Altair) as PNGs; geo-level series are summed to national."""
   charts = {
       "spend_share": eda.plot_relative_spend_share_barchart(geos=NATIONALIZE),
-      "kpi_with_knots": eda.plot_national_kpi_with_knots_time_series(),
       "population_media": eda.plot_population_raw_media_correlation(),
       "population_controls": eda.plot_population_treatment_correlation(),
       "kpi_boxplot": eda.plot_kpi_boxplot(geos=NATIONALIZE),
       "media_boxplot": eda.plot_treatments_without_non_media_boxplot(geos=NATIONALIZE),
       "controls_boxplot": eda.plot_controls_and_non_media_boxplot(geos=NATIONALIZE),
       "pairwise_correlation": eda.plot_pairwise_correlation(geos=NATIONALIZE),
-      "prior_mean": eda.plot_prior_mean(),
   }
   for name, chart in charts.items():
     chart.save(FIG / f"{name}.png", scale_factor=2)

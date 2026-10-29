@@ -37,38 +37,9 @@ Revenue per conversion barely changes (it varies by only 0.5%), so results in re
 ## Summary
 Nothing in the checks blocks the model. Two items are flagged for review, unusual CPMs and unusually large weeks, and both turn out to be harmless (see below).
 
-## Spend and media units
-**There is enough data.** 6,240 geo-weeks for about 50 main parameters: roughly 125 data points each.
-
-**Spend share.** Channel3 takes the largest share of the budget (40%) and Channel2 the smallest (6%). Small channels are harder to estimate, but none is small enough to need merging.
-
-![](figures/eda/spend_share.png)
-
-**Spend and impressions carry the same information.** In every channel, spend is impressions times a constant CPM (Channel0 7.33, Channel1 9.64, Channel2 7.43, Channel3 7.79, Channel4 7.79). An outlier check flags 200 geo-weeks as unusual CPMs, but they differ only in the sixth decimal place: rounding, not real variation. So it makes no difference whether the model uses spend or impressions.
-
-<details><summary>Technical details</summary>
-
-- Data-to-parameter ratio 124.8: (geos - 1) + knots (2) + controls + treatments, a rough count of the main parameters.
-- Spend share: Channel0 18.5%, Channel1 14.3%, Channel2 5.5%, Channel3 40.0%, Channel4 21.7%.
-- CPM range per channel (min to max): Channel0 7.332722-7.332724, Channel1 9.641230-9.641233, Channel2 7.430924-7.430925, Channel3 7.792840-7.792841, Channel4 7.791911-7.791912.
-
-</details>
-
-### How much room there is to spend more
-Most weeks run well below each geo's highest-ever spend, and some channels are often off (Channel2 is off in 64% of geo-weeks). **For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed shape of the response curve.
-
-<details><summary>Technical details</summary>
-
-- Share of geo-weeks with zero spend: Channel0 12.1%, Channel1 27.9%, Channel2 64.3%, Channel3 2.7%, Channel4 13.1%.
-- Median non-zero week as a share of the geo's maximum: Channel0 0.35, Channel1 0.29, Channel2 0.24, Channel3 0.41, Channel4 0.34.
-- Share of last-52-week geo-weeks above the geo's historical maximum if spend is raised 20%: Channel0 3.2%, Channel1 1.9%, Channel2 1.4%, Channel3 2.6%, Channel4 2.2%; raised 50%: Channel0 10.4%, Channel1 5.8%, Channel2 3.4%, Channel3 10.3%, Channel4 7.1%.
-
-</details>
-
-![](figures/eda/spend_vs_geo_max.png)
-
 ## Individual variables
-**Some weeks are unusually large.** An outlier check flags values far from a variable's typical range: 36 geo-weeks of revenue and 1,461 media and control values (3% of them). Spend is often zero and occasionally large, so many such points are expected. They are real values, not errors, and we keep them. Every variable varies enough to be estimated.
+### Revenue
+Revenue varies enough to be modelled. An outlier check flags 36 geo-weeks of revenue as unusually far from the typical range: real values, not errors, so we keep them.
 
 <details><summary>Technical details</summary>
 
@@ -76,17 +47,9 @@ Most weeks run well below each geo's highest-ever spend, and some channels are o
 
 </details>
 
-Summed nationally, the spread of revenue, media and the controls (circles are unusual weeks):
+Spread of national weekly revenue (circles are unusual weeks):
 
 ![](figures/eda/kpi_boxplot.png)
-
-![](figures/eda/media_boxplot.png)
-
-![](figures/eda/controls_boxplot.png)
-
-National revenue as the model sees it (scaled), with the baseline's two knots at the ends of the series:
-
-![](figures/eda/kpi_with_knots.png)
 
 ### Revenue grows slowly
 Revenue per year (each year is a block of 52 weeks, starting in late January):
@@ -125,6 +88,45 @@ A typical geo's weekly revenue moves up and down by about 30% around its average
 - Noise vs geo size: Spearman -0.33 between per-capita revenue noise and population; the quietest geo's noise is 0.60x the noisiest's. The model uses one noise level for all geos.
 
 </details>
+
+### Media and controls
+The same outlier check flags 1,461 media and control values (3% of them). Spend is often zero and occasionally large, so many such points are expected. They are real values, not errors, and we keep them. Every variable varies enough to be estimated.
+
+Spread of national weekly media and controls (circles are unusual weeks):
+
+![](figures/eda/media_boxplot.png)
+
+![](figures/eda/controls_boxplot.png)
+
+## Spend and media units
+**There is enough data.** 6,240 geo-weeks for about 50 main parameters: roughly 125 data points each.
+
+**Spend share.** Channel3 takes the largest share of the budget (40%) and Channel2 the smallest (6%). Small channels are harder to estimate, but none is small enough to need merging.
+
+![](figures/eda/spend_share.png)
+
+**Spend and impressions carry the same information.** In every channel, spend is impressions times a constant CPM (Channel0 7.33, Channel1 9.64, Channel2 7.43, Channel3 7.79, Channel4 7.79). An outlier check flags 200 geo-weeks as unusual CPMs, but they differ only in the sixth decimal place: rounding, not real variation. So it makes no difference whether the model uses spend or impressions.
+
+<details><summary>Technical details</summary>
+
+- Data-to-parameter ratio 124.8: (geos - 1) + knots (2) + controls + treatments, a rough count of the main parameters.
+- Spend share: Channel0 18.5%, Channel1 14.3%, Channel2 5.5%, Channel3 40.0%, Channel4 21.7%.
+- CPM range per channel (min to max): Channel0 7.332722-7.332724, Channel1 9.641230-9.641233, Channel2 7.430924-7.430925, Channel3 7.792840-7.792841, Channel4 7.791911-7.791912.
+
+</details>
+
+### How much room there is to spend more
+Most weeks run well below each geo's highest-ever spend, and some channels are often off (Channel2 is off in 64% of geo-weeks). **For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed shape of the response curve.
+
+<details><summary>Technical details</summary>
+
+- Share of geo-weeks with zero spend: Channel0 12.1%, Channel1 27.9%, Channel2 64.3%, Channel3 2.7%, Channel4 13.1%.
+- Median non-zero week as a share of the geo's maximum: Channel0 0.35, Channel1 0.29, Channel2 0.24, Channel3 0.41, Channel4 0.34.
+- Share of last-52-week geo-weeks above the geo's historical maximum if spend is raised 20%: Channel0 3.2%, Channel1 1.9%, Channel2 1.4%, Channel3 2.6%, Channel4 2.2%; raised 50%: Channel0 10.4%, Channel1 5.8%, Channel2 3.4%, Channel3 10.3%, Channel4 7.1%.
+
+</details>
+
+![](figures/eda/spend_vs_geo_max.png)
 
 ## Population scaling
 Each channel's spend tracks population almost perfectly (rank correlation 0.97 to 0.99): bigger geos spend more. The controls and Promo barely track population. **For the model:** revenue and media are expressed per person (the model's default); controls and Promo are not.
@@ -185,8 +187,3 @@ Keeping a variable that turns out not to matter costs little. But if advertising
 </details>
 
 ![](figures/eda/controls_correlation.png)
-
-## Prior specifications
-Before seeing any data, the priors expect the biggest channels by spend to contribute the most, with Channel3 first. Under the priors alone, the probability that media and the other drivers are credited with more than all of the revenue (a negative baseline) is 0.22, just above the usual review level of 0.20. That describes the priors, not the fit: the fitted model's probability is checked against the same 0.20 limit in the gates.
-
-![](figures/eda/prior_mean.png)

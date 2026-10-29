@@ -1,7 +1,9 @@
 """Writes reports/eda.md: EDA findings generated from outputs/01_eda/eda_summary.json.
 
-The page follows the sections of Meridian's EDA report and adds analyses where needed,
-presented as one set of checks.
+The page follows the sections of Meridian's EDA report (except its prior checks) and
+adds analyses where needed, presented as one set of checks. Revenue comes first, then
+the drivers.
+
 Each section leads with a plain-language takeaway and what it means for the model;
 the test statistics sit in a collapsed "Technical details" block.
 """
@@ -97,61 +99,15 @@ lines = [
     "unusually large weeks, and both turn out to be harmless (see below).",
     "",
 
-    "## Spend and media units",
-    f"**There is enough data.** {ad['n_data_points']:,} geo-weeks for about {ad['n_parameters']} main parameters: "
-    f"roughly {ad['ratio']:.0f} data points each.",
-    "",
-    f"**Spend share.** Channel3 takes the largest share of the budget ({pct(share['Channel3'], 0)}) and Channel2 the "
-    f"smallest ({pct(share['Channel2'], 0)}). Small channels are harder to estimate, but none is small enough to "
-    "need merging.",
-    "",
-    fig(mf["spend_share"]),
-    "",
-    "**Spend and impressions carry the same information.** In every channel, spend is impressions times a "
-    "constant CPM (" + ", ".join(f"{c} {cpm['cpm'][c]['median']:.2f}" for c in CHANNELS) + "). An outlier check flags "
-    f"{cpm['n_outliers_flagged']} geo-weeks as unusual CPMs, but they differ only in the sixth decimal place: "
-    "rounding, not real variation. So it makes no difference whether the model uses spend or impressions.",
-    *details(f"Data-to-parameter ratio {ad['ratio']:.1f}: (geos - 1) + knots ({ad['n_knots']}) + controls + "
-             "treatments, a rough count of the main parameters.",
-             "Spend share: " + ", ".join(f"{c} {pct(share[c])}" for c in CHANNELS) + ".",
-             "CPM range per channel (min to max): " + ", ".join(
-                 f"{c} {cpm['cpm'][c]['min']:.6f}-{cpm['cpm'][c]['max']:.6f}" for c in CHANNELS) + "."),
-
-    "### How much room there is to spend more",
-    "Most weeks run well below each geo's highest-ever spend, and some channels are often off "
-    f"(Channel2 is off in {pct(gm['Channel2']['share_zero_geo_weeks'], 0)} of geo-weeks). "
-    "**For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all "
-    "geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed "
-    "shape of the response curve.",
-    *details("Share of geo-weeks with zero spend: " + ", ".join(f"{c} {pct(gm[c]['share_zero_geo_weeks'])}" for c in CHANNELS) + ".",
-             "Median non-zero week as a share of the geo's maximum: "
-             + ", ".join(f"{c} {gm[c]['nonzero_ratio_to_geo_max_quantiles']['0.5']:.2f}" for c in CHANNELS) + ".",
-             "Share of last-52-week geo-weeks above the geo's historical maximum if spend is raised 20%: "
-             + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.2'])}" for c in CHANNELS)
-             + "; raised 50%: " + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.5'])}" for c in CHANNELS) + "."),
-    fig(gm["figure"]),
-    "",
-
     "## Individual variables",
-    "**Some weeks are unusually large.** An outlier check flags values far from a variable's typical range: "
-    f"{var['outliers_flagged']['kpi_scaled']} geo-weeks of revenue and {var['outliers_flagged']['treatment_control_scaled']:,} "
-    f"media and control values ({pct(var['outliers_flagged']['treatment_control_scaled'] / n_tc, 0)} of them). Spend is often zero "
-    "and occasionally large, so many such points are expected. They are real values, not errors, and we keep them. "
-    "Every variable varies enough to be estimated.",
+    "### Revenue",
+    f"Revenue varies enough to be modelled. An outlier check flags {var['outliers_flagged']['kpi_scaled']} geo-weeks "
+    "of revenue as unusually far from the typical range: real values, not errors, so we keep them.",
     *details(f"Scaled revenue standard deviation {var['kpi_scaled_sd']:.2f} (a check that revenue is not nearly constant)."),
-    "Summed nationally, the spread of revenue, media and the controls (circles are unusual weeks):",
+    "Spread of national weekly revenue (circles are unusual weeks):",
     "",
     fig(mf["kpi_boxplot"]),
     "",
-    fig(mf["media_boxplot"]),
-    "",
-    fig(mf["controls_boxplot"]),
-    "",
-    "National revenue as the model sees it (scaled), with the baseline's two knots at the ends of the series:",
-    "",
-    fig(mf["kpi_with_knots"]),
-    "",
-
     "### Revenue grows slowly",
     "Revenue per year (each year is a block of 52 weeks, starting in late January):",
     "",
@@ -204,6 +160,54 @@ lines = [
              f"Noise vs geo size: Spearman {nf['per_capita_sd_spearman_with_population']:+.2f} between per-capita "
              f"revenue noise and population; the quietest geo's noise is {nf['per_capita_sd_min_over_max']:.2f}x the "
              "noisiest's. The model uses one noise level for all geos."),
+
+    "### Media and controls",
+    f"The same outlier check flags {var['outliers_flagged']['treatment_control_scaled']:,} media and control values "
+    f"({pct(var['outliers_flagged']['treatment_control_scaled'] / n_tc, 0)} of them). Spend is often zero and "
+    "occasionally large, so many such points are expected. They are real values, not errors, and we keep them. "
+    "Every variable varies enough to be estimated.",
+    "",
+    "Spread of national weekly media and controls (circles are unusual weeks):",
+    "",
+    fig(mf["media_boxplot"]),
+    "",
+    fig(mf["controls_boxplot"]),
+    "",
+
+    "## Spend and media units",
+    f"**There is enough data.** {ad['n_data_points']:,} geo-weeks for about {ad['n_parameters']} main parameters: "
+    f"roughly {ad['ratio']:.0f} data points each.",
+    "",
+    f"**Spend share.** Channel3 takes the largest share of the budget ({pct(share['Channel3'], 0)}) and Channel2 the "
+    f"smallest ({pct(share['Channel2'], 0)}). Small channels are harder to estimate, but none is small enough to "
+    "need merging.",
+    "",
+    fig(mf["spend_share"]),
+    "",
+    "**Spend and impressions carry the same information.** In every channel, spend is impressions times a "
+    "constant CPM (" + ", ".join(f"{c} {cpm['cpm'][c]['median']:.2f}" for c in CHANNELS) + "). An outlier check flags "
+    f"{cpm['n_outliers_flagged']} geo-weeks as unusual CPMs, but they differ only in the sixth decimal place: "
+    "rounding, not real variation. So it makes no difference whether the model uses spend or impressions.",
+    *details(f"Data-to-parameter ratio {ad['ratio']:.1f}: (geos - 1) + knots ({ad['n_knots']}) + controls + "
+             "treatments, a rough count of the main parameters.",
+             "Spend share: " + ", ".join(f"{c} {pct(share[c])}" for c in CHANNELS) + ".",
+             "CPM range per channel (min to max): " + ", ".join(
+                 f"{c} {cpm['cpm'][c]['min']:.6f}-{cpm['cpm'][c]['max']:.6f}" for c in CHANNELS) + "."),
+
+    "### How much room there is to spend more",
+    "Most weeks run well below each geo's highest-ever spend, and some channels are often off "
+    f"(Channel2 is off in {pct(gm['Channel2']['share_zero_geo_weeks'], 0)} of geo-weeks). "
+    "**For budget scenarios:** raising last year's spend by 20% stays within past levels in almost all "
+    "geo-weeks; by 50%, some channels go beyond anything observed, where results rely on the assumed "
+    "shape of the response curve.",
+    *details("Share of geo-weeks with zero spend: " + ", ".join(f"{c} {pct(gm[c]['share_zero_geo_weeks'])}" for c in CHANNELS) + ".",
+             "Median non-zero week as a share of the geo's maximum: "
+             + ", ".join(f"{c} {gm[c]['nonzero_ratio_to_geo_max_quantiles']['0.5']:.2f}" for c in CHANNELS) + ".",
+             "Share of last-52-week geo-weeks above the geo's historical maximum if spend is raised 20%: "
+             + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.2'])}" for c in CHANNELS)
+             + "; raised 50%: " + ", ".join(f"{c} {pct(gm[c]['last52_share_geo_weeks_beyond_geo_max_if_x1.5'])}" for c in CHANNELS) + "."),
+    fig(gm["figure"]),
+    "",
 
     "## Population scaling",
     "Each channel's spend tracks population almost perfectly (rank correlation "
@@ -285,15 +289,6 @@ lines = [
     fig(cc["figure"]),
     "",
 
-    "## Prior specifications",
-    "Before seeing any data, the priors expect the biggest channels by spend to contribute the most, with "
-    "Channel3 first. Under the priors alone, the probability that media and the other drivers are credited with "
-    f"more than all of the revenue (a negative baseline) is {s['prior_negative_baseline_prob']:.2f}, just above "
-    "the usual review level of 0.20. That describes the priors, not the fit: the fitted model's probability is "
-    "checked against the same 0.20 limit in the gates.",
-    "",
-    fig(mf["prior_mean"]),
-    "",
 ]
 
 (ROOT / "reports").mkdir(exist_ok=True)

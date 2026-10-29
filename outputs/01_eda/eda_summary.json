@@ -567,16 +567,13 @@
     "max_r2_time_variable": "Channel3",
     "max_r2_geo": -0.0003942013979678638
   },
-  "prior_negative_baseline_prob": 0.2240000069141388,
   "meridian_figures": {
     "spend_share": "reports/figures/eda/spend_share.png",
-    "kpi_with_knots": "reports/figures/eda/kpi_with_knots.png",
     "population_media": "reports/figures/eda/population_media.png",
     "population_controls": "reports/figures/eda/population_controls.png",
     "kpi_boxplot": "reports/figures/eda/kpi_boxplot.png",
     "media_boxplot": "reports/figures/eda/media_boxplot.png",
     "controls_boxplot": "reports/figures/eda/controls_boxplot.png",
-    "pairwise_correlation": "reports/figures/eda/pairwise_correlation.png",
-    "prior_mean": "reports/figures/eda/prior_mean.png"
+    "pairwise_correlation": "reports/figures/eda/pairwise_correlation.png"
   }
 }
