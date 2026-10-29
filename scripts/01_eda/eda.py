@@ -503,12 +503,12 @@ def meridian_figures(eda):
       "kpi_boxplot": eda.plot_kpi_boxplot(geos=NATIONALIZE),
       "media_boxplot": eda.plot_treatments_without_non_media_boxplot(geos=NATIONALIZE),
       "controls_boxplot": eda.plot_controls_and_non_media_boxplot(geos=NATIONALIZE),
-      "correlation": eda.plot_pairwise_correlation(geos=NATIONALIZE),
+      "pairwise_correlation": eda.plot_pairwise_correlation(geos=NATIONALIZE),
       "prior_mean": eda.plot_prior_mean(),
   }
   for name, chart in charts.items():
-    chart.save(FIG / f"meridian_{name}.png", scale_factor=2)
-  return {name: f"reports/figures/eda/meridian_{name}.png" for name in charts}
+    chart.save(FIG / f"{name}.png", scale_factor=2)
+  return {name: f"reports/figures/eda/{name}.png" for name in charts}
 
 
 def main():
