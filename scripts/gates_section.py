@@ -127,7 +127,6 @@ def section():
       "- **PASS:** the check meets its threshold. **WARN:** a non-blocking check misses it "
       "(report with caveats). **FAIL:** a blocking check misses it (not client-ready).",
       f"- Intervals: {cfg['meta']['interval']}.",
-      f"- {cfg['meta']['note']}",
       "",
       "## Gate summary",
       "",

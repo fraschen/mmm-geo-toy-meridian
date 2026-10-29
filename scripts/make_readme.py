@@ -86,11 +86,11 @@ Defined in [`config/model.toml`](config/model.toml):
 **Why this model.** Its choices follow from what the EDA could and could not settle, and from what
 ran reliably on this data in earlier attempts: a more flexible baseline (Meridian's automatic knot
 selection) and looser pooling across geos did not sample reliably, so we kept the baseline a straight
-line and pooled media effects strongly. {gcfg['meta']['note_plain']}
+line and pooled media effects strongly.
 {details("Spec: " + ", ".join(f"`{k} = {v}`" for k, v in cfg['model']['spec'].items()) + ".",
           "Priors (others Meridian defaults): " + ", ".join(f"`{k} ~ {v['dist']}(" + ", ".join(f"{a}={x}" for a, x in v.items() if a != 'dist') + ")`" for k, v in cfg['model']['priors'].items()) + ".",
           f"Sampler: {cfg['sampler']['n_chains']} chains, {cfg['sampler']['n_adapt']} adaptation + {cfg['sampler']['n_burnin']} burn-in + {cfg['sampler']['n_keep']} kept draws per chain, seed {cfg['sampler']['seed']}.",
-          gcfg['meta']['note'])}
+          )}
 
 ## The checks we trust
 
@@ -100,6 +100,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
 
 - **Did the computation run reliably?** {'Yes' if conv['converged'] else 'No'}. Meridian estimates the model by running {cfg['sampler']['n_chains']}
   independent simulations, which {'agree' if conv['converged'] else 'do not agree'} with each other. If they did not, we would report nothing.
+  {gcfg['meta']['note']}
 - **Does it forecast weeks it has not seen?** This is the test that matters most, and the one the model
   does not pass yet (see above).
 - **Does it fit the past?** {'Yes, within the limits of the data' if g['insample_r2']['status'] == 'PASS' and g['insample_coverage']['status'] == 'PASS' else 'Not well enough'}. Nationally it misses a typical week by

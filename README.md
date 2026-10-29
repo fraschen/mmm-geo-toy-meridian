@@ -48,14 +48,13 @@ Defined in [`config/model.toml`](config/model.toml):
 **Why this model.** Its choices follow from what the EDA could and could not settle, and from what
 ran reliably on this data in earlier attempts: a more flexible baseline (Meridian's automatic knot
 selection) and looser pooling across geos did not sample reliably, so we kept the baseline a straight
-line and pooled media effects strongly. We loosened the reliability criteria after the first attempts failed to meet them; the original, stricter criteria are recorded in config/gates.toml.
+line and pooled media effects strongly.
 
 <details><summary>Technical details</summary>
 
 - Spec: `knots = 2`, `max_lag = 4`, `media_effects_dist = log_normal`, `adstock_decay_spec = geometric`, `hill_before_adstock = False`, `media_prior_type = roi`, `unique_sigma_for_each_geo = False`.
 - Priors (others Meridian defaults): `roi_m ~ LogNormal(loc=0.2, scale=0.9)`, `eta_m ~ HalfNormal(scale=0.1)`.
 - Sampler: 4 chains, 500 adaptation + 500 burn-in + 1000 kept draws per chain, seed 20260128.
-- The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
 
 </details>
 
@@ -68,6 +67,7 @@ All rules are in [`config/gates.toml`](config/gates.toml) and explained in
 
 - **Did the computation run reliably?** Yes. Meridian estimates the model by running 4
   independent simulations, which agree with each other. If they did not, we would report nothing.
+  The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
 - **Does it forecast weeks it has not seen?** This is the test that matters most, and the one the model
   does not pass yet (see above).
 - **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by

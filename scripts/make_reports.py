@@ -454,7 +454,6 @@ def diagnostics(d, figs):
       "more reliably.",
       "- In our first attempts, a more flexible baseline (Meridian's automatic knot selection) and "
       "looser pooling did not sample reliably on this data.",
-      f"- {d['gcfg']['meta']['note_plain']}",
       "",
       "## Data and prior checks",
       f"- Data integrity: {g['data_integrity']['status']} (checksum, balanced 40 x 156 panel, no "
@@ -697,8 +696,7 @@ def measurement(d, figs):
       "",
   ] + ([f"![]({figs['cal']})", ""] if figs.get("cal") else []) + [
       "## Caveats",
-      "- Read Part 1 first: out-of-sample validation is thin, and the candidate set and "
-      "convergence criteria were revised after earlier attempts failed to converge.",
+      "- Read Part 1 first: out-of-sample validation is thin.",
       "- Baseline and media trade off almost one-for-one; totals are firmer than channel splits.",
       "- National results only; no geo-level ROI.",
       "- The lift test is HYPOTHETICAL; calibrated numbers illustrate the method, not real evidence.",

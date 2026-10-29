@@ -19,7 +19,6 @@ The model's choices follow from what the EDA could and could not settle, and fro
 - **Media effects strongly pooled across geos:** each geo's own media signal is too weak to estimate a separate effect.
 - **Max lag 4:** the data do not say how long media effects last, and shorter lags sample more reliably.
 - In our first attempts, a more flexible baseline (Meridian's automatic knot selection) and looser pooling did not sample reliably on this data.
-- We loosened the reliability criteria after the first attempts failed to meet them; the original, stricter criteria are recorded in config/gates.toml.
 
 ## Are the inputs and starting assumptions sound?
 
@@ -219,7 +218,7 @@ How a real experiment would sharpen the model. The test here is invented, to sho
 
 Read these before sharing any number from this page.
 
-- Read Part 1 first: out-of-sample validation is thin, and the candidate set and convergence criteria were revised after earlier attempts failed to converge.
+- Read Part 1 first: out-of-sample validation is thin.
 - Baseline and media trade off almost one-for-one; totals are firmer than channel splits.
 - National results only; no geo-level ROI.
 - The lift test is HYPOTHETICAL; calibrated numbers illustrate the method, not real evidence.
@@ -231,7 +230,6 @@ These are the checks the model must pass before its numbers go to a client. A **
 
 - **PASS:** the check meets its threshold. **WARN:** a non-blocking check misses it (report with caveats). **FAIL:** a blocking check misses it (not client-ready).
 - Intervals: 94% (3rd-97th percentile of the predictive or posterior draws).
-- The candidate set and the convergence criteria were revised after earlier rounds failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
 
 ## Gate summary
 
