@@ -34,6 +34,13 @@ def spend_range(var):
   return f"correlation {min(vals):+.2f} to {max(vals):+.2f} across channels"
 
 
+def num(x):
+  """Readable number: thousands as 'k', small values with two decimals."""
+  if x == 0:
+    return "0"
+  return f"{x / 1000:,.1f}k" if abs(x) >= 1000 else f"{x:.2f}"
+
+
 def details(*items):
   return ["", "<details><summary>Technical details</summary>", ""] + [f"- {i}" for i in items] + ["", "</details>", ""]
 
@@ -49,6 +56,18 @@ lines = [
     f"({d['first_week']} to {d['last_week']}). Nothing is missing, nothing is duplicated, and "
     "spend, impressions and sales are never negative. The only negative numbers are in the two "
     "control indices, which are centred around zero by design.",
+    "",
+    "Typical values per geo-week:",
+    "",
+    "| variable | mean | median | min | max | % zero weeks |",
+    "|---|---|---|---|---|---|",
+    *[f"| {name} | {num(v['mean'])} | {num(v['median'])} | {num(v['min'])} | {num(v['max'])} | "
+      f"{'-' if v['share_zero'] is None else pct(v['share_zero'], 0)} |" for name, v in s["summary_stats"].items()],
+    "",
+    "Spend has many low weeks and a few large ones (the mean is above the median), and some channels are "
+    f"often off: Channel2 runs in only {pct(1 - s['summary_stats']['Channel2 spend']['share_zero'], 0)} of "
+    "geo-weeks. Competitor sales and sentiment are indices "
+    "centred on zero, so their negative values are expected.",
     "",
     f"Revenue per conversion barely changes (it varies by only {pct(d['revenue_per_conversion']['cv'])}), so "
     "results in revenue and in conversions tell the same story. Its value (about "

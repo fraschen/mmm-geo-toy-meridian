@@ -5,6 +5,24 @@ This page summarises what we learned about the data before building the model, a
 ## The data are complete and clean
 We have 40 geos (geographic areas) observed every week for 156 weeks (2021-01-25 to 2024-01-15). Nothing is missing, nothing is duplicated, and spend, impressions and sales are never negative. The only negative numbers are in the two control indices, which are centred around zero by design.
 
+Typical values per geo-week:
+
+| variable | mean | median | min | max | % zero weeks |
+|---|---|---|---|---|---|
+| Revenue | 211.3k | 194.0k | 9.7k | 739.8k | 0% |
+| Channel0 spend | 6.5k | 5.0k | 0 | 38.1k | 12% |
+| Channel1 spend | 5.0k | 3.0k | 0 | 42.4k | 28% |
+| Channel2 spend | 1.9k | 0 | 0 | 41.7k | 64% |
+| Channel3 spend | 14.1k | 11.7k | 0 | 59.5k | 3% |
+| Channel4 spend | 7.6k | 5.8k | 0 | 54.4k | 13% |
+| competitor_sales_control | -0.04 | -0.05 | -4.83 | 3.92 | 0% |
+| sentiment_score_control | -0.03 | -0.04 | -4.23 | 4.32 | 0% |
+| Promo | 0.49 | 0.08 | 0 | 4.80 | 47% |
+| Organic_channel0_impression | 532.5k | 270.0k | 0 | 5,801.8k | 33% |
+| Population (per geo) | 542.4k | 560.5k | 136.7k | 994.0k | - |
+
+Spend has many low weeks and a few large ones (the mean is above the median), and some channels are often off: Channel2 runs in only 36% of geo-weeks. Competitor sales and sentiment are indices centred on zero, so their negative values are expected.
+
 Revenue per conversion barely changes (it varies by only 0.5%), so results in revenue and in conversions tell the same story. Its value (about 0.02) looks low because the simulated conversions are inflated (around 19 per person per week); revenue itself is on a realistic scale, with paid spend at 17% of revenue. Conversions and revenue per conversion should not be read literally, which is one reason results are reported in revenue.
 
 <details><summary>Technical details</summary>

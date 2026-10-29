@@ -52,6 +52,85 @@
     },
     "figure_spend_share": "reports/figures/eda/spend_share.png"
   },
+  "summary_stats": {
+    "Revenue": {
+      "mean": 211330.0380985844,
+      "median": 193995.582648904,
+      "min": 9742.28223292848,
+      "max": 739823.33893986,
+      "share_zero": 0.0
+    },
+    "Channel0 spend": {
+      "mean": 6490.659147432403,
+      "median": 4983.8355,
+      "min": 0.0,
+      "max": 38071.73,
+      "share_zero": 0.12099358974358974
+    },
+    "Channel1 spend": {
+      "mean": 5019.27855807125,
+      "median": 2995.07265,
+      "min": 0.0,
+      "max": 42397.7,
+      "share_zero": 0.2791666666666667
+    },
+    "Channel2 spend": {
+      "mean": 1935.7931637081729,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 41688.645,
+      "share_zero": 0.6426282051282052
+    },
+    "Channel3 spend": {
+      "mean": 14080.185616808654,
+      "median": 11731.1785,
+      "min": 0.0,
+      "max": 59499.484,
+      "share_zero": 0.027083333333333334
+    },
+    "Channel4 spend": {
+      "mean": 7649.147993224065,
+      "median": 5814.694600000001,
+      "min": 0.0,
+      "max": 54352.81,
+      "share_zero": 0.13141025641025642
+    },
+    "competitor_sales_control": {
+      "mean": -0.044412001848237175,
+      "median": -0.050346478,
+      "min": -4.8256345,
+      "max": 3.924682,
+      "share_zero": 0.0
+    },
+    "sentiment_score_control": {
+      "mean": -0.0336750954625,
+      "median": -0.036432595,
+      "min": -4.230392,
+      "max": 4.320259,
+      "share_zero": 0.0
+    },
+    "Promo": {
+      "mean": 0.4925280640294872,
+      "median": 0.0843822075,
+      "min": 0.0,
+      "max": 4.8005548,
+      "share_zero": 0.46826923076923077
+    },
+    "Organic_channel0_impression": {
+      "mean": 532466.6705128205,
+      "median": 269958.0,
+      "min": 0.0,
+      "max": 5801781.0,
+      "share_zero": 0.33253205128205127
+    },
+    "Population (per geo)": {
+      "mean": 542418.8327500001,
+      "median": 560478.825,
+      "min": 136670.94,
+      "max": 994048.94,
+      "share_zero": null
+    }
+  },
   "cpm": {
     "Channel0": {
       "cpm_median": 7.332723135848411,

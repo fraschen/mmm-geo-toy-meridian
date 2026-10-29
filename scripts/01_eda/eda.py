@@ -432,6 +432,25 @@ def controls_confounding(df):
   }
 
 
+def summary_stats(df):
+  """Mean, median, min, max and share of zero weeks for each input, per geo-week.
+
+  Population is constant within a geo, so its statistics are across the geos.
+  """
+  columns = {"Revenue": "revenue"}
+  columns.update({f"{c} spend": sp for c, sp in zip(CHANNELS, SPEND_COLS)})
+  columns.update({c: c for c in CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA})
+  out = {}
+  for label, col in columns.items():
+    x = df[col]
+    out[label] = {"mean": float(x.mean()), "median": float(x.median()), "min": float(x.min()),
+                  "max": float(x.max()), "share_zero": float((x == 0).mean())}
+  pop = df.groupby(GEO)[POPULATION].first()
+  out["Population (per geo)"] = {"mean": float(pop.mean()), "median": float(pop.median()),
+                                 "min": float(pop.min()), "max": float(pop.max()), "share_zero": None}
+  return out
+
+
 def spend_share_fig(suff):
   share = suff["spend_share"]
   fig, ax = plt.subplots(figsize=(6, 2.4))
@@ -451,6 +470,7 @@ def main():
   nat = national_series(df)
   summary = {"data": sufficiency(df)}
   summary["data"]["figure_spend_share"] = spend_share_fig(summary["data"])
+  summary["summary_stats"] = summary_stats(df)
   summary["cpm"] = cpm_check(df)
   summary["trend"] = trend_test(nat)
   summary["seasonality"] = seasonality_test(df, nat)
