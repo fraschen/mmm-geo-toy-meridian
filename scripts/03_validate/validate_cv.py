@@ -21,7 +21,7 @@ import dataclasses
 import numpy as np
 import pandas as pd
 
-from common import (CI, GEO, OUTPUTS, RAW_CSV, SEED, TIME, convergence, load_model, load_model_config,
+from common import (CI, GEO, OUTPUTS, SEED, TIME, convergence, load_model, load_model_config,
                     build_input_data, load_raw, write_json)
 
 _VAL = load_model_config()["validation"]
@@ -35,13 +35,8 @@ def fold_label(t0):
   return "holdout" if t0 == FOLDS[-1] else f"fold_{t0}"
 
 
-def load_fold(t0):
-  return load_model(train_weeks=t0)
-
-
-
 def window_input(t0):
-  df = pd.read_csv(RAW_CSV).drop(columns=["Unnamed: 0"], errors="ignore")
+  df = load_raw()
   weeks = sorted(df[TIME].unique())[: t0 + HORIZON]
   return build_input_data(df[df[TIME].isin(weeks)])
 
@@ -145,7 +140,7 @@ def main():
   raw = load_raw()
   roi_rows, nat_rows, folds = [], [], {}
   for t0 in FOLDS:
-    mmm = load_fold(t0)
+    mmm = load_model(train_weeks=t0)
     conv = convergence(mmm.inference_data)
     label = fold_label(t0)
     conv_summary = {k: conv[k] for k in ("max_rhat", "min_ess_bulk", "min_ess_tail",
@@ -175,10 +170,8 @@ def main():
       nat_rows.append({"fold": label, "time": str(pd.Timestamp(w).date()), "week": i + 1,
                        "forecast_period": bool(test[i]), "observed": no[i], "mean": nm[i],
                        "ci_lo": nlo[i], "ci_hi": nhi[i]})
-    # ROI only for converged fold fits (never report a non-converged fit's ROI).
-    if conv["converged"]:
-      for c, v in fold_roi(mmm).items():
-        roi_rows.append({"fold": label, "channel": c, **v})
+    for c, v in fold_roi(mmm).items():
+      roi_rows.append({"fold": label, "channel": c, **v})
     print(f"{label}: converged={conv['converged']} geo MAPE {g_out['mape']:.3f} "
           f"(ratio {rec['geo_week']['error_ratio']:.2f}, cov {g_out['coverage_94']:.2f}) | "
           f"national MAPE {n_out['mape']:.3f} (ratio {rec['national']['error_ratio']:.2f}, "
