@@ -104,7 +104,7 @@ Details in [reports/results.md](reports/results.md#part-2-measurement); the chan
 - **A precise split between media and underlying demand.**
 
 **Using a real experiment (optional, illustrative).** `make calibration` shows how the result
-of a lift test would sharpen the model. We used an invented (HYPOTHETICAL) Channel3 test: it
+of a lift test would sharpen the model. We used an invented Channel3 lift test: it
 narrowed Channel3's range and left the others unchanged. It is not part of the production model.
 
 ## Run it
@@ -181,7 +181,7 @@ scripts/model_spec.py     the model definition (from config/model.toml)
 scripts/01_eda/           data checks and exploratory tests
 scripts/02_fit/           fit the model, check that it converged
 scripts/03_validate/      forecast tests on shorter histories, Meridian health check, acceptance gates
-scripts/04_scenarios/     budget scenarios, the hypothetical lift test and calibration
+scripts/04_scenarios/     budget scenarios, the lift test and calibration
 scripts/05_report/        channel results and the results report
 docker/                   container checks: the EDA reproduces, sampling runs
 models/                   fitted models (not committed) and their settings
