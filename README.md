@@ -105,8 +105,7 @@ Details in [reports/results.md](reports/results.md#part-2-measurement); the chan
 
 **Using a real experiment (optional, illustrative).** `make calibration` shows how the result
 of a lift test would sharpen the model. We used an invented (HYPOTHETICAL) Channel3 test: it
-narrowed Channel3's range and left the others unchanged, and the choice of test geos did not drive
-the result. It is not part of the production model.
+narrowed Channel3's range and left the others unchanged. It is not part of the production model.
 
 ## Run it
 

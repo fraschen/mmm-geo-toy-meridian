@@ -209,7 +209,6 @@ Lift test (`data/lift_tests/lift_tests.csv`, schema in `data/lift_tests/README.m
 | Channel4 | 1.28 (0.27-3.24) | 0.57 | 1.31 (0.28-3.17) | 0.59 |
 
 - Model vs test: for the test geos and weeks, the uncalibrated model implied Channel3 ROI 1.43 (94% CI 0.62-2.40); the lift test said 1.4. After calibration the model implies 1.33.
-- Test-geo choice: across 20 alternative stratified sets of the same size, the model-implied ROI ranges 1.35-1.50 (chosen set at the 35% percentile) and the calibrated prior mean 1.20-1.21. The choice of test geos does not drive the result.
 - The test value equals the uncalibrated national ROI estimate to two decimals by coincidence (it was fixed before that estimate was computed), so calibration narrows the interval more than it moves the mean.
 
 ![](figures/measurement/calibration.png)

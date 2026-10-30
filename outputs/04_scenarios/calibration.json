@@ -1,5 +1,5 @@
 {
-  "label": "HYPOTHETICAL lift test",
+  "label": "lift test",
   "test": {
     "test_id": "HYPOTHETICAL-CH3-2023Q3",
     "hypothetical": true,
@@ -111,37 +111,5 @@
       "after_ci_hi": 3.1728538933405948,
       "after_p_roi_gt_1": 0.593
     }
-  ],
-  "geo_choice_check": {
-    "n_alternative_sets": 20,
-    "chosen_set": {
-      "implied_roi_mean": 1.427620944559112,
-      "calibrated_prior": {
-        "mean": 1.2074751761835751,
-        "sd": 0.46777612148987574,
-        "p_roi_gt_1": 0.63755
-      },
-      "population_share": 0.2523812020057484
-    },
-    "implied_roi_mean_range": [
-      1.3472005940355658,
-      1.5047048244571677
-    ],
-    "implied_roi_mean_sd": 0.03597962722018982,
-    "chosen_implied_percentile": 0.35,
-    "calibrated_prior_mean_range": [
-      1.201141829732028,
-      1.2101138133279623
-    ],
-    "calibrated_prior_sd_range": [
-      0.46073283158965533,
-      0.48431239922656877
-    ],
-    "national_roi_before": {
-      "mean": 1.399479695175383,
-      "ci_lo": 0.5958289620583606,
-      "ci_hi": 2.3439237289396497,
-      "p_roi_gt_1": 0.8135
-    }
-  }
+  ]
 }

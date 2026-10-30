@@ -70,7 +70,6 @@ def load_all():
   d["cvf"] = pd.read_csv(OUTPUTS / "03_validate" / "cv_national_forecasts.csv", parse_dates=["time"])
   d["cvroi"] = pd.read_csv(OUTPUTS / "03_validate" / "cv_roi.csv")
   d["rba"] = pd.read_csv(OUTPUTS / "04_scenarios" / "roi_before_after.csv")
-  d["geo"] = pd.read_csv(OUTPUTS / "04_scenarios" / "geo_choice_check.csv")
   return d
 
 
@@ -605,7 +604,6 @@ def measurement(d, figs):
                        with_range(x.before_mean, x.before_ci_lo, x.before_ci_hi), f"{x.before_p_roi_gt_1:.2f}",
                        with_range(x.after_mean, x.after_ci_lo, x.after_ci_hi), f"{x.after_p_roi_gt_1:.2f}"])
   t = cal["test"]
-  gc = cal["geo_choice_check"]
   prior_after = cal["prior_channel"]["after_calibrated"]
   refit = cal["after_convergence"]
   implied = cal["implied_test_roi_before"]
@@ -702,11 +700,6 @@ def measurement(d, figs):
       f"{implied['mean']:.2f} (94% CI {implied['ci_lo']:.2f}-{implied['ci_hi']:.2f}); "
       f"the lift test said {t['point_estimate_roi']}."
       + (f" After calibration the model implies {cal['implied_test_roi_after']['mean']:.2f}." if "implied_test_roi_after" in cal else ""),
-      f"- Test-geo choice: across {gc['n_alternative_sets']} alternative stratified sets of the same size, the "
-      f"model-implied ROI ranges {gc['implied_roi_mean_range'][0]:.2f}-{gc['implied_roi_mean_range'][1]:.2f} "
-      f"(chosen set at the {pct(gc['chosen_implied_percentile'], 0)} percentile) and the calibrated prior mean "
-      f"{gc['calibrated_prior_mean_range'][0]:.2f}-{gc['calibrated_prior_mean_range'][1]:.2f}. The choice of test "
-      "geos does not drive the result.",
       f"- The test value equals the uncalibrated national ROI estimate to two decimals by coincidence (it was "
       "fixed before that estimate was computed), so calibration narrows the interval more than it moves the mean.",
       "",
