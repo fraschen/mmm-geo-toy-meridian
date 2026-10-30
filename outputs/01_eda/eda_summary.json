@@ -530,14 +530,6 @@
   "controls_spread": {
     "figure": "reports/figures/eda/controls_boxplot.png"
   },
-  "controls_population": {
-    "spearman": {
-      "competitor_sales_control": -0.04596622889305817,
-      "sentiment_score_control": 0.22926829268292684,
-      "Promo": 0.1803001876172608
-    },
-    "figure": "reports/figures/eda/population_controls.png"
-  },
   "controls_confounding": {
     "within_geo_corr": {
       "competitor_sales_control": {

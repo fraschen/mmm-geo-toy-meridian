@@ -160,17 +160,6 @@ They also have a few unusual weeks (counted with media above); all real values, 
 
 ![](figures/eda/controls_boxplot.png)
 
-### Not scaled by population
-Unlike spend, the controls and Promo barely track population. **For the model:** they are not expressed per person.
-
-<details><summary>Technical details</summary>
-
-- Spearman with population: competitor_sales_control -0.05, sentiment_score_control +0.23, Promo +0.18.
-
-</details>
-
-![](figures/eda/population_controls.png)
-
 ### Which controls to include, and why
 A control belongs in the model if it moves with both our spend and our revenue: leaving it out would credit its effect to media. The four non-media variables make that case with different strength.
 

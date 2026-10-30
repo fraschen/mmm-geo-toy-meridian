@@ -465,16 +465,6 @@ def controls_spread(eda):
                                "controls_boxplot.png")}
 
 
-def controls_population(eda):
-  """Rank correlation between population and the (unscaled) controls and Promo, across geos."""
-  ds = eda.eda_engine.check_population_corr_scaled_treatment_control().analysis_artifacts[0].correlation_ds
-  out = {str(c): float(v) for c, v in zip(ds.control_variable.values, ds["controls_scaled"].values)}
-  out.update({str(c): float(v) for c, v in zip(ds.non_media_channel.values,
-                                                ds["non_media_treatments_scaled"].values)})
-  return {"spearman": out,
-          "figure": save_chart(eda.plot_population_treatment_correlation(), "population_controls.png")}
-
-
 def controls_confounding(df):
   cols = CONTROLS + NON_MEDIA_TREATMENTS + ORGANIC_MEDIA
   W = demean(df, cols + SPEND_COLS + ["revenue"], GEO)   # within-geo values
@@ -524,7 +514,6 @@ def main():
       "spend_vs_geo_max": spend_vs_geo_max(df),
       # Control variables
       "controls_spread": controls_spread(eda),
-      "controls_population": controls_population(eda),
       "controls_confounding": controls_confounding(df),
   }
   write_json(summary, OUT / "eda_summary.json")
