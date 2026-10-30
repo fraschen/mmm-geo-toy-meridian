@@ -192,3 +192,9 @@ outputs/                  the numbers behind every report, in the folder of the 
 reports/                  eda.md, results.md, figures, Meridian reports
 Makefile, Dockerfile, requirements.lock
 ```
+
+## Credits
+
+The dataset (`data/raw/geo_all_channels.csv`) and Meridian's agent skills (`.claude/skills/`) come
+from [google/meridian](https://github.com/google/meridian) and are used under its
+[Apache License 2.0](https://github.com/google/meridian/blob/main/LICENSE).
