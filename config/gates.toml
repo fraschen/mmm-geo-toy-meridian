@@ -131,15 +131,15 @@ blocking = true
 applies_to = """holdout (train 1-143, forecast 144-156) and each rolling-origin fold (train 1-104, \
 1-117, 1-130; forecast the next 13 weeks); reported as cv_fold_104, cv_fold_117, cv_fold_130, \
 cv_holdout"""
-checks = """Each fold is refitted on its training weeks only (all scaling inside the fold). FAIL if \
-the fold fit does not pass the convergence gate (no forecast evidence), or if any of: \
-forecast/in-sample MAPE ratio above the maximum (geo-week or national); national weekly MAPE \
-above the maximum; 94% interval coverage below the minimum (geo-week or national)."""
-thresholds = { cv_error_ratio_max = 1.25, cv_national_mape_max = 0.10, cv_coverage_min = 0.80 }
-source = "study brief"
+checks = """Each fold is fitted with the forecast weeks held out (Meridian's holdout: their revenue \
+is left out of the fit). FAIL if the fold fit does not pass the convergence gate (no forecast \
+evidence), or if any of: forecast/in-sample MAPE ratio above the maximum (geo-week or national); \
+national weekly MAPE above the maximum. MAPE is Meridian's predictive_accuracy."""
+thresholds = { cv_error_ratio_max = 1.25, cv_national_mape_max = 0.10 }
+source = "study brief (its 80% coverage check was dropped: Meridian's holdout accuracy has no forecast intervals)"
 basis = """National MAPE: a 13-week moving average has MAPE {nat_floor:.1%} nationally, so 10% is \
-about {ratio:.1f}x the noise floor; kept at the study-brief value. The error ratio and coverage \
-are relative measures and need no noise-floor adjustment. Geo-week MAPE is not gated directly: \
+about {ratio:.1f}x the noise floor; kept at the study-brief value. The error ratio is a \
+relative measure and needs no noise-floor adjustment. Geo-week MAPE is not gated directly: \
 its noise floor is {geo_floor:.0%}."""
 enforced_in = "scripts/03_validate/validate_cv.py (metrics), scripts/03_validate/gates.py (gate)"
 

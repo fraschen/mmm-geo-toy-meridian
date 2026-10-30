@@ -2,6 +2,7 @@
   "model": "mmm",
   "calibrated": false,
   "train_weeks": 104,
+  "holdout_start": "2023-01-23",
   "sampler": {
     "n_chains": 4,
     "n_adapt": 500,
@@ -12,8 +13,8 @@
   "n_prior_draws": 500,
   "knot_locations": [
     0,
-    103
+    116
   ],
   "n_knots": 2,
-  "runtime_seconds": 290.13976311683655
+  "runtime_seconds": 358.4808828830719
 }

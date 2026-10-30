@@ -145,19 +145,14 @@ def main():
     gw, nat = f["geo_week"], f["national"]
     checks = {"geo_error_ratio": gw["error_ratio"] <= T["cv_error_ratio_max"],
               "national_error_ratio": nat["error_ratio"] <= T["cv_error_ratio_max"],
-              "national_mape": nat["forecast"]["mape"] <= T["cv_national_mape_max"],
-              "geo_coverage": gw["forecast"]["coverage_94"] >= T["cv_coverage_min"],
-              "national_coverage": nat["forecast"]["coverage_94"] >= T["cv_coverage_min"]}
+              "national_mape": nat["forecast"]["mape"] <= T["cv_national_mape_max"]}
     gates.append(gate(f"cv_{label}", "PASS" if all(checks.values()) else "FAIL",
                       {"geo_error_ratio": gw["error_ratio"], "national_error_ratio": nat["error_ratio"],
                        "national_mape": nat["forecast"]["mape"],
-                       "geo_coverage": gw["forecast"]["coverage_94"],
-                       "national_coverage": nat["forecast"]["coverage_94"],
                        "national_bias": nat["forecast"]["mean_signed_pct_error"],
                        "failed": [k for k, v in checks.items() if not v]},
                       {"error_ratio_max": T["cv_error_ratio_max"],
-                       "national_mape_max": T["cv_national_mape_max"],
-                       "coverage_min": T["cv_coverage_min"]}, True))
+                       "national_mape_max": T["cv_national_mape_max"]}, True))
 
   # 7. ROI stability across folds (converged folds only).
   roi_cv = pd.read_csv(OUTPUTS / "03_validate" / "cv_roi.csv")

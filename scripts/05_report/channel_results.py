@@ -1,14 +1,13 @@
 """Deliverable 2: national channel-level results (CSV + metadata JSON).
 
-Selected model only, national level only (no geo-level ROI). Per channel:
-incremental revenue (contribution), ROI and marginal ROI with 94% credible
-intervals, P(ROI > 1), spend, spend share, share of revenue, ROI range across
-converged CV folds, gate status, period and units.
+National level only (no geo-level ROI). Per channel: incremental revenue
+(contribution), ROI and marginal ROI with 94% credible intervals, P(ROI > 1), spend,
+spend share, share of revenue and the channel_roi_checks gate. The period, units and
+column descriptions are in the metadata JSON.
 """
 
 from __future__ import annotations
 
-import importlib.metadata as md
 import json
 
 import numpy as np
@@ -24,7 +23,7 @@ def main():
   OUT.mkdir(parents=True, exist_ok=True)
   model_cfg = load_model_config()["model"]
   gates = json.load(open(OUTPUTS / "03_validate" / "gates.json"))
-  name = model_cfg["name"]
+  channel_gate = next(g for g in gates["gates"] if g["gate"] == "channel_roi_checks")["value"]
   mmm = load_model()
   an = Analyzer(model_context=mmm.model_context, inference_data=mmm.inference_data)
   n = len(CHANNELS)
@@ -35,48 +34,33 @@ def main():
   raw = load_raw()
   spend = raw[[f"{c}_spend" for c in CHANNELS]].sum().to_numpy()
   total_rev = float(raw["revenue"].sum())
-  roi_cv = pd.read_csv(OUTPUTS / "03_validate" / "cv_roi.csv")
-  n_conv_folds = roi_cv["fold"].nunique() if len(roi_cv) else 0
-  ch_gate = next(g for g in gates["gates"] if g["gate"] == "channel_roi_checks")["value"]
   period = f"{raw['time'].min().date()} to {raw['time'].max().date()}"
 
   rows = []
   for i, c in enumerate(CHANNELS):
     contribution = summarize(inc[:, i])
-    channel_roi = summarize(roi[:, i])
-    marginal_roi = summarize(mroi[:, i])
-    folds = roi_cv[roi_cv.channel == c]["mean"] if n_conv_folds else pd.Series(dtype=float)
-    g = ch_gate[c]
     rows.append({
-        "channel": c, "period": period,
+        "channel": c,
         **{f"contribution_{k}": v for k, v in contribution.items()},
-        **{f"roi_{k}": v for k, v in channel_roi.items()},
-        **{f"mroi_{k}": v for k, v in marginal_roi.items()},
+        **{f"roi_{k}": v for k, v in summarize(roi[:, i]).items()},
+        **{f"mroi_{k}": v for k, v in summarize(mroi[:, i]).items()},
         "p_roi_gt_1": float((roi[:, i] > 1).mean()),
         "spend": float(spend[i]), "spend_share": float(spend[i] / spend.sum()),
         "share_of_revenue": contribution["mean"] / total_rev,
-        "roi_cv_fold_min": float(folds.min()) if len(folds) >= 2 else None,
-        "roi_cv_fold_max": float(folds.max()) if len(folds) >= 2 else None,
-        "roi_cv_converged_folds": int(n_conv_folds),
-        "gate_status": g["status"],
-        "gate_notes": "; ".join(
-            ([] if g["payback_determined"] else ["payback undetermined (0.1 < P(ROI>1) < 0.9)"])
-            + (["prior-driven ROI"] if g["prior_driven"] else [])) or "none",
-        "units": "revenue (conversions x revenue_per_conversion); ROI = revenue per unit spend",
+        "gate_status": channel_gate[c]["status"],
+        "prior_driven": channel_gate[c]["prior_driven"],
+        "payback_determined": channel_gate[c]["payback_determined"],
     })
   df = pd.DataFrame(rows)
   df.to_csv(OUT / "channel_results.csv", index=False)
 
-  versions = {p: md.version(p) for p in ("google-meridian", "jax", "jaxlib", "tfp-nightly",
-                                         "numpy", "pandas", "arviz")}
   meta = {
-      "model": name, "description": model_cfg["description"], "backend": "JAX",
+      "model": model_cfg["name"], "description": model_cfg["description"], "backend": "JAX",
       "period": period, "level": "national (sum over 40 geos)",
+      "units": "revenue (conversions x revenue_per_conversion); ROI = revenue per unit spend",
       "credible_interval": "94% (3rd-97th percentile of 4 chains x 1000 posterior draws)",
-      "package_versions": versions,
       "columns": {
           "channel": "Paid media channel.",
-          "period": "Weeks covered (all 156 modelled weeks).",
           "contribution_mean/_ci_lo/_ci_hi": "Incremental revenue attributed to the channel (vs zero spend): posterior mean and 94% CI.",
           "roi_mean/_ci_lo/_ci_hi": "Incremental revenue / spend: posterior mean and 94% CI.",
           "mroi_mean/_ci_lo/_ci_hi": "Marginal ROI: incremental revenue from a 1% spend increase / that extra spend.",
@@ -84,11 +68,9 @@ def main():
           "spend": "Total channel spend over the period.",
           "spend_share": "Channel spend / total paid spend.",
           "share_of_revenue": "Posterior mean contribution / total observed revenue.",
-          "roi_cv_fold_min/_max": "Range of fold-level posterior mean ROI across converged CV fold fits (null if fewer than 2 converged).",
-          "roi_cv_converged_folds": "Number of CV fold fits that passed the convergence gate.",
-          "gate_status": "Per-channel gate (PASS/WARN) from make gates.",
-          "gate_notes": "Reason for WARN.",
-          "units": "Units of monetary columns.",
+          "gate_status": "channel_roi_checks gate (PASS/WARN) from make gates.",
+          "prior_driven": "True if the data barely narrowed the ROI (contraction below the gate minimum).",
+          "payback_determined": "True if P(ROI > 1) is at least 0.9 or at most 0.1.",
       },
       "notes": ["Cost per incremental KPI is not reported: the modelled outcome is converted to revenue.",
                 "No geo-level ROI is reported."],

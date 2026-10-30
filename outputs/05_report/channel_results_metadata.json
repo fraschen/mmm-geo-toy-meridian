@@ -4,19 +4,10 @@
   "backend": "JAX",
   "period": "2021-01-25 to 2024-01-15",
   "level": "national (sum over 40 geos)",
+  "units": "revenue (conversions x revenue_per_conversion); ROI = revenue per unit spend",
   "credible_interval": "94% (3rd-97th percentile of 4 chains x 1000 posterior draws)",
-  "package_versions": {
-    "google-meridian": "2.1.0",
-    "jax": "0.10.2",
-    "jaxlib": "0.10.2",
-    "tfp-nightly": "0.26.0.dev20260130",
-    "numpy": "2.3.5",
-    "pandas": "2.3.3",
-    "arviz": "0.19.0"
-  },
   "columns": {
     "channel": "Paid media channel.",
-    "period": "Weeks covered (all 156 modelled weeks).",
     "contribution_mean/_ci_lo/_ci_hi": "Incremental revenue attributed to the channel (vs zero spend): posterior mean and 94% CI.",
     "roi_mean/_ci_lo/_ci_hi": "Incremental revenue / spend: posterior mean and 94% CI.",
     "mroi_mean/_ci_lo/_ci_hi": "Marginal ROI: incremental revenue from a 1% spend increase / that extra spend.",
@@ -24,11 +15,9 @@
     "spend": "Total channel spend over the period.",
     "spend_share": "Channel spend / total paid spend.",
     "share_of_revenue": "Posterior mean contribution / total observed revenue.",
-    "roi_cv_fold_min/_max": "Range of fold-level posterior mean ROI across converged CV fold fits (null if fewer than 2 converged).",
-    "roi_cv_converged_folds": "Number of CV fold fits that passed the convergence gate.",
-    "gate_status": "Per-channel gate (PASS/WARN) from make gates.",
-    "gate_notes": "Reason for WARN.",
-    "units": "Units of monetary columns."
+    "gate_status": "channel_roi_checks gate (PASS/WARN) from make gates.",
+    "prior_driven": "True if the data barely narrowed the ROI (contraction below the gate minimum).",
+    "payback_determined": "True if P(ROI > 1) is at least 0.9 or at most 0.1."
   },
   "notes": [
     "Cost per incremental KPI is not reported: the modelled outcome is converted to revenue.",

@@ -10,10 +10,10 @@
       ],
       "converged": true,
       "convergence": {
-        "max_rhat": 1.0097672805682703,
-        "min_ess_bulk": 698.688380651666,
-        "min_ess_tail": 837.6810162596827,
-        "divergences": 8,
+        "max_rhat": 1.0104381796048192,
+        "min_ess_bulk": 582.9152512972817,
+        "min_ess_tail": 925.0625185765275,
+        "divergences": 15,
         "passed": {
           "rhat": true,
           "ess_bulk": true,
@@ -23,80 +23,148 @@
       },
       "geo_week": {
         "in_sample": {
-          "mape": 0.2555219080308955,
-          "coverage_94": 0.9454326923076923,
-          "mean_signed_pct_error": 0.09658176813070336
+          "mape": 0.2555106929681824,
+          "wmape": 0.1996175806721982,
+          "r2": 0.771642015624834
         },
         "forecast": {
-          "mape": 0.2655820293963535,
-          "coverage_94": 0.9365384615384615,
-          "mean_signed_pct_error": 0.12195273776465412
+          "mape": 0.2656169716867609,
+          "wmape": 0.2098875874817303,
+          "r2": 0.7435013071715667
         },
-        "error_ratio": 1.039370876035575
+        "error_ratio": 1.0395532515730643
       },
       "national": {
         "in_sample": {
-          "mape": 0.040808928604731426,
-          "coverage_94": 0.9038461538461539,
-          "mean_signed_pct_error": 0.0026304823568054723,
-          "share_weeks_over_predicted": 0.5192307692307693
+          "mape": 0.04081159811032456,
+          "wmape": 0.04030201169831315,
+          "r2": 0.4723054061865892
         },
         "forecast": {
-          "mape": 0.04463171538546965,
-          "coverage_94": 0.7692307692307693,
-          "mean_signed_pct_error": 0.03119192655513334,
+          "mape": 0.044681784665183584,
+          "wmape": 0.04189375510825961,
+          "r2": 0.37148618458597893,
+          "mean_signed_pct_error": 0.031201281739962873,
           "share_weeks_over_predicted": 0.5384615384615384
         },
-        "error_ratio": 1.0936752546915678
+        "error_ratio": 1.0948305563628478
       }
     },
     "fold_117": {
       "label": "fold_117",
       "train_weeks": 117,
-      "converged": false,
+      "test_weeks": [
+        118,
+        130
+      ],
+      "converged": true,
       "convergence": {
-        "max_rhat": 1.0125558510548207,
-        "min_ess_bulk": 379.2937813952378,
-        "min_ess_tail": 665.7119170708081,
-        "divergences": 1,
+        "max_rhat": 1.0132284398544718,
+        "min_ess_bulk": 502.94957493577493,
+        "min_ess_tail": 732.1472853071432,
+        "divergences": 4,
         "passed": {
           "rhat": true,
-          "ess_bulk": false,
+          "ess_bulk": true,
           "ess_tail": true,
           "divergences": true
         }
+      },
+      "geo_week": {
+        "in_sample": {
+          "mape": 0.2551453385853809,
+          "wmape": 0.2003925180781632,
+          "r2": 0.7694837366803214
+        },
+        "forecast": {
+          "mape": 0.2785997620268932,
+          "wmape": 0.21845302445339398,
+          "r2": 0.7351843984573432
+        },
+        "error_ratio": 1.0919257375876517
+      },
+      "national": {
+        "in_sample": {
+          "mape": 0.04097642218821068,
+          "wmape": 0.04033866905887138,
+          "r2": 0.4697368227063756
+        },
+        "forecast": {
+          "mape": 0.042479751826152996,
+          "wmape": 0.04259102184896079,
+          "r2": 0.20406858044009646,
+          "mean_signed_pct_error": -0.001440500999026313,
+          "share_weeks_over_predicted": 0.5384615384615384
+        },
+        "error_ratio": 1.0366876744640443
       }
     },
     "fold_130": {
       "label": "fold_130",
       "train_weeks": 130,
-      "converged": false,
+      "test_weeks": [
+        131,
+        143
+      ],
+      "converged": true,
       "convergence": {
-        "max_rhat": 1.0364617384563688,
-        "min_ess_bulk": 96.9377089985423,
-        "min_ess_tail": 374.0188611752342,
-        "divergences": 35,
+        "max_rhat": 1.01206568336438,
+        "min_ess_bulk": 542.8358045048453,
+        "min_ess_tail": 575.812240870725,
+        "divergences": 3,
         "passed": {
           "rhat": true,
-          "ess_bulk": false,
-          "ess_tail": false,
-          "divergences": false
+          "ess_bulk": true,
+          "ess_tail": true,
+          "divergences": true
         }
+      },
+      "geo_week": {
+        "in_sample": {
+          "mape": 0.2568701235558794,
+          "wmape": 0.20183444196392952,
+          "r2": 0.766942594644535
+        },
+        "forecast": {
+          "mape": 0.26919146273384625,
+          "wmape": 0.2057655399367005,
+          "r2": 0.7835459535350823
+        },
+        "error_ratio": 1.0479671945004787
+      },
+      "national": {
+        "in_sample": {
+          "mape": 0.04100104798470755,
+          "wmape": 0.04042241821882516,
+          "r2": 0.4560661426665267
+        },
+        "forecast": {
+          "mape": 0.024644430739895293,
+          "wmape": 0.024473300734124497,
+          "r2": 0.7142320048514819,
+          "mean_signed_pct_error": 0.002037415021090253,
+          "share_weeks_over_predicted": 0.6923076923076923
+        },
+        "error_ratio": 0.6010683129145162
       }
     },
     "holdout": {
       "label": "holdout",
       "train_weeks": 143,
+      "test_weeks": [
+        144,
+        156
+      ],
       "converged": false,
       "convergence": {
-        "max_rhat": 1.0164095854712294,
-        "min_ess_bulk": 342.0081674102515,
-        "min_ess_tail": 620.7643531746305,
-        "divergences": 0,
+        "max_rhat": 1.0488235400361385,
+        "min_ess_bulk": 67.91113306660006,
+        "min_ess_tail": 315.1051371971442,
+        "divergences": 4,
         "passed": {
           "rhat": true,
           "ess_bulk": false,
-          "ess_tail": true,
+          "ess_tail": false,
           "divergences": true
         }
       }
@@ -107,5 +175,5 @@
     0.03,
     0.97
   ],
-  "method": "Phase 4: 13-week holdout + rolling-origin CV for the selected spec.\n\nFolds train on weeks 1-104, 1-117, 1-130, 1-143 and forecast the next 13 weeks;\nthe 1-143 fold is the final 13-week holdout. Each fold model is fitted on the\ntruncated data (scripts/02_fit/build_model.py --train-weeks), so every data-derived\nscaling (KPI mean/sd, media medians, control centring) comes from training weeks.\n\nForecasts use Meridian's own mean function (Analyzer.get_kpi_means) on inputs\nscaled by the fold's transformers (DataTensorsBuilder.build_scaled_inputs), with\nthe knots=2 baseline extended along its line. They are conditional on the\nobserved media, controls, Promo and organic in the forecast weeks. Predictive\ndraws add Normal(0, sigma) on Meridian's transformed KPI scale, are mapped back\nwith the fold's KpiTransformer, and are converted to revenue with the observed\nrevenue_per_conversion."
+  "method": "Phase 4: 13-week holdout + rolling-origin CV for the production model.\n\nEach fold model is fitted on weeks 1 to N + 13 with the last 13 weeks held out\n(scripts/02_fit/build_model.py --train-weeks N, using Meridian's `holdout` in ModelSpec):\nthose weeks' revenue is left out of the fit, while their media, controls and Promo\nare kept. Folds hold out weeks 105-117, 118-130, 131-143 and 144-156; the last is\nthe final 13-week holdout.\n\nAccuracy on the training and held-out weeks comes from Meridian's\nAnalyzer.predictive_accuracy (MAPE, wMAPE and R2, per geo-week and national)."
 }

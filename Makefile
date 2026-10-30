@@ -59,17 +59,18 @@ budget: $(MODEL)
 	$(AWAKE) $(PY) scripts/04_scenarios/run_budget_optimization.py
 
 # Acceptance gates (exits non-zero on any blocking failure). Rules and thresholds:
-# config/gates.toml; documentation: Part 3 of reports/results.md.
+# config/gates.toml; summary: the gates section of reports/results.md.
 gates:
 	$(PY) scripts/03_validate/gates.py
 
-# Channel results file + the results report (the README is written by hand).
+# Channel results file and the data behind the report charts.
 results:
 	$(PY) scripts/05_report/analysis_data.py
 	$(PY) scripts/05_report/channel_results.py
 
+# Charts for reports/results.md (the report text is written by hand).
 reports: results
-	$(PY) scripts/05_report/make_reports.py
+	$(PY) scripts/05_report/make_figures.py
 
 # Optional, not part of production: refit with a HYPOTHETICAL lift test.
 $(LIFT):

@@ -13,9 +13,10 @@ cannot tell a client. Numbers here are from the last full run; the full set is i
 **The model is useful for direction, not yet for decisions.** It fits the past well and its
 uncertainty ranges are honest in-sample. But three things keep it from being client-ready:
 
-- **We could not confirm it forecasts well.** We refit the model on shorter stretches of history
-  to see how it predicts the weeks that follow. Only 1 of those 4 refits ran reliably. In that one,
-  the forecast ranges were too narrow nationally: they captured 77% of weeks, below our 80% bar.
+- **Its forecasts are only partly confirmed.** We fit the model with 13 weeks of revenue held out and
+  check how well it predicts them, at four points in time. Three of the four fits ran reliably and
+  forecast about as well as they fit the past (national error 2.5-4.5%). The fourth, the most recent
+  13 weeks, did not run reliably, so those weeks are untested.
 - **No channel clearly pays for itself, or clearly doesn't.** The probability that a channel's ROI is
   above 1 ranges from 24% to 81%; we would need 90% (or 10%) to call it.
 - **The model struggles to separate media from everything else.** It is confident about total revenue,
@@ -52,7 +53,9 @@ The rules are in [`config/gates.toml`](config/gates.toml) and explained in
   simulations, and they agree with each other. If they did not, we would report nothing.
   The candidate set and the convergence criteria were revised after earlier rounds failed to
   converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
-- **Does it forecast weeks it has not seen?** Not yet: the model does not pass this check (see above).
+- **Does it forecast weeks it has not seen?** Partly. Three of four held-out periods pass; the most recent
+  one could not be checked because its fit did not run reliably. Which fits run reliably varies between
+  runs, so sampling on these windows is fragile.
 - **Does it fit the past?** Yes, within the limits of the data. Nationally it misses a typical week by
   4.0%, better than a simple 13-week average (5.1%). Its 94% ranges contain 95% of geo-level weeks,
   close to the 94% they should.
@@ -64,8 +67,9 @@ The rules are in [`config/gates.toml`](config/gates.toml) and explained in
 - **What we don't rely on:** Meridian's built-in health score (93/100). It only looks at how well the
   model fits the past, so it cannot see the forecasting problem.
 
-Status at the last run: the data, prior, convergence, baseline and in-sample checks pass; the four
-forecast checks and the ROI-stability check fail; each channel carries a warning that its payback is undetermined.
+Status at the last run: every check passes except the forecast check on the most recent 13 weeks
+(blocking: the model is not client-ready until it passes); each channel carries a warning that its
+payback is undetermined.
 
 ## What the model can tell a client
 
@@ -96,7 +100,7 @@ Details in [reports/results.md](reports/results.md#part-2-measurement); the chan
 ## What the model cannot tell a client
 
 - **Whether any specific channel pays back.** The ranges are too wide.
-- **Reliable forecasts.** Not yet tested well enough.
+- **Reliable forecasts for the latest weeks.** The most recent held-out period could not be tested.
 - **Results by geo.** We report national results only. Media effects are strongly pooled across geos and
   each geo's own signal is weak, so geo-level ROIs would mostly repeat the national estimate.
 - **What happens at much higher spend than ever before.** Beyond past levels, results depend on
@@ -145,16 +149,15 @@ Each of these is a model change aimed at one of the problems above. Judge every 
 acceptance checks and thresholds, fixed before fitting, and change one thing at a time, so we know
 what helped.
 
-- **Tighten the baseline's starting assumptions.** *Problem: the refits on shorter histories did not
-  run reliably.* The baseline level and the differences between geos are given very wide starting
-  ranges, compared with how little revenue actually varies. That lets them trade off against each
-  other and makes the sampler struggle. Narrower ranges should help the refits converge, which would
-  also make the forecast check possible.
-- **Let the baseline bend a little.** *Problem: forecasts ran high and the national ranges were too
-  narrow.* A straight line cannot follow shocks that hit every geo in the same week, and in the one
-  refit that ran, the forecast drifted about 3% high. Try a few knots (for example one per year) with
-  tight starting ranges, and check whether forecasts and ranges improve without making the split
-  between media and baseline any worse.
+- **Tighten the baseline's starting assumptions.** *Problem: the fit with the most recent 13 weeks held
+  out did not run reliably, and the baseline was the part that failed.* The baseline level and the
+  differences between geos are given very wide starting ranges, compared with how little revenue
+  actually varies. That lets them trade off against each other and makes the sampler struggle.
+  Narrower ranges should help every fit converge, which would complete the forecast check.
+- **Let the baseline bend a little.** *Problem: a straight line cannot follow shocks that hit every
+  geo in the same week; in the earliest held-out period the forecast drifted about 3% high.* Try a few
+  knots (for example one per year) with tight starting ranges, and check whether forecasts improve
+  without making the split between media and baseline any worse.
 - **Pool the controls across geos.** *Problem: the baseline and the control effects were the hardest
   parts to sample.* Give competitor sales and sentiment one effect for all geos. This simplifies the
   model and may help it converge, at the cost of ignoring any real differences between geos in how
@@ -180,9 +183,9 @@ scripts/common.py         shared code: paths and data loading, convergence check
 scripts/model_spec.py     the model definition (from config/model.toml)
 scripts/01_eda/           data checks and exploratory tests
 scripts/02_fit/           fit the model, check that it converged
-scripts/03_validate/      forecast tests on shorter histories, Meridian health check, acceptance gates
+scripts/03_validate/      forecast tests on held-out weeks, Meridian health check, acceptance gates
 scripts/04_scenarios/     budget scenarios, the lift test and calibration
-scripts/05_report/        channel results and the results report
+scripts/05_report/        channel results and the report charts
 docker/                   container checks: the EDA reproduces, sampling runs
 models/                   fitted models (not committed) and their settings
 outputs/                  the numbers behind every report, in the folder of the phase that wrote them

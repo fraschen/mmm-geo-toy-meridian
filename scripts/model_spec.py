@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from meridian import backend
 from meridian.model.prior_distribution import PriorDistribution
-from meridian.model.spec import ModelSpec
+from meridian.model.spec import DateRange, HoldoutSpec, ModelSpec
 
 from common import ROOT, load_model_config
 
@@ -59,9 +59,15 @@ def calibrated_roi_prior(input_data, max_lag):
   return tfd.LogNormal(loc.astype(np.float64), scale.astype(np.float64), name="roi_m")
 
 
-def make_spec(input_data=None, calibrated: bool = False) -> ModelSpec:
-  """The production ModelSpec from config/model.toml (optionally lift-test calibrated)."""
+def make_spec(input_data=None, calibrated: bool = False, holdout_start=None) -> ModelSpec:
+  """The production ModelSpec from config/model.toml (optionally lift-test calibrated).
+
+  holdout_start: first week (YYYY-MM-DD) of a holdout running to the end of the data. Those
+  weeks' revenue is left out of the fit (Meridian's holdout); used by the CV folds.
+  """
   spec = dict(CONFIG["model"]["spec"])
+  if holdout_start:
+    spec["holdout"] = HoldoutSpec([DateRange(holdout_start, None)])
   priors = {name: _dist(name, cfg) for name, cfg in CONFIG["model"]["priors"].items()}
   if calibrated:
     priors["roi_m"] = calibrated_roi_prior(input_data, max_lag=spec["max_lag"])

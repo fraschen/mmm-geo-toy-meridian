@@ -7,7 +7,7 @@ sample the prior, fit with sample_posterior and save with meridian_serde.save_me
 Usage (run from the project root with PYTHONPATH=scripts so that `common` is found;
 the Makefile does this):
   PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py                    # full-data fit
-  PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py --train-weeks 104  # CV refit on weeks 1-104
+  PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py --train-weeks 104  # CV fold: fit weeks 1-104, hold out 105-117
   PYTHONPATH=scripts .venv/bin/python scripts/02_fit/build_model.py --calibrated       # HYPOTHETICAL lift test
 """
 
@@ -27,7 +27,7 @@ from model_spec import CONFIG, make_spec
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--train-weeks", type=int, default=None,
-                      help="CV refit: keep only the first N weeks.")
+                      help="CV fold: fit on the first N weeks, hold out the next 13 (Meridian holdout).")
   parser.add_argument("--calibrated", action="store_true",
                       help="Optional: ROI prior calibrated by the lift tests file.")
   args = parser.parse_args()
@@ -38,13 +38,17 @@ def main():
 
   # 1. Load data & build InputData (approved column mapping).
   df = pd.read_csv(RAW_CSV).drop(columns=["Unnamed: 0"], errors="ignore")
+  holdout_start = None
   if args.train_weeks:
-    weeks = sorted(df[TIME].unique())[:args.train_weeks]
+    # Keep the training weeks plus the forecast weeks; the forecast weeks are held out.
+    weeks = sorted(df[TIME].unique())[:args.train_weeks + CONFIG["validation"]["horizon"]]
     df = df[df[TIME].isin(weeks)]
+    holdout_start = weeks[args.train_weeks]
   input_data = build_input_data(df)
 
   # 2. ModelSpec + Meridian.
-  mmm = Meridian(input_data=input_data, model_spec=make_spec(input_data, args.calibrated))
+  mmm = Meridian(input_data=input_data,
+                 model_spec=make_spec(input_data, args.calibrated, holdout_start))
 
   # 3. Prior sampling (fixed seed).
   mmm.sample_prior(n_draws=CONFIG["sampler"]["n_prior_draws"], seed=CONFIG["sampler"]["seed"])
@@ -59,7 +63,7 @@ def main():
   meridian_serde.save_meridian(mmm, str(save_path))
   with open(output_dir / "fit_info.json", "w") as f:
     json.dump({"model": CONFIG["model"]["name"], "calibrated": args.calibrated,
-               "train_weeks": args.train_weeks, "sampler": sampler,
+               "train_weeks": args.train_weeks, "holdout_start": holdout_start, "sampler": sampler,
                "n_prior_draws": CONFIG["sampler"]["n_prior_draws"],
                "knot_locations": [int(k) for k in mmm.knot_info.knot_locations],
                "n_knots": int(len(mmm.knot_info.knot_locations)),
