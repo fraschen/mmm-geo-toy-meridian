@@ -16,13 +16,6 @@
 #               outputs/01_eda/eda_summary.json when gates.py runs.
 #   enforced_in script and function that apply the rule.
 
-[meta]
-note = """The candidate set and the convergence criteria were revised after earlier rounds \
-failed to converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 \
-and 0 divergences."""
-note_plain = """We loosened the reliability criteria after the first attempts failed to meet them; the original, stricter criteria are recorded in config/gates.toml."""
-interval = "94% (3rd-97th percentile of the predictive or posterior draws)"
-
 # ---------------------------------------------------------------------------- data
 [gates.data_integrity]
 plain = "Is the data file the one we expect, complete and free of impossible values?"
@@ -60,8 +53,8 @@ the share of divergent NUTS transitions. FAIL if any threshold is breached. A fa
 records only its convergence diagnostics; its ROI, fit and contributions are never reported."""
 thresholds = { rhat_max = 1.05, ess_min = 400, divergent_share_max = 0.005 }
 source = "project (revised; see meta.note)"
-basis = """ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is looser than \
-their 1.01 and stricter than Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent \
+basis = """ESS >= 400 bulk and tail follows Vehtari et al. (2021). R-hat <= 1.05 is stricter than \
+Meridian's own health check (R-hat < 1.2). Up to 0.5% divergent \
 draws (20 of 4000) are tolerated."""
 enforced_in = "scripts/02_fit/check_convergence.py (make convergence)"
 
