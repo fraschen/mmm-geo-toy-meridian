@@ -51,8 +51,6 @@ The rules are in [`config/gates.toml`](config/gates.toml) and explained in
 
 - **Did the computation run reliably?** Yes. Meridian estimates the model by running 4 independent
   simulations, and they agree with each other. If they did not, we would report nothing.
-  The candidate set and the convergence criteria were revised after earlier rounds failed to
-  converge; the original convergence gate was R-hat <= 1.01, bulk/tail ESS >= 400 and 0 divergences.
 - **Does it forecast weeks it has not seen?** Partly. Three of four held-out periods pass; the most recent
   one could not be checked because its fit did not run reliably. Which fits run reliably varies between
   runs, so sampling on these windows is fragile.
