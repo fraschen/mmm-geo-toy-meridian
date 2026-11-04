@@ -82,9 +82,6 @@ def main():
     an = Analyzer(model_context=mmm.model_context, inference_data=mmm.inference_data)
     rec.update(accuracy(an))
     nat = national_series(an, raw, label, t0)
-    test = nat[nat.forecast_period]
-    error = test["mean"] / test["observed"] - 1               # national weekly % error
-    rec["national"]["forecast"]["share_weeks_over_predicted"] = float((error > 0).mean())
     national.append(nat)
     for c, v in fold_roi(an, list(np.asarray(mmm.input_data.media_channel))).items():
       roi_rows.append({"fold": label, "channel": c, **v})
