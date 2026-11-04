@@ -136,7 +136,6 @@
         "geo_error_ratio": 1.0395532515730643,
         "national_error_ratio": 1.0948305563628478,
         "national_mape": 0.044681784665183584,
-        "national_bias": 0.031201281739962873,
         "failed": []
       },
       "threshold": {
@@ -153,7 +152,6 @@
         "geo_error_ratio": 1.0919257375876517,
         "national_error_ratio": 1.0366876744640443,
         "national_mape": 0.042479751826152996,
-        "national_bias": -0.001440500999026313,
         "failed": []
       },
       "threshold": {
@@ -170,7 +168,6 @@
         "geo_error_ratio": 1.0479671945004787,
         "national_error_ratio": 0.6010683129145162,
         "national_mape": 0.024644430739895293,
-        "national_bias": 0.002037415021090253,
         "failed": []
       },
       "threshold": {
