@@ -152,6 +152,7 @@ what helped.
   differences between geos are given very wide starting ranges, compared with how little revenue
   actually varies. That lets them trade off against each other and makes the sampler struggle.
   Narrower ranges should help every fit converge, which would complete the forecast check.
+- **Use more informative priors for media effectiveness.** *Problem: the model uses defaults for ROI priors* Having not context about the media predictors, we used a default configuration for ROI priors across the board. Refit with contribution priors that reflect the historical spend mix. 
 - **Let the baseline bend a little.** *Problem: a straight line cannot follow shocks that hit every
   geo in the same week; in the earliest held-out period the forecast drifted about 3% high.* Try a few
   knots (for example one per year) with tight starting ranges, and check whether forecasts improve
@@ -164,10 +165,6 @@ what helped.
   advertising drives them, keeping them understates media.* If channel ROIs barely move, the choice does
   not matter; if they move, the report should say which way and by how much. Fewer controls may also make
   the model easier to sample.
-- **Test how much the answers depend on the starting belief about ROI.** *Problem: the ranges are
-  wide, so the starting assumption matters.* Refit with a tighter and a wider starting belief. If the
-  channel ranking and the direction of the budget move hold, we can trust them more; if they change,
-  they are driven by the assumption and not by the data.
 - **Add a measure of underlying demand,** such as category search volume. *Problem: media and
   underlying demand are hard to tell apart.* This needs new data, not just a model change.
 
