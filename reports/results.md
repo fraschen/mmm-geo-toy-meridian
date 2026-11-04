@@ -60,17 +60,16 @@ For each fold the model is fitted with 13 weeks held out, using Meridian's holdo
 
 The forecasts use the actual media, controls, Promo and organic of the held-out weeks. That is realistic for our own spend, but in a real forecast competitor sales and sentiment would not be known in advance, so this test is somewhat easier than real forecasting. Meridian also computes its revenue scaling from all weeks, held-out ones included. That is a small leak, and it made no measurable difference: on fold_104, the only fold that converged under both, the old approach (fitting truncated data with its own scaling) gave the same errors to three decimals.
 
-| fold | train weeks | converged | geo MAPE (forecast / in-sample) | national MAPE (forecast / in-sample) | national bias | gate |
-|---|---|---|---|---|---|---|
-| fold_104 | 1-104 | yes | 26.6% / 25.6% | 4.5% / 4.1% | +3.1% | PASS |
-| fold_117 | 1-117 | yes | 27.9% / 25.5% | 4.2% / 4.1% | −0.1% | PASS |
-| fold_130 | 1-130 | yes | 26.9% / 25.7% | 2.5% / 4.1% | +0.2% | PASS |
-| holdout | 1-143 | no | – | – | – | FAIL |
+| fold | train weeks | converged | geo MAPE (forecast / in-sample) | national MAPE (forecast / in-sample) | gate |
+|---|---|---|---|---|---|
+| fold_104 | 1-104 | yes | 26.6% / 25.6% | 4.5% / 4.1% | PASS |
+| fold_117 | 1-117 | yes | 27.9% / 25.5% | 4.2% / 4.1% | PASS |
+| fold_130 | 1-130 | yes | 26.9% / 25.7% | 2.5% / 4.1% | PASS |
+| holdout | 1-143 | no | – | – | FAIL |
 
 - **Three of four folds converged.** In each, forecast errors are close to the in-sample errors: the forecast-to-in-sample ratio is at most 1.09, against a limit of 1.25. National MAPE is 2.5–4.5%, against a limit of 10%.
 - **The final holdout did not converge** (min bulk ESS 68, against a minimum of 400), so it gives no forecast evidence and fails the gate. Sampling on shorter or differently shaped windows is still fragile.
 - **Which folds converge varies between runs.** Before the switch to Meridian's holdout, only fold_104 converged; after it, fold_117 and fold_130 passed and the final holdout got worse. The failure is in the baseline's level parameters (knot values, geo levels, control effects), which trade off against each other; the media estimates agreed across the four simulations.
-- **The forecast drifted high only in fold_104,** by 3.1%. The later folds show no bias.
 
 ![](figures/diagnostics/cv_forecast.png)
 

@@ -149,7 +149,6 @@ def main():
     gates.append(gate(f"cv_{label}", "PASS" if all(checks.values()) else "FAIL",
                       {"geo_error_ratio": gw["error_ratio"], "national_error_ratio": nat["error_ratio"],
                        "national_mape": nat["forecast"]["mape"],
-                       "national_bias": nat["forecast"]["mean_signed_pct_error"],
                        "failed": [k for k, v in checks.items() if not v]},
                       {"error_ratio_max": T["cv_error_ratio_max"],
                        "national_mape_max": T["cv_national_mape_max"]}, True))

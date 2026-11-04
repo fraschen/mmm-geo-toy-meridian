@@ -84,15 +84,13 @@ def main():
     nat = national_series(an, raw, label, t0)
     test = nat[nat.forecast_period]
     error = test["mean"] / test["observed"] - 1               # national weekly % error
-    rec["national"]["forecast"]["mean_signed_pct_error"] = float(error.mean())
     rec["national"]["forecast"]["share_weeks_over_predicted"] = float((error > 0).mean())
     national.append(nat)
     for c, v in fold_roi(an, list(np.asarray(mmm.input_data.media_channel))).items():
       roi_rows.append({"fold": label, "channel": c, **v})
     print(f"{label}: geo MAPE {rec['geo_week']['forecast']['mape']:.3f} "
           f"(ratio {rec['geo_week']['error_ratio']:.2f}) | national MAPE "
-          f"{rec['national']['forecast']['mape']:.3f} (ratio {rec['national']['error_ratio']:.2f}, "
-          f"bias {rec['national']['forecast']['mean_signed_pct_error']:+.3f})")
+          f"{rec['national']['forecast']['mape']:.3f} (ratio {rec['national']['error_ratio']:.2f})")
 
   (pd.concat(national) if national else pd.DataFrame()).to_csv(OUT / "cv_national_forecasts.csv", index=False)
   pd.DataFrame(roi_rows).to_csv(OUT / "cv_roi.csv", index=False)
